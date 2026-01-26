@@ -1,0 +1,24 @@
+# Dependency directories
+node_modules/
+dist/
+.next/
+out/
+
+# Environment files (IMPORTANTE: Esto protege tus claves)
+.env
+.env.*
+supabase.env
+*.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
