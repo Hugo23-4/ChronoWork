@@ -1,24 +1,71 @@
-# Dependency directories
-node_modules/
-dist/
-.next/
-out/
+# ==========================================
+# CHRONOWORK - MASTER GITIGNORE (ENTERPRISE)
+# ==========================================
 
-# Environment files (IMPORTANTE: Esto protege tus claves)
+# --- DEPENDENCIES ---
+# Nunca subimos las librerías; se regeneran con 'npm install'
+node_modules/
+jspm_packages/
+web_modules/
+
+# --- SECRETS & CONFIG (CRÍTICO) ---
+# Ocultamos cualquier archivo que contenga credenciales de Supabase o DB
 .env
 .env.*
-supabase.env
 *.env
+supabase.env
+.shadow
+.netrc
+_netrc
 
-# Logs
+# --- BUILD & OUTPUTS ---
+# No guardamos el código compilado ni los artefactos de construcción
+dist/
+build/
+.next/
+out/
+bin/
+obj/
+*.tsbuildinfo
+
+# --- LOGS ---
+# Registros de errores y actividad local
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# OS Files
-.DS_Store
-Thumbs.db
+# --- TESTING ---
+# Resultados de pruebas y reportes de cobertura (Jest)
+coverage/
+*.lcov
+.nyc_output
 
-# IDEs
-.vscode/
+# --- IDEs & EDITORS ---
+# Configuraciones personales de tu editor de código
+.vscode/*
+!.vscode/extensions.json
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OPERATING SYSTEMS ---
+# Basura del sistema operativo (Windows/Mac)
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- SUPABASE LOCAL (Si usas Supabase CLI en el futuro) ---
+# Archivos de configuración local de infraestructura
+supabase/.temp/
+supabase/functions/.import_map.json
