@@ -1,42 +1,92 @@
+/* =========================================
+   CHRONOWORK DESIGN SYSTEM v2.0
+   Based on Figma UI Kit & Brand Guidelines
+   ========================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 01. Arquitectura de Color */
+  --loom-navy: #0F172A;       /* Primary Text / Dark Buttons */
+  --chrono-blue: #2563EB;     /* Actions / Accent */
+  --pure-surface: #FFFFFF;    /* Cards */
+  --bg-body: #F8FAFC;         /* Slate 50 Background */
+  
+  /* Status Colors */
+  --status-success: #10B981;
+  --status-error: #EF4444;
+  --status-warning: #F59E0B;
+
+  /* Overriding Bootstrap Variables via CSS Custom Properties */
+  --bs-body-font-family: 'Inter', sans-serif;
+  --bs-body-bg: var(--bg-body);
+  --bs-primary: var(--loom-navy); /* Redefinimos el "Primary" de Bootstrap al Navy */
+  --bs-link-color: var(--chrono-blue);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  background-color: var(--bg-body);
+  color: var(--loom-navy);
+  font-family: 'Inter', sans-serif; /* */
+  -webkit-font-smoothing: antialiased; /* Texto más nítido */
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* 02. Títulos y Tipografía */
+h1, h2, h3, h4, h5, h6, .display-1, .display-2 {
+  font-weight: 700; /* Bold por defecto para títulos */
+  color: var(--loom-navy);
+  letter-spacing: -0.02em; /* Toque moderno */
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* 03. Componentes Interactivos - BOTONES */
+.btn-primary {
+  background-color: var(--loom-navy) !important; /* */
+  border-color: var(--loom-navy) !important;
+  border-radius: 12px !important;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.2s ease;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.btn-primary:hover {
+  background-color: #1e293b !important; /* Un tono un poco más claro para hover */
+  transform: translateY(-1px);
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Botón de Acción Principal (El Azul "Chrono Blue") */
+/* Crearemos una clase especial para cuando quieras el botón azul brillante */
+.btn-action {
+  background-color: var(--chrono-blue) !important;
+  border-color: var(--chrono-blue) !important;
+  color: white !important;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
 }
+
+.btn-action:hover {
+  background-color: #1d4ed8 !important;
+}
+
+/* 04. Tarjetas y Contenedores */
+.card {
+  background-color: var(--pure-surface);
+  border: none; /* Quitamos bordes por defecto de Bootstrap */
+  border-radius: 16px !important; /* */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+/* 05. Inputs de Formulario */
+.form-control {
+  border-radius: 8px !important; /* */
+  border: 1px solid #E2E8F0;
+  padding: 12px 16px;
+  background-color: #FFFFFF;
+}
+
+.form-control:focus {
+  border-color: var(--chrono-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Utilidades de Texto Personalizadas */
+.text-primary { color: var(--loom-navy) !important; }
+.text-accent { color: var(--chrono-blue) !important; }
