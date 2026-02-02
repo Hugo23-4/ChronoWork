@@ -3,6 +3,8 @@
    Based on Figma UI Kit & Brand Guidelines
    ========================================= */
 
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
 :root {
   /* 01. Arquitectura de Color */
   --loom-navy: #0F172A;       /* Primary Text / Dark Buttons */
@@ -90,3 +92,33 @@ h1, h2, h3, h4, h5, h6, .display-1, .display-2 {
 /* Utilidades de Texto Personalizadas */
 .text-primary { color: var(--loom-navy) !important; }
 .text-accent { color: var(--chrono-blue) !important; }
+
+/* ======================================================
+   EXPERIENCIA TIPO APP (Desactivar selección de texto)
+   ====================================================== */
+
+/* Por defecto, nadie puede seleccionar texto ni ver el cursor de texto */
+body {
+  user-select: none;           /* Estándar */
+  -webkit-user-select: none;   /* Safari / Chrome */
+  cursor: default;             /* Cursor de flecha siempre */
+}
+
+/* Excepción: Permitir escribir en Inputs y Textareas */
+input, textarea {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text !important;
+}
+
+/* Excepción: Permitir seleccionar texto si le ponemos la clase .selectable */
+.selectable {
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
+/* Asegurar que los botones y enlaces siempre tengan la manita */
+button, a, .btn, .cursor-pointer {
+  cursor: pointer !important;
+}

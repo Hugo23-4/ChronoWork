@@ -1,167 +1,242 @@
 'use client';
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
+  const router = useRouter();
+  
+  // Estados del formulario
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Lógica del ojito
+  const [rememberMe, setRememberMe] = useState(false);
+  
+  // Estados de interfaz (UI)
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
+  // 1. EFECTO: AL CARGAR, MIRAR SI HAY EMAIL GUARDADO
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('chrono_saved_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
+  // 2. FUNCIÓN DE LOGIN
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      // Intentamos iniciar sesión
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setError('Credenciales incorrectas. Verifica tu email y contraseña.');
-      setLoading(false);
-    } else {
+      if (error) throw error;
+
+      // LÓGICA DE RECORDAR USUARIO
+      if (rememberMe) {
+        localStorage.setItem('chrono_saved_email', email);
+      } else {
+        localStorage.removeItem('chrono_saved_email');
+      }
+
+      // Redirigir al dashboard
       router.push('/dashboard');
+      
+    } catch (err: any) {
+      setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. FUNCIÓN DE "OLVIDÉ MI CONTRASEÑA"
+  const handleForgotPassword = async () => {
+    // Validamos que haya escrito algo en el correo
+    if (!email) {
+      setError('Por favor, escribe tu correo electrónico en el campo de arriba para poder recuperarla.');
+      return;
+    }
+
+    setResetLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/update-password`,
+      });
+
+      if (error) throw error;
+
+      setSuccessMsg(`✅ Hemos enviado un enlace de recuperación a ${email}. Revisa tu bandeja de entrada.`);
+    } catch (err: any) {
+      setError('Error al enviar recuperación: ' + err.message);
+    } finally {
+      setResetLoading(false);
     }
   };
 
   return (
-    <div className="container-fluid vh-100">
+    <div className="container-fluid vh-100 overflow-hidden bg-white">
       <div className="row h-100">
         
-        {/* =========================================================
-            SECCIÓN IZQUIERDA (SOLO ESCRITORIO - BRANDING)
-            Basado en Frame-1.png
-           ========================================================= */}
+        {/* =======================================================
+            COLUMNA IZQUIERDA (SOLO DESKTOP)
+           ======================================================= */}
         <div className="col-lg-6 d-none d-lg-flex flex-column justify-content-between p-5 text-white" 
-             style={{ backgroundColor: 'var(--loom-navy)' }}>
+             style={{ backgroundColor: '#0F172A' }}>
           
-          {/* Logo y Tagline */}
-          <div className="mt-5 pt-5 px-4">
-            <h1 className="display-4 fw-bold mb-0">ChronoWork</h1>
-            <div className="bg-primary mb-4 mt-2" style={{ height: '6px', width: '80px', borderRadius: '3px' }}></div>
-            <p className="lead fs-4 fw-light opacity-75" style={{ maxWidth: '400px' }}>
+          <div className="mt-5">
+            <h1 className="fw-bold display-4 mb-3">ChronoWork</h1>
+            <div style={{ width: '80px', height: '6px', backgroundColor: '#2563EB', borderRadius: '4px' }}></div>
+            <p className="mt-4 fs-4 fw-light text-white-50" style={{ maxWidth: '400px' }}>
               Gestión de presencia inteligente, segura y transparente.
             </p>
           </div>
 
-          {/* Footer Corporativo */}
-          <div className="px-4 mb-4 opacity-50 small">
-            <div className="border-top border-light border-opacity-25 pt-4">
-              <p className="mb-0 fw-bold">LOOM S.L. © 2026 • Extremadura</p>
-              <p className="mb-0 font-monospace" style={{ fontSize: '0.75rem' }}>v2.0.1 Stable</p>
-            </div>
+          <div className="border-top border-secondary border-opacity-25 pt-4">
+            <small className="text-white-50">LOOM S.L. © 2026 • Extremadura</small>
           </div>
         </div>
 
-        {/* =========================================================
-            SECCIÓN DERECHA (FORMULARIO)
-            Basado en Frame-1.png (Derecha) y Frame-1movil.png
-           ========================================================= */}
-        <div className="col-lg-6 d-flex align-items-center justify-content-center bg-white position-relative">
-          
-          {/* Logo visible solo en Móvil */}
-          <div className="d-lg-none position-absolute top-0 start-0 w-100 p-4 text-center">
-             <h3 className="fw-bold text-primary">ChronoWork</h3>
-          </div>
-
-          <div className="w-100 p-4" style={{ maxWidth: '480px' }}>
+        {/* =======================================================
+            COLUMNA DERECHA (LOGIN FORM)
+           ======================================================= */}
+        <div className="col-lg-6 d-flex flex-column align-items-center justify-content-center bg-white p-4 position-relative">
             
-            {/* Cabecera del Formulario */}
-            <div className="mb-5">
-              <h2 className="fw-bold text-dark mb-2">Bienvenido de nuevo</h2>
-              <p className="text-secondary">Introduce tus credenciales corporativas para acceder.</p>
+            {/* Header Móvil */}
+            <div className="d-lg-none text-center mb-5">
+                <h2 className="fw-bold text-dark display-6 mb-1">ChronoWork</h2>
+                <p className="text-secondary">Acceso de Empleado</p>
             </div>
 
-            <form onSubmit={handleLogin}>
-              {/* Input Email */}
-              <div className="mb-4">
-                <label className="form-label fw-bold small text-dark">Correo Electrónico</label>
-                <input 
-                  type="email" 
-                  className="form-control form-control-lg bg-light border-0" 
-                  placeholder="ejemplo@loom.es"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ fontSize: '0.95rem', padding: '12px 16px' }}
-                  required 
-                />
-              </div>
-
-              {/* Input Password con Ojo */}
-              <div className="mb-4">
-                <label className="form-label fw-bold small text-dark">Contraseña</label>
-                <div className="input-group">
-                  <input 
-                    type={showPassword ? "text" : "password"} 
-                    className="form-control form-control-lg bg-light border-0" 
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{ fontSize: '0.95rem', padding: '12px 16px' }}
-                    required 
-                  />
-                  <button 
-                    className="btn btn-light border-0 text-secondary" 
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <i className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
-                  </button>
+            <div className="w-100" style={{ maxWidth: '420px' }}>
+                
+                {/* Títulos Desktop */}
+                <div className="d-none d-lg-block mb-4">
+                    <h2 className="fw-bold text-dark">Bienvenido de nuevo</h2>
+                    <p className="text-secondary">Introduce tus credenciales corporativas.</p>
                 </div>
-              </div>
 
-              {/* Checkbox y Olvidé contraseña */}
-              <div className="d-flex justify-content-between align-items-center mb-5">
-                <div className="form-check">
-                  <input className="form-check-input" type="checkbox" id="rememberMe" />
-                  <label className="form-check-label small text-secondary" htmlFor="rememberMe">
-                    Recordar este dispositivo
-                  </label>
-                </div>
-                <Link href="/recuperar" className="small fw-bold text-primary text-decoration-none">
-                  ¿Olvidaste la contraseña?
-                </Link>
-              </div>
-
-              {/* Mensaje de Error */}
-              {error && (
-                <div className="alert alert-danger d-flex align-items-center gap-2 mb-4 p-2 small rounded-3">
-                  <i className="bi bi-exclamation-octagon-fill"></i> {error}
-                </div>
-              )}
-
-              {/* Botón Principal (Loom Navy) */}
-              <button 
-                type="submit" 
-                className="btn btn-primary w-100 py-3 fw-bold mb-4 shadow-sm"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span><span className="spinner-border spinner-border-sm me-2"></span>Accediendo...</span>
-                ) : (
-                  'Acceder al Panel'
+                {/* ALERTAS DE ESTADO */}
+                {error && (
+                    <div className="alert alert-danger d-flex align-items-center gap-2 small py-2 rounded-3 mb-4 animate__animated animate__shakeX">
+                        <i className="bi bi-exclamation-circle-fill"></i> {error}
+                    </div>
                 )}
-              </button>
+                
+                {successMsg && (
+                    <div className="alert alert-success d-flex align-items-center gap-2 small py-2 rounded-3 mb-4">
+                        <i className="bi bi-check-circle-fill"></i> {successMsg}
+                    </div>
+                )}
 
-              {/* Badge SSL (Copia exacta de Frame-1.png) */}
-              <div className="alert alert-info border-0 d-flex align-items-center gap-3 py-3 rounded-3" 
-                   style={{ backgroundColor: '#F0F9FF', color: '#0369A1' }}>
-                <i className="bi bi-shield-lock-fill fs-4"></i>
-                <div style={{ lineHeight: '1.2' }}>
-                  <small className="fw-bold d-block">Acceso Seguro SSL</small>
-                  <small className="opacity-75" style={{ fontSize: '0.7rem' }}>
-                    Tus datos están protegidos por normativa RGPD.
-                  </small>
-                </div>
-              </div>
+                <form onSubmit={handleLogin}>
+                    {/* Input Email */}
+                    <div className="mb-4">
+                        <label className="form-label fw-bold small text-dark">Correo Electrónico</label>
+                        <input 
+                            type="email" 
+                            className="form-control form-control-lg bg-light border-0 fs-6 py-3" 
+                            placeholder="ejemplo@loom.es"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required 
+                        />
+                    </div>
 
-            </form>
-          </div>
+                    {/* Input Contraseña */}
+                    <div className="mb-4">
+                        <label className="form-label fw-bold small text-dark">Contraseña</label>
+                        <div className="position-relative">
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                className="form-control form-control-lg bg-light border-0 fs-6 py-3 pe-5" 
+                                placeholder="••••••••"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required 
+                            />
+                            <button 
+                                type="button"
+                                className="btn position-absolute top-50 end-0 translate-middle-y text-secondary border-0 z-1"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{ paddingRight: '15px' }}
+                            >
+                                <i className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Opciones Extra: Recordar y Olvido */}
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <div className="form-check">
+                            <input 
+                                className="form-check-input cursor-pointer" 
+                                type="checkbox" 
+                                id="remember" 
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                            />
+                            <label className="form-check-label small text-secondary cursor-pointer" htmlFor="remember">
+                                Recordar usuario
+                            </label>
+                        </div>
+                        
+                        {/* Botón funcional de Olvidé contraseña */}
+                        <button 
+                            type="button" 
+                            onClick={handleForgotPassword}
+                            className="btn btn-link small text-primary fw-bold text-decoration-none p-0 border-0"
+                            disabled={resetLoading}
+                        >
+                            {resetLoading ? 'Enviando...' : '¿Olvidaste la contraseña?'}
+                        </button>
+                    </div>
+
+                    {/* Botón Principal */}
+                    <button 
+                        type="submit" 
+                        className="btn btn-primary w-100 py-3 rounded-3 fw-bold mb-4"
+                        disabled={loading}
+                        style={{ backgroundColor: '#0F172A', borderColor: '#0F172A' }} 
+                    >
+                        {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : 'Acceder al Panel'}
+                    </button>
+
+                    {/* FACE ID (Solo visual Móvil) */}
+                    <div className="d-lg-none text-center mb-4">
+                        <button type="button" className="btn btn-link text-decoration-none d-flex flex-column align-items-center gap-1 mx-auto text-secondary">
+                             <i className="bi bi-person-bounding-box fs-3 text-warning"></i>
+                             <small className="fw-bold text-primary">Usar Face ID</small>
+                        </button>
+                    </div>
+
+                    {/* Badge de Seguridad */}
+                    <div className="d-none d-lg-flex alert alert-info bg-opacity-10 border-info border-opacity-25 align-items-center gap-3 rounded-3">
+                        <i className="bi bi-lock-fill text-info fs-5"></i>
+                        <div className="small text-secondary" style={{ fontSize: '0.8rem', lineHeight: '1.2' }}>
+                            <strong className="d-block text-info">Acceso Seguro SSL</strong>
+                            Tus datos están protegidos por normativa RGPD.
+                        </div>
+                    </div>
+
+                </form>
+            </div>
         </div>
+
       </div>
     </div>
   );
