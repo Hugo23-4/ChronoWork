@@ -1,29 +1,36 @@
-import { ReactNode } from 'react';
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Sidebar from '@/components/dashboard/Sidebar';
 import MobileMenu from '@/components/dashboard/MobileMenu';
-import Sidebar from '@/components/Sidebar'; // Asegúrate que esta ruta es correcta en tu proyecto
+import AdminModeSwitcher from '@/components/dashboard/AdminModeSwitcher';
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
-    <div className="d-flex min-vh-100 bg-light">
-      
-      {/* SIDEBAR (Escritorio) */}
-      <div className="d-none d-lg-block flex-shrink-0" style={{ width: '280px' }}>
-         <div className="fixed-top h-100" style={{ width: '280px' }}>
-            <Sidebar />
-         </div>
+    <div className="d-flex vh-100 overflow-hidden">
+
+      {/* Sidebar Desktop */}
+      <div className="d-none d-lg-block">
+        <Sidebar />
       </div>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <div className="flex-grow-1 d-flex flex-column" style={{ minWidth: 0 }}>
-        {/* pb-5 y mb-5 extra en móvil para dejar sitio al menú */}
-        <main className="flex-grow-1 p-3 p-lg-4 pb-5 mb-5 mb-lg-0">
-            {children}
-        </main>
+      {/* Contenido Principal */}
+      <main className="flex-grow-1 overflow-auto bg-light position-relative">
+        <div className="p-3 p-md-4">
+          {children}
+        </div>
+      </main>
+
+      {/* Menu Móvil */}
+      <div className="d-lg-none">
+        <MobileMenu />
       </div>
 
-      {/* MENÚ MÓVIL */}
-      <MobileMenu />
-      
+      {/* Botón Admin (solo visible para admins) */}
+      <AdminModeSwitcher />
+
     </div>
   );
 }
