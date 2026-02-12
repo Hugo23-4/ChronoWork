@@ -51,35 +51,78 @@ export default function AdminView({ userName }: AdminViewProps) {
 
     const fetchDashboardData = async () => {
         try {
-            // 1. Total de empleados
-            const { count: totalEmpleados } = await supabase
-                .from('empleados_info')
-                .select('*', { count: 'exact', head: true });
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
-            // 2. Empleados activos (consideramos todos como activos si no hay campo específico)
-            const { count: empleadosActivos } = await supabase
-                .from('empleados_info')
+            // 1. ACTIVOS EN TURNO HOY (fichajes con hora_entrada hoy y sin hora_salida)
+            const { count: activosHoy } = await supabase
+                .from('fichajes')
                 .select('*', { count: 'exact', head: true })
-                .neq('activo', false);
+                .eq('fecha', today)
+                .is('hora_salida', null);
 
-            // 3. Solicitudes pendientes
+            // 2. RETRASOS HOY (fichajes donde hora_entrada > 09:00:00)
+            const { data: fichajesHoy } = await supabase
+                .from('fichajes')
+                .select('hora_entrada')
+                .eq('fecha', today);
+
+            let retrasosCount = 0;
+            if (fichajesHoy) {
+                fichajesHoy.forEach((f: any) => {
+                    try {
+                        // Parsear hora_entrada (puede ser ISO o HH:MM:SS)
+                        let horaEntrada: Date;
+                        if (f.hora_entrada.includes('T') || f.hora_entrada.includes('Z')) {
+                            horaEntrada = new Date(f.hora_entrada);
+                        } else {
+                            const [hours, minutes] = f.hora_entrada.split(':').map(Number);
+                            horaEntrada = new Date();
+                            horaEntrada.setHours(hours, minutes, 0, 0);
+                        }
+
+                        // Comparar con 09:00 (consideramos retraso si entrada > 09:00)
+                        const limite = new Date();
+                        limite.setHours(9, 0, 0, 0);
+
+                        if (horaEntrada > limite) {
+                            retrasosCount++;
+                        }
+                    } catch (err) {
+                        console.error('Error parsing hora_entrada:', err);
+                    }
+                });
+            }
+
+            // 3. SOLICITUDES PENDIENTES
             const { count: solicitudesPendientes } = await supabase
                 .from('solicitudes')
                 .select('*', { count: 'exact', head: true })
                 .eq('estado', 'pendiente');
 
-            // 4. Últimas solicitudes para actividad reciente
+            // 4. TOTAL DE EMPLEADOS
+            const { count: totalEmpleados } = await supabase
+                .from('empleados_info')
+                .select('*', { count: 'exact', head: true });
+
+            // 5. ÚLTIMAS SOLICITUDES PARA ACTIVIDAD RECIENTE
             const { data: ultimasSolicitudes } = await supabase
                 .from('solicitudes')
                 .select('*, empleados_info(nombre_completo)')
                 .order('created_at', { ascending: false })
-                .limit(3);
+                .limit(5);
+
+            console.log('📊 Dashboard Stats:', {
+                activosHoy,
+                retrasosCount,
+                solicitudesPendientes,
+                totalEmpleados
+            });
 
             setStats({
-                activos: empleadosActivos || 0,
+                activos: activosHoy || 0,
                 total: totalEmpleados || 0,
-                alertas: 0, // Por ahora sin sistema de alertas
-                retrasos: 0, // Por ahora sin sistema de retrasos
+                alertas: retrasosCount || 0,
+                retrasos: retrasosCount || 0,
                 pendientes: solicitudesPendientes || 0
             });
 
@@ -95,7 +138,7 @@ export default function AdminView({ userName }: AdminViewProps) {
 
             setActividad(actividadFormateada);
         } catch (error) {
-            console.error('Error fetching dashboard data:', error);
+            console.error('❌ Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
         }
@@ -165,15 +208,15 @@ export default function AdminView({ userName }: AdminViewProps) {
                         style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', transition: 'transform 0.3s ease' }}
                         onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
                         onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                        <h6 className="text-white small fw-bold mb-2 opacity-90">ALERTAS</h6>
+                        <h6 className="text-white small fw-bold mb-2 opacity-90">RETRASOS HOY</h6>
                         <div className="d-flex align-items-baseline gap-1">
                             <span className="display-4 fw-bold text-white">
                                 {loading ? '...' : stats.alertas}
                             </span>
                         </div>
                         <small className="text-white fw-bold d-flex align-items-center gap-1 mt-2">
-                            <i className="bi bi-exclamation-triangle-fill"></i>
-                            Requieren acción
+                            <i className="bi bi-clock-history"></i>
+                            Entraron tarde
                         </small>
                         <i className="bi bi-exclamation-circle-fill position-absolute opacity-10"
                             style={{ fontSize: '5rem', right: '-20px', bottom: '-20px' }}></i>

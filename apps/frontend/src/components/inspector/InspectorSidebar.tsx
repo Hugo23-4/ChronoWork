@@ -1,0 +1,117 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+
+interface InspectorSidebarProps {
+    remainingTime: string;
+    sessionsUsed: number;
+    maxSessions: number;
+}
+
+export default function InspectorSidebar({ remainingTime, sessionsUsed, maxSessions }: InspectorSidebarProps) {
+    const pathname = usePathname();
+    const { profile, signOut } = useAuth();
+
+    const isActive = (path: string) => {
+        if (path === '/inspector') return pathname === path;
+        return pathname.startsWith(path);
+    };
+
+    const linkClass = (path: string) => `
+        nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3 position-relative
+        ${isActive(path)
+            ? 'text-white fw-bold'
+            : 'text-white-50'}
+    `;
+
+    const menuItems = [
+        { icon: 'bi-activity', label: 'Monitor en Tiempo Real', href: '/inspector' },
+        { icon: 'bi-journal-text', label: 'Registro Inmutable (Log)', href: '/inspector/log' },
+        { icon: 'bi-file-earmark-bar-graph', label: 'Exportar Informe Legal', href: '/inspector/exportar' },
+    ];
+
+    return (
+        <div className="d-flex flex-column h-100 text-white p-3" style={{ width: '280px', backgroundColor: '#0F172A' }}>
+
+            {/* Logo */}
+            <div className="mb-4 px-2 mt-2">
+                <div className="d-flex align-items-baseline gap-1">
+                    <h4 className="fw-bold m-0">ChronoWork</h4>
+                    <span className="text-warning fw-bold" style={{ fontSize: '0.7rem' }}>AUDIT</span>
+                </div>
+                <div style={{ width: '40px', height: '3px', background: '#F59E0B', borderRadius: '2px', marginTop: '8px' }}></div>
+            </div>
+
+            {/* Menu */}
+            <small className="text-secondary text-uppercase fw-bold px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.08em' }}>
+                Herramientas
+            </small>
+            <ul className="nav nav-pills flex-column mb-4 gap-1">
+                {menuItems.map((item) => (
+                    <li className="nav-item" key={item.href}>
+                        <Link href={item.href} className={linkClass(item.href)}>
+                            {isActive(item.href) && (
+                                <div className="position-absolute start-0 top-50 translate-middle-y bg-warning rounded-end"
+                                    style={{ width: '4px', height: '60%' }}></div>
+                            )}
+                            <i className={`bi ${item.icon} fs-5`}></i>
+                            <span>{item.label}</span>
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+
+            {/* Timer Card */}
+            <div className="rounded-4 p-3 mb-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                <div className="d-flex align-items-center gap-2 mb-2">
+                    <i className="bi bi-clock text-warning"></i>
+                    <small className="text-warning fw-bold">SESIÓN ACTIVA</small>
+                </div>
+                <div className="font-monospace fw-bold text-white mb-1" style={{ fontSize: '1.5rem' }}>
+                    {remainingTime}
+                </div>
+                <small className="text-white-50">Tiempo restante</small>
+                <div className="mt-2">
+                    <div className="d-flex gap-1">
+                        {Array.from({ length: maxSessions }).map((_, i) => (
+                            <div key={i} className="flex-grow-1 rounded-pill" style={{
+                                height: '4px',
+                                background: i < sessionsUsed ? '#F59E0B' : 'rgba(255,255,255,0.1)'
+                            }}></div>
+                        ))}
+                    </div>
+                    <small className="text-white-50 d-block mt-1" style={{ fontSize: '0.7rem' }}>
+                        {sessionsUsed + 1} de {maxSessions} sesiones esta semana
+                    </small>
+                </div>
+            </div>
+
+            {/* Spacer */}
+            <div className="flex-grow-1"></div>
+
+            {/* Inspector Badge */}
+            <div className="mt-4 pt-3 border-top border-secondary border-opacity-25">
+                <div className="d-flex align-items-center gap-3 px-2">
+                    <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-dark"
+                        style={{ width: 40, height: 40, fontSize: '0.75rem', background: '#F59E0B' }}>
+                        INS
+                    </div>
+                    <div className="overflow-hidden flex-grow-1">
+                        <div className="fw-bold text-white text-truncate" style={{ maxWidth: '130px' }}>
+                            {profile?.nombre_completo || 'Inspector'}
+                        </div>
+                        <small className="text-warning d-block" style={{ fontSize: '0.7rem' }}>
+                            Acceso Inspector
+                        </small>
+                    </div>
+                    <button onClick={signOut} className="btn btn-link text-white-50 p-0" title="Cerrar sesión">
+                        <i className="bi bi-box-arrow-right fs-5"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    );
+}

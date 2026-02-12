@@ -51,9 +51,21 @@ export default function LoginPage() {
         localStorage.removeItem('chrono_saved_email');
       }
 
-      // TODOS entran como empleado - los admins verán el botón para cambiar
-      localStorage.setItem('chronowork_view_mode', 'personal');
-      router.push('/dashboard');
+      // Check role to redirect properly
+      const { data: empData } = await supabase
+        .from('empleados_info')
+        .select('rol, rol_id')
+        .eq('id', data.user?.id)
+        .single();
+
+      if (empData?.rol === 'inspector' || empData?.rol_id === 3) {
+        // Inspector goes to inspector portal
+        router.push('/inspector');
+      } else {
+        // Everyone else goes to employee dashboard
+        localStorage.setItem('chronowork_view_mode', 'personal');
+        router.push('/dashboard');
+      }
 
     } catch (err: any) {
       setError('Credenciales incorrectas. Verifica tu correo y contraseña.');
