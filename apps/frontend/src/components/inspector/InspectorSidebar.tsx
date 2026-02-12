@@ -6,11 +6,13 @@ import { useAuth } from '@/context/AuthContext';
 
 interface InspectorSidebarProps {
     remainingTime: string;
-    sessionsUsed: number;
-    maxSessions: number;
+    daysUsed: number;
+    maxDays: number;
+    minutesUsedToday: number;
+    maxMinutesPerDay: number;
 }
 
-export default function InspectorSidebar({ remainingTime, sessionsUsed, maxSessions }: InspectorSidebarProps) {
+export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, minutesUsedToday, maxMinutesPerDay }: InspectorSidebarProps) {
     const pathname = usePathname();
     const { profile, signOut } = useAuth();
 
@@ -29,8 +31,14 @@ export default function InspectorSidebar({ remainingTime, sessionsUsed, maxSessi
     const menuItems = [
         { icon: 'bi-activity', label: 'Monitor en Tiempo Real', href: '/inspector' },
         { icon: 'bi-journal-text', label: 'Registro Inmutable (Log)', href: '/inspector/log' },
+        { icon: 'bi-qr-code-scan', label: 'Escanear / Verificar', href: '/inspector/escanear' },
         { icon: 'bi-file-earmark-bar-graph', label: 'Exportar Informe Legal', href: '/inspector/exportar' },
     ];
+
+    // Parse remaining time to get minutes for progress bar
+    const timeParts = remainingTime.split(':');
+    const remainingMinutes = parseInt(timeParts[0]) + (parseInt(timeParts[1]) > 0 ? 1 : 0);
+    const usagePercent = Math.round(((maxMinutesPerDay - remainingMinutes) / maxMinutesPerDay) * 100);
 
     return (
         <div className="d-flex flex-column h-100 text-white p-3" style={{ width: '280px', backgroundColor: '#0F172A' }}>
@@ -63,29 +71,55 @@ export default function InspectorSidebar({ remainingTime, sessionsUsed, maxSessi
                 ))}
             </ul>
 
-            {/* Timer Card */}
+            {/* Session Info Card */}
             <div className="rounded-4 p-3 mb-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
                 <div className="d-flex align-items-center gap-2 mb-2">
                     <i className="bi bi-clock text-warning"></i>
                     <small className="text-warning fw-bold">SESIÓN ACTIVA</small>
                 </div>
+
+                {/* Timer */}
                 <div className="font-monospace fw-bold text-white mb-1" style={{ fontSize: '1.5rem' }}>
                     {remainingTime}
                 </div>
-                <small className="text-white-50">Tiempo restante</small>
+                <small className="text-white-50">Tiempo restante hoy</small>
+
+                {/* Today progress bar */}
+                <div className="mt-2 mb-2">
+                    <div className="rounded-pill overflow-hidden" style={{ height: '4px', background: 'rgba(255,255,255,0.1)' }}>
+                        <div className="rounded-pill" style={{
+                            height: '100%',
+                            width: `${usagePercent}%`,
+                            background: usagePercent > 80 ? '#EF4444' : '#F59E0B',
+                            transition: 'width 1s ease'
+                        }}></div>
+                    </div>
+                </div>
+
+                {/* Days indicator */}
                 <div className="mt-2">
+                    <small className="text-white-50 d-block mb-1" style={{ fontSize: '0.65rem' }}>DÍAS ESTA SEMANA</small>
                     <div className="d-flex gap-1">
-                        {Array.from({ length: maxSessions }).map((_, i) => (
+                        {Array.from({ length: maxDays }).map((_, i) => (
                             <div key={i} className="flex-grow-1 rounded-pill" style={{
-                                height: '4px',
-                                background: i < sessionsUsed ? '#F59E0B' : 'rgba(255,255,255,0.1)'
+                                height: '6px',
+                                background: i < daysUsed ? '#F59E0B' : 'rgba(255,255,255,0.1)'
                             }}></div>
                         ))}
                     </div>
                     <small className="text-white-50 d-block mt-1" style={{ fontSize: '0.7rem' }}>
-                        {sessionsUsed + 1} de {maxSessions} sesiones esta semana
+                        {daysUsed} de {maxDays} días usados
                     </small>
                 </div>
+            </div>
+
+            {/* Usage rules */}
+            <div className="rounded-3 p-2 mb-3 text-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <small className="text-white-50" style={{ fontSize: '0.6rem', lineHeight: '1.3' }}>
+                    <i className="bi bi-info-circle me-1"></i>
+                    {maxDays} días/semana • {maxMinutesPerDay} min/día<br />
+                    Los minutos se acumulan entre sesiones
+                </small>
             </div>
 
             {/* Spacer */}

@@ -7,7 +7,8 @@ export default function InspectorMobileMenu() {
     const pathname = usePathname();
 
     const items = [
-        { name: 'Log', href: '/inspector', icon: 'bi-journal-text' },
+        { name: 'Monitor', href: '/inspector', icon: 'bi-activity' },
+        { name: 'Log', href: '/inspector/log', icon: 'bi-journal-text' },
         { name: 'Escanear', href: '/inspector/escanear', icon: 'bi-qr-code-scan' },
         { name: 'Exportar', href: '/inspector/exportar', icon: 'bi-file-earmark-arrow-down' },
         { name: 'Perfil', href: '/inspector/perfil', icon: 'bi-person-badge' },
@@ -26,7 +27,7 @@ export default function InspectorMobileMenu() {
                             key={item.name}
                             href={item.href}
                             className="text-decoration-none d-flex flex-column align-items-center justify-content-center"
-                            style={{ width: '75px', height: '60px' }}
+                            style={{ width: '60px', height: '55px' }}
                         >
                             <div
                                 className={`
@@ -41,16 +42,17 @@ export default function InspectorMobileMenu() {
                                 }}
                             >
                                 <i
-                                    className={`bi ${item.icon} fs-5 ${isActive ? 'text-white' : 'text-secondary opacity-75'}`}
+                                    className={`bi ${item.icon} ${isActive ? 'text-white' : 'text-secondary opacity-75'}`}
+                                    style={{ fontSize: isActive ? '1.1rem' : '1rem' }}
                                 ></i>
                             </div>
 
                             <span
                                 className="small fw-bold"
                                 style={{
-                                    fontSize: '10px',
+                                    fontSize: '9px',
                                     color: isActive ? '#F59E0B' : '#888',
-                                    marginTop: '2px'
+                                    marginTop: '1px'
                                 }}
                             >
                                 {item.name}

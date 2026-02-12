@@ -7,8 +7,8 @@ import { useAuth } from '@/context/AuthContext';
 import InspectorSidebar from '@/components/inspector/InspectorSidebar';
 import InspectorMobileMenu from '@/components/inspector/InspectorMobileMenu';
 
-const MAX_SESSIONS_PER_WEEK = 3;
-const MAX_MINUTES_PER_SESSION = 60;
+const MAX_DAYS_PER_WEEK = 3;        // 3 días a la semana
+const MAX_MINUTES_PER_DAY = 60;     // 60 minutos por día
 
 export default function InspectorLayout({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
@@ -18,12 +18,13 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     const [sessionError, setSessionError] = useState<string | null>(null);
 
     // Timer state
-    const [remainingSeconds, setRemainingSeconds] = useState(MAX_MINUTES_PER_SESSION * 60);
-    const [sessionsUsedThisWeek, setSessionsUsedThisWeek] = useState(0);
+    const [remainingSeconds, setRemainingSeconds] = useState(MAX_MINUTES_PER_DAY * 60);
+    const [daysUsedThisWeek, setDaysUsedThisWeek] = useState(0);
+    const [minutesUsedToday, setMinutesUsedToday] = useState(0);
     const sessionIdRef = useRef<string | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Get Monday of current week
+    // Get Monday of current week (ISO format)
     const getMonday = () => {
         const d = new Date();
         const day = d.getDay();
@@ -33,9 +34,11 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         return monday.toISOString().split('T')[0];
     };
 
-    // Check sessions this week
-    const checkWeeklySessions = useCallback(async () => {
-        if (!user) return 0;
+    const today = new Date().toISOString().split('T')[0];
+
+    // Check weekly sessions and calculate remaining time
+    const checkWeeklyUsage = useCallback(async () => {
+        if (!user) return { daysUsed: 0, minutesToday: 0 };
         const monday = getMonday();
 
         const { data, error } = await supabase
@@ -46,10 +49,24 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
 
         if (error) {
             console.error('Error checking sessions:', error);
-            return 0;
+            return { daysUsed: 0, minutesToday: 0 };
         }
 
-        return data?.length || 0;
+        if (!data || data.length === 0) {
+            return { daysUsed: 0, minutesToday: 0 };
+        }
+
+        // Count DISTINCT days used this week
+        const distinctDays = new Set(data.map((s: any) => s.fecha));
+        const daysUsed = distinctDays.size;
+
+        // Sum minutes used TODAY (could be from multiple sessions)
+        const todayStr = new Date().toISOString().split('T')[0];
+        const minutesToday = data
+            .filter((s: any) => s.fecha === todayStr)
+            .reduce((sum: number, s: any) => sum + (s.duracion_minutos || 0), 0);
+
+        return { daysUsed, minutesToday };
     }, [user]);
 
     // Start a new session
@@ -76,12 +93,12 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         }
     }, [user]);
 
-    // End session
+    // End session and save duration
     const endSession = useCallback(async () => {
         if (!sessionIdRef.current) return;
 
-        const elapsed = MAX_MINUTES_PER_SESSION * 60 - remainingSeconds;
-        const minutes = Math.ceil(elapsed / 60);
+        const elapsed = (MAX_MINUTES_PER_DAY * 60 - remainingSeconds);
+        const minutes = Math.max(1, Math.ceil(elapsed / 60));
 
         await supabase
             .from('inspector_sesiones')
@@ -94,7 +111,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         sessionIdRef.current = null;
     }, [remainingSeconds]);
 
-    // Check access
+    // Check access and sessions
     useEffect(() => {
         const checkAccess = async () => {
             if (!user) {
@@ -109,15 +126,44 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
                 .single();
 
             if (data?.rol === 'inspector' || data?.rol_id === 3) {
-                // Check weekly sessions
-                const sessionsUsed = await checkWeeklySessions();
-                setSessionsUsedThisWeek(sessionsUsed);
+                const { daysUsed, minutesToday } = await checkWeeklyUsage();
+                setDaysUsedThisWeek(daysUsed);
+                setMinutesUsedToday(minutesToday);
 
-                if (sessionsUsed >= MAX_SESSIONS_PER_WEEK) {
-                    setSessionError(`Has agotado tus ${MAX_SESSIONS_PER_WEEK} sesiones semanales. Vuelve el próximo lunes.`);
+                const todayStr = new Date().toISOString().split('T')[0];
+
+                // Check if all 60 minutes used today
+                if (minutesToday >= MAX_MINUTES_PER_DAY) {
+                    setSessionError(`Has agotado tus ${MAX_MINUTES_PER_DAY} minutos de inspección para hoy. Vuelve mañana.`);
                     setLoading(false);
                     return;
                 }
+
+                // Check if this is a new day and all days used
+                const mondayStr = getMonday();
+                const { data: weekData } = await supabase
+                    .from('inspector_sesiones')
+                    .select('fecha')
+                    .eq('inspector_id', user.id)
+                    .gte('fecha', mondayStr);
+
+                const distinctDays = new Set((weekData || []).map((s: any) => s.fecha));
+                const hasUsedToday = distinctDays.has(todayStr);
+
+                if (!hasUsedToday && distinctDays.size >= MAX_DAYS_PER_WEEK) {
+                    setSessionError(`Has agotado tus ${MAX_DAYS_PER_WEEK} días de inspección esta semana. Vuelve el próximo lunes.`);
+                    setDaysUsedThisWeek(distinctDays.size);
+                    setLoading(false);
+                    return;
+                }
+
+                // Calculate remaining seconds for today
+                const remainingMinutesToday = MAX_MINUTES_PER_DAY - minutesToday;
+                setRemainingSeconds(remainingMinutesToday * 60);
+
+                // Update days count (including today if not counted yet)
+                const totalDays = hasUsedToday ? distinctDays.size : distinctDays.size + 1;
+                setDaysUsedThisWeek(totalDays);
 
                 // Start session and timer
                 await startSession();
@@ -130,7 +176,6 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
 
         checkAccess();
 
-        // Cleanup on unmount
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
@@ -143,10 +188,9 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         timerRef.current = setInterval(() => {
             setRemainingSeconds(prev => {
                 if (prev <= 1) {
-                    // Session expired
                     if (timerRef.current) clearInterval(timerRef.current);
                     endSession().then(() => {
-                        alert('⏰ Tu sesión de inspección ha expirado (1 hora). Serás redirigido.');
+                        alert('⏰ Has agotado tu tiempo de inspección para hoy (60 minutos). Serás redirigido.');
                         router.push('/login');
                     });
                     return 0;
@@ -169,7 +213,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [endSession]);
 
-    // Format time
+    // Format time mm:ss
     const formatTime = (secs: number) => {
         const m = Math.floor(secs / 60);
         const s = secs % 60;
@@ -186,21 +230,57 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     }
 
     if (sessionError) {
+        const isTimeError = sessionError.includes('minutos');
         return (
             <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center p-4" style={{ background: '#0F172A' }}>
-                <div className="text-center">
-                    <i className="bi bi-lock-fill text-warning" style={{ fontSize: '4rem' }}></i>
-                    <h3 className="text-white fw-bold mt-3">Acceso Limitado</h3>
+                <div className="text-center" style={{ maxWidth: '420px' }}>
+                    <i className={`bi ${isTimeError ? 'bi-hourglass-bottom' : 'bi-calendar-x'} text-warning`} style={{ fontSize: '4rem' }}></i>
+                    <h3 className="text-white fw-bold mt-3">
+                        {isTimeError ? 'Tiempo Agotado Hoy' : 'Días Agotados'}
+                    </h3>
                     <p className="text-white-50 mb-4">{sessionError}</p>
-                    <div className="d-flex gap-3 justify-content-center">
-                        <div className="bg-dark rounded-4 p-3 text-center border border-secondary">
-                            <div className="display-6 fw-bold text-warning">{sessionsUsedThisWeek}</div>
-                            <small className="text-white-50">de {MAX_SESSIONS_PER_WEEK} sesiones usadas</small>
+
+                    {/* Info card */}
+                    <div className="rounded-4 p-4 mb-4" style={{ background: '#1E293B', border: '1px solid #334155' }}>
+                        <div className="row g-3">
+                            <div className="col-6">
+                                <div className="text-center">
+                                    <div className="display-6 fw-bold text-warning">{daysUsedThisWeek}</div>
+                                    <small className="text-white-50">de {MAX_DAYS_PER_WEEK} días usados</small>
+                                </div>
+                            </div>
+                            <div className="col-6">
+                                <div className="text-center">
+                                    <div className="display-6 fw-bold text-warning">{minutesUsedToday}</div>
+                                    <small className="text-white-50">de {MAX_MINUTES_PER_DAY} min hoy</small>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Day progress */}
+                        <div className="mt-3">
+                            <small className="text-white-50 d-block mb-1" style={{ fontSize: '0.7rem' }}>DÍAS ESTA SEMANA</small>
+                            <div className="d-flex gap-1">
+                                {Array.from({ length: MAX_DAYS_PER_WEEK }).map((_, i) => (
+                                    <div key={i} className="flex-grow-1 rounded-pill" style={{
+                                        height: '6px',
+                                        background: i < daysUsedThisWeek ? '#F59E0B' : 'rgba(255,255,255,0.1)'
+                                    }}></div>
+                                ))}
+                            </div>
                         </div>
                     </div>
+
+                    {/* Info text */}
+                    <div className="rounded-3 p-3 mb-4 text-start" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                        <small className="text-warning">
+                            <i className="bi bi-info-circle me-2"></i>
+                            Tienes acceso a {MAX_DAYS_PER_WEEK} días por semana, {MAX_MINUTES_PER_DAY} minutos cada día. Los minutos se acumulan entre sesiones del mismo día.
+                        </small>
+                    </div>
+
                     <button
                         onClick={() => router.push('/login')}
-                        className="btn btn-outline-light rounded-pill px-4 mt-4"
+                        className="btn btn-outline-light rounded-pill px-4"
                     >
                         <i className="bi bi-box-arrow-left me-2"></i>
                         Cerrar Sesión
@@ -218,14 +298,16 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
             <div className="d-none d-lg-block">
                 <InspectorSidebar
                     remainingTime={formatTime(remainingSeconds)}
-                    sessionsUsed={sessionsUsedThisWeek}
-                    maxSessions={MAX_SESSIONS_PER_WEEK}
+                    daysUsed={daysUsedThisWeek}
+                    maxDays={MAX_DAYS_PER_WEEK}
+                    minutesUsedToday={minutesUsedToday}
+                    maxMinutesPerDay={MAX_MINUTES_PER_DAY}
                 />
             </div>
 
             {/* Main Content */}
             <main className="flex-grow-1 overflow-auto position-relative" style={{ background: '#FAFBFC' }}>
-                {/* Timer Bar - Always visible */}
+                {/* Timer Bar */}
                 <div
                     className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom"
                     style={{
@@ -236,8 +318,15 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
                     <div className="d-flex align-items-center gap-2">
                         <i className={`bi bi-shield-lock-fill ${remainingSeconds < 300 ? 'text-danger' : 'text-warning'}`}></i>
                         <small className="fw-bold" style={{ color: remainingSeconds < 300 ? '#DC2626' : '#92400E' }}>
-                            MODO LECTURA: NO EDITABLE
+                            MODO LECTURA
                         </small>
+                        <span className="badge rounded-pill px-2 py-1" style={{
+                            background: remainingSeconds < 300 ? '#FEE2E2' : '#FEF3C7',
+                            color: remainingSeconds < 300 ? '#DC2626' : '#92400E',
+                            fontSize: '0.65rem'
+                        }}>
+                            Día {daysUsedThisWeek}/{MAX_DAYS_PER_WEEK}
+                        </span>
                     </div>
                     <div className="d-flex align-items-center gap-2">
                         <i className={`bi bi-clock ${remainingSeconds < 300 ? 'text-danger' : 'text-warning'}`}></i>
@@ -247,7 +336,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
                         }}>
                             {formatTime(remainingSeconds)}
                         </span>
-                        <small className="d-none d-md-inline text-secondary">restante</small>
+                        <small className="d-none d-md-inline text-secondary">restante hoy</small>
                     </div>
                 </div>
 

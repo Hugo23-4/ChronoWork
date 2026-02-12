@@ -23,7 +23,6 @@ export default function InspectorMonitorPage() {
     const [isLive, setIsLive] = useState(false);
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-    // Generate simulated hash
     const generateHash = (id: string) => {
         const chars = '0123456789abcdef';
         let hash = '0x';
@@ -33,26 +32,13 @@ export default function InspectorMonitorPage() {
         return hash + '...' + id.substring(0, 4);
     };
 
-    const processFichajes = useCallback((data: any[]): FichajeMonitor[] => {
-        return data.map((f: any) => ({
-            id: f.id,
-            empleado_id: f.empleado_id,
-            nombre_completo: f.empleados_info?.nombre_completo || 'Desconocido',
-            sede_nombre: f.sedes?.nombre || 'Sin sede',
-            fecha: f.fecha,
-            hora_entrada: f.hora_entrada,
-            hora_salida: f.hora_salida,
-            has_gps: !!(f.latitud_entrada && f.longitud_entrada),
-            hash: generateHash(f.id),
-        }));
-    }, []);
-
     const fetchFichajes = useCallback(async () => {
         setLoading(true);
 
+        // 1. Fetch fichajes (no FK join with empleados_info since it's a view)
         let query = supabase
             .from('fichajes')
-            .select('*, empleados_info(nombre_completo), sedes(nombre)')
+            .select('*')
             .eq('fecha', filterDate)
             .order('hora_entrada', { ascending: false });
 
@@ -62,55 +48,85 @@ export default function InspectorMonitorPage() {
             query = query.not('hora_salida', 'is', null);
         }
 
-        const { data, error } = await query;
+        const { data: rawFichajes, error } = await query;
 
         if (error) {
             console.error('Error fetching fichajes:', error);
             setFichajes([]);
-        } else {
-            setFichajes(processFichajes(data || []));
+            setLastUpdate(new Date());
+            setLoading(false);
+            return;
         }
 
+        const fichData = rawFichajes || [];
+
+        // 2. Batch fetch employee names
+        const empleadoIds = [...new Set(fichData.map((f: any) => f.empleado_id))];
+        const empMap: Record<string, string> = {};
+
+        if (empleadoIds.length > 0) {
+            const { data: emps } = await supabase
+                .from('empleados_info')
+                .select('id, nombre_completo')
+                .in('id', empleadoIds);
+
+            (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
+        }
+
+        // 3. Batch fetch sede names
+        const sedeIds = [...new Set(fichData.map((f: any) => f.sede_id).filter(Boolean))];
+        const sedeMap: Record<string, string> = {};
+
+        if (sedeIds.length > 0) {
+            const { data: sedes } = await supabase
+                .from('sedes')
+                .select('id, nombre')
+                .in('id', sedeIds);
+
+            (sedes || []).forEach((s: any) => { sedeMap[s.id] = s.nombre; });
+        }
+
+        // 4. Combine
+        const processed: FichajeMonitor[] = fichData.map((f: any) => ({
+            id: f.id,
+            empleado_id: f.empleado_id,
+            nombre_completo: empMap[f.empleado_id] || 'Desconocido',
+            sede_nombre: sedeMap[f.sede_id] || 'Sin sede',
+            fecha: f.fecha,
+            hora_entrada: f.hora_entrada,
+            hora_salida: f.hora_salida,
+            has_gps: !!(f.latitud_entrada && f.longitud_entrada),
+            hash: generateHash(f.id),
+        }));
+
+        setFichajes(processed);
         setLastUpdate(new Date());
         setLoading(false);
-    }, [filterDate, filterStatus, processFichajes]);
+    }, [filterDate, filterStatus]);
 
-    // Initial fetch
     useEffect(() => {
         fetchFichajes();
     }, [fetchFichajes]);
 
-    // Supabase Realtime subscription
+    // Supabase Realtime
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
-        // Only subscribe to realtime if viewing today's data
         if (filterDate !== today) {
             setIsLive(false);
             return;
         }
-
         setIsLive(true);
 
         const channel = supabase
             .channel('inspector-fichajes-realtime')
             .on(
                 'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'fichajes',
-                    filter: `fecha=eq.${today}`,
-                },
-                () => {
-                    // Refetch on any change
-                    fetchFichajes();
-                }
+                { event: '*', schema: 'public', table: 'fichajes', filter: `fecha=eq.${today}` },
+                () => { fetchFichajes(); }
             )
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, [filterDate, fetchFichajes]);
 
     const formatTime = (timeStr: string | null) => {
@@ -208,7 +224,7 @@ export default function InspectorMonitorPage() {
                 </button>
             </div>
 
-            {/* Last Update Time */}
+            {/* Last Update */}
             <div className="d-flex align-items-center gap-1 mb-3">
                 <i className="bi bi-clock text-muted" style={{ fontSize: '0.7rem' }}></i>
                 <span className="text-muted" style={{ fontSize: '0.7rem' }}>

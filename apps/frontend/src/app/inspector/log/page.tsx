@@ -28,10 +28,10 @@ export default function InspectorLogPage() {
     const fetchLog = async () => {
         setLoading(true);
 
-        // Fetch fichajes with joins
+        // 1. Fetch fichajes (no FK join — empleados_info is a view)
         const { data: fichajes, error } = await supabase
             .from('fichajes')
-            .select('*, empleados_info(nombre_completo, rol), sedes(nombre)')
+            .select('*')
             .order('created_at', { ascending: false })
             .limit(50);
 
@@ -41,14 +41,48 @@ export default function InspectorLogPage() {
             return;
         }
 
-        // Also fetch solicitudes for modifications
+        // 2. Batch fetch employee names
+        const empleadoIds = [...new Set((fichajes || []).map((f: any) => f.empleado_id))];
+        const empMap: Record<string, string> = {};
+
+        if (empleadoIds.length > 0) {
+            const { data: emps } = await supabase
+                .from('empleados_info')
+                .select('id, nombre_completo')
+                .in('id', empleadoIds);
+            (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
+        }
+
+        // 3. Batch fetch sede names
+        const sedeIds = [...new Set((fichajes || []).map((f: any) => f.sede_id).filter(Boolean))];
+        const sedeMap: Record<string, string> = {};
+
+        if (sedeIds.length > 0) {
+            const { data: sedes } = await supabase
+                .from('sedes')
+                .select('id, nombre')
+                .in('id', sedeIds);
+            (sedes || []).forEach((s: any) => { sedeMap[s.id] = s.nombre; });
+        }
+
+        // 4. Fetch solicitudes for modifications
         const { data: solicitudes } = await supabase
             .from('solicitudes')
-            .select('*, empleados_info(nombre_completo)')
+            .select('*')
             .in('tipo', ['correccion', 'modificacion'])
             .eq('estado', 'aprobada')
             .order('created_at', { ascending: false })
             .limit(20);
+
+        // Batch fetch solicitudes employee names
+        const solEmpIds = [...new Set((solicitudes || []).map((s: any) => s.empleado_id))];
+        if (solEmpIds.length > 0) {
+            const { data: solEmps } = await supabase
+                .from('empleados_info')
+                .select('id, nombre_completo')
+                .in('id', solEmpIds);
+            (solEmps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
+        }
 
         const logEntries: LogEntry[] = [];
         const chars = '0123456789abcdef';
@@ -61,11 +95,11 @@ export default function InspectorLogPage() {
 
         // Process fichajes
         (fichajes || []).forEach((f: any) => {
-            const empNombre = f.empleados_info?.nombre_completo || 'Desconocido';
-            const sedeName = f.sedes?.nombre || 'Sin sede';
+            const empNombre = empMap[f.empleado_id] || 'Desconocido';
+            const sedeName = sedeMap[f.sede_id] || 'Sin sede';
             const hasGps = !!(f.latitud_entrada && f.longitud_entrada);
 
-            // Check for GPS fraud (out of range)
+            // GPS fraud check
             if (f.ubicacion_error && f.ubicacion_error > 500) {
                 logEntries.push({
                     id: f.id + '_fallido',
@@ -112,9 +146,9 @@ export default function InspectorLogPage() {
             }
         });
 
-        // Process solicitudes for modifications
+        // Process solicitudes
         (solicitudes || []).forEach((s: any) => {
-            const empNombre = s.empleados_info?.nombre_completo || 'Desconocido';
+            const empNombre = empMap[s.empleado_id] || 'Desconocido';
             const fecha = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
             const hora = s.created_at ? new Date(s.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 
@@ -181,7 +215,7 @@ export default function InspectorLogPage() {
     return (
         <div className="fade-in-up">
 
-            {/* Header - dark gradient matching Figma */}
+            {/* Header */}
             <div className="mb-4 p-4 rounded-4" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
                 <h2 className="fw-bold text-white mb-1">Registro de Auditoría</h2>
                 <p className="text-white-50 small mb-0">Log de inmutabilidad (Blockchain)</p>

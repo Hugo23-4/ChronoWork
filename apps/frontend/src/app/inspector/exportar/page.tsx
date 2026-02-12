@@ -27,9 +27,10 @@ export default function InspectorExportarPage() {
     const generatePreview = async () => {
         setLoading(true);
 
+        // 1. Fetch fichajes (no FK join — empleados_info is a view)
         const { data: fichajes, error } = await supabase
             .from('fichajes')
-            .select('*, empleados_info(nombre_completo)')
+            .select('*')
             .gte('fecha', periodo.inicio)
             .lte('fecha', periodo.fin)
             .order('fecha', { ascending: true });
@@ -40,12 +41,24 @@ export default function InspectorExportarPage() {
             return;
         }
 
+        // 2. Batch fetch employee names
+        const empleadoIds = [...new Set((fichajes || []).map((f: any) => f.empleado_id))];
+        const empMap: Record<string, string> = {};
+
+        if (empleadoIds.length > 0) {
+            const { data: emps } = await supabase
+                .from('empleados_info')
+                .select('id, nombre_completo')
+                .in('id', empleadoIds);
+            (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
+        }
+
         // Group by employee
         const byEmployee: Record<string, { nombre: string; totalMinutes: number; dias: Set<string>; count: number }> = {};
 
         (fichajes || []).forEach((f: any) => {
             const empId = f.empleado_id;
-            const nombre = f.empleados_info?.nombre_completo || 'Desconocido';
+            const nombre = empMap[empId] || 'Desconocido';
 
             if (!byEmployee[empId]) {
                 byEmployee[empId] = { nombre, totalMinutes: 0, dias: new Set(), count: 0 };
@@ -77,7 +90,6 @@ export default function InspectorExportarPage() {
             fichajes_count: emp.count,
         }));
 
-        // Sort by total hours descending
         reportData.sort((a, b) => b.totalMinutes - a.totalMinutes);
 
         setPreview(reportData);
@@ -93,6 +105,7 @@ export default function InspectorExportarPage() {
             const jsPDFModule = await import('jspdf');
             const jsPDF = jsPDFModule.default;
             const autoTableModule = await import('jspdf-autotable');
+            const autoTable = autoTableModule.default;
 
             const doc = new jsPDF('p', 'mm', 'a4');
             const pageWidth = doc.internal.pageSize.getWidth();
@@ -180,7 +193,7 @@ export default function InspectorExportarPage() {
                 tableBody.push(['TOTAL', totalHoras]);
             }
 
-            (doc as any).autoTable({
+            const tableResult = autoTable(doc, {
                 startY: tableY,
                 head: [tableHeaders],
                 body: tableBody,
@@ -223,7 +236,7 @@ export default function InspectorExportarPage() {
             });
 
             // Footer: digital signature
-            const finalY = (doc as any).lastAutoTable?.finalY || tableY + 100;
+            const finalY = (doc as any).lastAutoTable?.finalY || (tableResult as any)?.finalY || tableY + 100;
             const sigY = finalY + 20;
 
             // Signature line
