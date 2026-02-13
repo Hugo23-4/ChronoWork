@@ -1,4 +1,5 @@
 import { AuthProvider } from '@/context/AuthContext';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './globals.css';
 
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           {children}
+          <SpeedInsights />
         </AuthProvider>
       </body>
     </html>
