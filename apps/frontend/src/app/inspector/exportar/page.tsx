@@ -270,71 +270,99 @@ export default function InspectorExportarPage() {
         setDownloading(true);
 
         try {
-            const XLSX = await import('xlsx');
+            const ExcelJS = (await import('exceljs')).default;
 
-            const wb = XLSX.utils.book_new();
+            const workbook = new ExcelJS.Workbook();
+            workbook.creator = 'ChronoWork System v1.0';
+            workbook.created = new Date();
 
-            // Header rows
-            const headerRows = [
-                ['CHRONOWORK - CERTIFICADO DE REGISTRO'],
+            const sheet = workbook.addWorksheet('Informe');
+
+            // Column widths
+            sheet.columns = [
+                { key: 'col1', width: 32 },
+                { key: 'col2', width: 20 },
+                { key: 'col3', width: 20 },
+                { key: 'col4', width: 20 },
+                { key: 'col5', width: 16 },
+            ];
+
+            // Title row
+            sheet.addRow(['CHRONOWORK - CERTIFICADO DE REGISTRO']);
+            sheet.mergeCells('A1:E1');
+            sheet.getCell('A1').font = { bold: true, size: 14 };
+            sheet.getCell('A1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+            sheet.getCell('A1').font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+
+            // Meta rows
+            const metaRows = [
                 [`Ref: ${refIdRef.current}`],
                 [`Periodo: ${formatPeriodoLabel()}`],
                 [`Tipo: ${tipoReporte === 'completo' ? 'Informe Legal Completo' : 'Resumen Ejecutivo'}`],
-                [`Fecha de generación: ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`],
-                [], // empty row
+                [`Fecha: ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`],
             ];
+            metaRows.forEach(r => {
+                sheet.addRow(r);
+                sheet.mergeCells(`A${sheet.lastRow!.number}:E${sheet.lastRow!.number}`);
+                sheet.lastRow!.getCell(1).font = { italic: true, color: { argb: 'FF64748B' } };
+            });
 
-            // Data
-            const dataHeaders = tipoReporte === 'completo'
+            sheet.addRow([]); // spacer
+
+            // Header row
+            const headers = tipoReporte === 'completo'
                 ? ['EMPLEADO', 'HORAS TOTALES', 'MINUTOS TOTALES', 'DÍAS TRABAJADOS', 'Nº FICHAJES']
                 : ['EMPLEADO', 'HORAS TOTALES', 'MINUTOS TOTALES'];
+            const headerRow = sheet.addRow(headers);
+            headerRow.eachCell(cell => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+                cell.alignment = { horizontal: 'center' };
+            });
 
-            const dataRows = preview.map(row =>
-                tipoReporte === 'completo'
+            // Data rows
+            preview.forEach((row, idx) => {
+                const values = tipoReporte === 'completo'
                     ? [row.empleado, row.horas_totales, Math.round(row.totalMinutes), row.dias_trabajados, row.fichajes_count]
-                    : [row.empleado, row.horas_totales, Math.round(row.totalMinutes)]
-            );
+                    : [row.empleado, row.horas_totales, Math.round(row.totalMinutes)];
+                const dataRow = sheet.addRow(values);
+                if (idx % 2 === 0) {
+                    dataRow.eachCell(cell => {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+                    });
+                }
+            });
 
             // Total row
             const totalMinutes = preview.reduce((sum, r) => sum + r.totalMinutes, 0);
             const totalHoras = `${Math.floor(totalMinutes / 60)}h ${Math.round(totalMinutes % 60).toString().padStart(2, '0')}m`;
             const totalDays = preview.reduce((sum, r) => sum + r.dias_trabajados, 0);
             const totalFichajes = preview.reduce((sum, r) => sum + r.fichajes_count, 0);
+            const totals = tipoReporte === 'completo'
+                ? ['TOTAL', totalHoras, Math.round(totalMinutes), totalDays, totalFichajes]
+                : ['TOTAL', totalHoras, Math.round(totalMinutes)];
+            const totalRow = sheet.addRow(totals);
+            totalRow.eachCell(cell => {
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF59E0B' } };
+            });
 
-            if (tipoReporte === 'completo') {
-                dataRows.push(['TOTAL', totalHoras, Math.round(totalMinutes), totalDays, totalFichajes]);
-            } else {
-                dataRows.push(['TOTAL', totalHoras, Math.round(totalMinutes)]);
-            }
+            // Signature footer
+            sheet.addRow([]);
+            sheet.addRow(['FIRMADO DIGITALMENTE']);
+            sheet.addRow([`Hash: ${refIdRef.current.toLowerCase()}`]);
 
-            const allRows = [...headerRows, dataHeaders, ...dataRows, [], ['FIRMADO DIGITALMENTE'], [`Hash: ${refIdRef.current.toLowerCase()}`]];
-
-            const ws = XLSX.utils.aoa_to_sheet(allRows);
-
-            // Column widths
-            ws['!cols'] = [
-                { wch: 30 }, // Empleado
-                { wch: 18 }, // Horas
-                { wch: 18 }, // Minutos
-                { wch: 18 }, // Días
-                { wch: 15 }, // Fichajes
-            ];
-
-            // Merge header cells
-            ws['!merges'] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Title
-                { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } }, // Ref
-                { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }, // Periodo
-                { s: { r: 3, c: 0 }, e: { r: 3, c: 4 } }, // Tipo
-                { s: { r: 4, c: 0 }, e: { r: 4, c: 4 } }, // Fecha
-            ];
-
-            XLSX.utils.book_append_sheet(wb, ws, 'Informe');
-
-            XLSX.writeFile(wb, `ChronoWork_Informe_${periodo.inicio}_${periodo.fin}.xlsx`);
+            // Generate and download
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ChronoWork_Informe_${periodo.inicio}_${periodo.fin}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error generating Excel:', error);
-            alert('Error al generar el Excel. Inténtalo de nuevo.');
         }
 
         setDownloading(false);

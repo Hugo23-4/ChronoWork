@@ -143,11 +143,9 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         timerRef.current = setInterval(() => {
             setRemainingSeconds(prev => {
                 if (prev <= 1) {
-                    // Session expired
                     if (timerRef.current) clearInterval(timerRef.current);
                     endSession().then(() => {
-                        alert('⏰ Tu sesión de inspección ha expirado (1 hora). Serás redirigido.');
-                        router.push('/login');
+                        router.push('/login?session=expired');
                     });
                     return 0;
                 }

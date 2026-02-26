@@ -33,7 +33,7 @@ export default function AdminRequestsManager() {
 
       const { data, error: queryError, count } = await query;
 
-      console.log('📊 Solicitudes query result:', { data, error: queryError, count, filter });
+
 
       if (queryError) {
         setError(`Error BD: ${queryError.message}`);
@@ -47,7 +47,6 @@ export default function AdminRequestsManager() {
       }
     } catch (err: any) {
       setError(`Error inesperado: ${err.message}`);
-      console.error('Unexpected error:', err);
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import Toast from '@/components/ui/Toast';
 
 interface EmployeeFormModalProps {
     employeeId?: string | null;
@@ -23,10 +24,16 @@ interface FormData {
     activo: boolean;
 }
 
+interface SedeOption {
+    id: string;
+    nombre: string;
+}
+
 export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave }: EmployeeFormModalProps) {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [sedes, setSedes] = useState<any[]>([]);
+    const [sedes, setSedes] = useState<SedeOption[]>([]);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
     const [formData, setFormData] = useState<FormData>({
         nombre_completo: '',
@@ -86,9 +93,8 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                     activo: data.activo !== false
                 });
             }
-        } catch (error) {
-            console.error('Error loading employee:', error);
-            alert('Error al cargar empleado');
+        } catch {
+            setToast({ message: 'No se pudo cargar el empleado. Inténtalo de nuevo.', type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -113,7 +119,7 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
         e.preventDefault();
 
         if (!formData.nombre_completo || !formData.email) {
-            alert('Nombre y email son obligatorios');
+            setToast({ message: 'Nombre y email son obligatorios.', type: 'warning' });
             return;
         }
 
@@ -125,42 +131,39 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
             };
 
             if (employeeId) {
-                // Actualizar
                 const { error } = await supabase
                     .from('empleados_info')
                     .update(payload)
                     .eq('id', employeeId);
 
                 if (error) throw error;
-                alert('✅ Empleado actualizado correctamente');
+                setToast({ message: 'Empleado actualizado correctamente.', type: 'success' });
             } else {
-                // Crear nuevo
                 const { error } = await supabase
                     .from('empleados_info')
                     .insert(payload);
 
                 if (error) throw error;
-                alert('✅ Empleado creado correctamente');
+                setToast({ message: 'Empleado creado correctamente.', type: 'success' });
             }
 
             onSave();
             onClose();
-        } catch (error: any) {
-            console.error('Error saving employee:', error);
-            alert('❌ Error: ' + error.message);
+        } catch {
+            setToast({ message: 'No se pudo guardar el empleado. Inténtalo de nuevo.', type: 'error' });
         } finally {
             setSaving(false);
         }
     };
 
-    const handleChange = (field: keyof FormData, value: any) => {
+    const handleChange = (field: keyof FormData, value: string | number | boolean | undefined) => {
         setFormData(prev => ({ ...prev, [field]: value }));
 
         // Sincronizar rol y rol_id
         if (field === 'rol') {
             setFormData(prev => ({
                 ...prev,
-                rol: value,
+                rol: value as string,
                 rol_id: value === 'admin' ? 2 : 1
             }));
         }
@@ -170,6 +173,13 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
 
     return (
         <>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
             <div className="modal-backdrop fade show" onClick={onClose}></div>
             <div className="modal fade show d-block" tabIndex={-1} style={{ zIndex: 1055 }}>
                 <div className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -181,7 +191,7 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                 <i className={`bi ${employeeId ? 'bi-pencil-square' : 'bi-person-plus-fill'}`}></i>
                                 {employeeId ? 'Editar Empleado' : 'Nuevo Empleado'}
                             </h5>
-                            <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
+                            <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Cerrar modal"></button>
                         </div>
 
                         {/* BODY */}
