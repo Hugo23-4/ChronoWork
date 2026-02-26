@@ -19,12 +19,17 @@ export default function LoginPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // 1. EFECTO: AL CARGAR, MIRAR SI HAY EMAIL GUARDADO
+  // 1. EFECTO: AL CARGAR, MIRAR SI HAY EMAIL GUARDADO Y DETECTAR SESSION EXPIRED
   useEffect(() => {
     const savedEmail = localStorage.getItem('chrono_saved_email');
     if (savedEmail) {
       setEmail(savedEmail);
       setRememberMe(true);
+    }
+    // Detectar si ha llegado por sesión expirada (sólo en cliente)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('session') === 'expired') {
+      setError('⏰ Tu sesión de inspector ha expirado (1 hora máxima). Vuelve a iniciar sesión.');
     }
   }, []);
 
@@ -95,7 +100,7 @@ export default function LoginPage() {
 
       setSuccessMsg(`✅ Hemos enviado un enlace de recuperación a ${email}. Revisa tu bandeja de entrada.`);
     } catch (err: any) {
-      setError('Error al enviar recuperación: ' + err.message);
+      setError('No hemos podido enviar el correo. Comprueba que el email es correcto e inténtalo de nuevo.');
     } finally {
       setResetLoading(false);
     }
@@ -187,8 +192,9 @@ export default function LoginPage() {
                     className="btn position-absolute top-50 end-0 translate-middle-y text-secondary border-0 z-1"
                     onClick={() => setShowPassword(!showPassword)}
                     style={{ paddingRight: '15px' }}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   >
-                    <i className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`}></i>
+                    <i className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'}`} aria-hidden="true"></i>
                   </button>
                 </div>
               </div>
@@ -252,5 +258,6 @@ export default function LoginPage() {
 
       </div>
     </div>
+
   );
 }

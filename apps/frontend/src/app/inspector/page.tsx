@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import useSWR from 'swr';
 
 interface FichajeMonitor {
     id: string;
@@ -15,100 +16,103 @@ interface FichajeMonitor {
     hash: string;
 }
 
+// Helper: Generate simulated hash
+const generateHash = (id: string) => {
+    const chars = '0123456789abcdef';
+    let hash = '0x';
+    for (let i = 0; i < 8; i++) {
+        hash += chars[Math.abs(id.charCodeAt(i % id.length) * (i + 3)) % 16];
+    }
+    return hash + '...' + id.substring(0, 4);
+};
+
+// SWR Fetcher Key
+const getKey = (filterDate: string, filterStatus: string) => ['fichajes', filterDate, filterStatus];
+
+// Main Fetcher Function
+const fetchFichajesData = async ([, date, status]: [string, string, string]) => {
+    // 1. Fetch fichajes (no FK join with empleados_info since it's a view)
+    let query = supabase
+        .from('fichajes')
+        .select('*')
+        .eq('fecha', date)
+        .order('hora_entrada', { ascending: false });
+
+    if (status === 'activos') {
+        query = query.is('hora_salida', null);
+    } else if (status === 'completados') {
+        query = query.not('hora_salida', 'is', null);
+    }
+
+    const { data: rawFichajes, error } = await query;
+
+    if (error) throw error;
+    const fichData = rawFichajes || [];
+
+    // 2. Batch fetch employee names
+    const empleadoIds = [...new Set(fichData.map((f: any) => f.empleado_id))];
+    const empMap: Record<string, string> = {};
+
+    if (empleadoIds.length > 0) {
+        const { data: emps } = await supabase
+            .from('empleados_info')
+            .select('id, nombre_completo')
+            .in('id', empleadoIds);
+
+        (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
+    }
+
+    // 3. Batch fetch sede names
+    const sedeIds = [...new Set(fichData.map((f: any) => f.sede_id).filter(Boolean))];
+    const sedeMap: Record<string, string> = {};
+
+    if (sedeIds.length > 0) {
+        const { data: sedes } = await supabase
+            .from('sedes')
+            .select('id, nombre')
+            .in('id', sedeIds);
+
+        (sedes || []).forEach((s: any) => { sedeMap[s.id] = s.nombre; });
+    }
+
+    // 4. Combine
+    return fichData.map((f: any) => ({
+        id: f.id,
+        empleado_id: f.empleado_id,
+        nombre_completo: empMap[f.empleado_id] || 'Desconocido',
+        sede_nombre: sedeMap[f.sede_id] || 'Sin sede',
+        fecha: f.fecha,
+        hora_entrada: f.hora_entrada,
+        hora_salida: f.hora_salida,
+        has_gps: !!(f.latitud_entrada && f.longitud_entrada),
+        hash: generateHash(f.id),
+    }));
+};
+
 export default function InspectorMonitorPage() {
-    const [fichajes, setFichajes] = useState<FichajeMonitor[]>([]);
-    const [loading, setLoading] = useState(true);
     const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterStatus, setFilterStatus] = useState<'todos' | 'activos' | 'completados'>('todos');
     const [isLive, setIsLive] = useState(false);
-    const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+    const lastUpdateRef = useRef<Date>(new Date());
 
-    const generateHash = (id: string) => {
-        const chars = '0123456789abcdef';
-        let hash = '0x';
-        for (let i = 0; i < 8; i++) {
-            hash += chars[Math.abs(id.charCodeAt(i % id.length) * (i + 3)) % 16];
+    // Use SWR for data fetching
+    const { data: fichajes, error, mutate, isValidating } = useSWR(
+        getKey(filterDate, filterStatus),
+        fetchFichajesData,
+        {
+            refreshInterval: 0, // We rely on Realtime
+            revalidateOnFocus: false,
+            dedupingInterval: 2000, // Prevent spam fetching
+            onSuccess: () => {
+                lastUpdateRef.current = new Date();
+            }
         }
-        return hash + '...' + id.substring(0, 4);
-    };
+    );
 
-    const fetchFichajes = useCallback(async () => {
-        setLoading(true);
+    const loading = !fichajes && !error;
+    const items = fichajes || [];
 
-        // 1. Fetch fichajes (no FK join with empleados_info since it's a view)
-        let query = supabase
-            .from('fichajes')
-            .select('*')
-            .eq('fecha', filterDate)
-            .order('hora_entrada', { ascending: false });
-
-        if (filterStatus === 'activos') {
-            query = query.is('hora_salida', null);
-        } else if (filterStatus === 'completados') {
-            query = query.not('hora_salida', 'is', null);
-        }
-
-        const { data: rawFichajes, error } = await query;
-
-        if (error) {
-            console.error('Error fetching fichajes:', error);
-            setFichajes([]);
-            setLastUpdate(new Date());
-            setLoading(false);
-            return;
-        }
-
-        const fichData = rawFichajes || [];
-
-        // 2. Batch fetch employee names
-        const empleadoIds = [...new Set(fichData.map((f: any) => f.empleado_id))];
-        const empMap: Record<string, string> = {};
-
-        if (empleadoIds.length > 0) {
-            const { data: emps } = await supabase
-                .from('empleados_info')
-                .select('id, nombre_completo')
-                .in('id', empleadoIds);
-
-            (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
-        }
-
-        // 3. Batch fetch sede names
-        const sedeIds = [...new Set(fichData.map((f: any) => f.sede_id).filter(Boolean))];
-        const sedeMap: Record<string, string> = {};
-
-        if (sedeIds.length > 0) {
-            const { data: sedes } = await supabase
-                .from('sedes')
-                .select('id, nombre')
-                .in('id', sedeIds);
-
-            (sedes || []).forEach((s: any) => { sedeMap[s.id] = s.nombre; });
-        }
-
-        // 4. Combine
-        const processed: FichajeMonitor[] = fichData.map((f: any) => ({
-            id: f.id,
-            empleado_id: f.empleado_id,
-            nombre_completo: empMap[f.empleado_id] || 'Desconocido',
-            sede_nombre: sedeMap[f.sede_id] || 'Sin sede',
-            fecha: f.fecha,
-            hora_entrada: f.hora_entrada,
-            hora_salida: f.hora_salida,
-            has_gps: !!(f.latitud_entrada && f.longitud_entrada),
-            hash: generateHash(f.id),
-        }));
-
-        setFichajes(processed);
-        setLastUpdate(new Date());
-        setLoading(false);
-    }, [filterDate, filterStatus]);
-
-    useEffect(() => {
-        fetchFichajes();
-    }, [fetchFichajes]);
-
-    // Supabase Realtime
+    // Supabase Realtime (Debounced)
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
         if (filterDate !== today) {
@@ -122,12 +126,15 @@ export default function InspectorMonitorPage() {
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'fichajes', filter: `fecha=eq.${today}` },
-                () => { fetchFichajes(); }
+                () => {
+                    // Debounce using mutate (SWR handles deduping with dedupingInterval)
+                    mutate();
+                }
             )
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [filterDate, fetchFichajes]);
+    }, [filterDate, mutate]);
 
     const formatTime = (timeStr: string | null) => {
         if (!timeStr) return '--:--';
@@ -142,8 +149,8 @@ export default function InspectorMonitorPage() {
         return { label: 'COMPLETADO', color: '#6B7280', bg: '#F3F4F6' };
     };
 
-    const activeCount = fichajes.filter(f => !f.hora_salida).length;
-    const completedCount = fichajes.filter(f => f.hora_salida).length;
+    const activeCount = items.filter((f: any) => !f.hora_salida).length;
+    const completedCount = items.filter((f: any) => f.hora_salida).length;
 
     return (
         <div className="fade-in-up">
@@ -176,7 +183,7 @@ export default function InspectorMonitorPage() {
             <div className="row g-3 mb-4">
                 <div className="col-4">
                     <div className="card border-0 shadow-sm rounded-4 p-3 text-center">
-                        <div className="display-6 fw-bold" style={{ color: '#0F172A' }}>{fichajes.length}</div>
+                        <div className="display-6 fw-bold" style={{ color: '#0F172A' }}>{items.length}</div>
                         <small className="text-muted fw-bold">TOTAL</small>
                     </div>
                 </div>
@@ -216,20 +223,22 @@ export default function InspectorMonitorPage() {
                 </div>
                 <button
                     className="btn btn-sm btn-outline-warning rounded-pill ms-auto"
-                    onClick={fetchFichajes}
-                    disabled={loading}
+                    onClick={() => mutate()}
+                    disabled={isValidating}
                 >
-                    <i className="bi bi-arrow-clockwise me-1"></i>
+                    <i className={`bi bi-arrow-clockwise me-1 ${isValidating ? 'spin' : ''}`}></i>
                     Actualizar
                 </button>
+                <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
             </div>
 
             {/* Last Update */}
             <div className="d-flex align-items-center gap-1 mb-3">
                 <i className="bi bi-clock text-muted" style={{ fontSize: '0.7rem' }}></i>
                 <span className="text-muted" style={{ fontSize: '0.7rem' }}>
-                    Última actualización: {lastUpdate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    Última actualización: {lastUpdateRef.current.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
+                {isValidating && !loading && <span className="text-warning small ms-2">(Actualizando...)</span>}
             </div>
 
             {/* Desktop Table */}
@@ -256,14 +265,14 @@ export default function InspectorMonitorPage() {
                                             <p className="text-muted small mt-2 mb-0">Cargando registros...</p>
                                         </td>
                                     </tr>
-                                ) : fichajes.length === 0 ? (
+                                ) : items.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="text-center py-5">
                                             <i className="bi bi-journal-x text-muted" style={{ fontSize: '2rem' }}></i>
                                             <p className="text-muted small mt-2 mb-0">No hay registros para esta fecha</p>
                                         </td>
                                     </tr>
-                                ) : fichajes.map((f) => {
+                                ) : items.map((f: any) => {
                                     const status = getStatus(f);
                                     return (
                                         <tr key={f.id} style={!f.hora_salida ? { background: '#F0FDF4' } : {}}>
@@ -317,12 +326,12 @@ export default function InspectorMonitorPage() {
                     <div className="text-center py-5">
                         <div className="spinner-border text-warning"></div>
                     </div>
-                ) : fichajes.length === 0 ? (
+                ) : items.length === 0 ? (
                     <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
                         <i className="bi bi-journal-x text-muted mb-2" style={{ fontSize: '2rem' }}></i>
                         <p className="text-muted small mb-0">No hay registros para esta fecha</p>
                     </div>
-                ) : fichajes.map((f) => {
+                ) : items.map((f: any) => {
                     const status = getStatus(f);
                     const isActive = !f.hora_salida;
 

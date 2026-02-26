@@ -4,10 +4,27 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
+// Interfaz tipada con los campos reales de la tabla empleados_info
+interface EmpleadoProfile {
+  id: string;
+  nombre_completo: string;
+  email: string;
+  rol: 'admin' | 'empleado' | 'inspector';
+  rol_id: number;
+  dni?: string;
+  telefono?: string;
+  puesto?: string;
+  departamento?: string;
+  sede_id?: string;
+  activo?: boolean;
+  roles?: { nombre: string };
+  empresas?: { nombre: string };
+}
+
 // Definimos la forma de nuestro estado global
 interface AuthContextType {
   user: User | null;
-  profile: any | null; // Datos de empleados_info (rol, empresa)
+  profile: EmpleadoProfile | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -16,14 +33,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<EmpleadoProfile | null>(null);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // 1. Verificar sesión activa al cargar la app
     const initializeAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session) {
         setUser(session.user);
         await fetchProfile(session.user.id);

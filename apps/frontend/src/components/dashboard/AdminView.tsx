@@ -111,13 +111,6 @@ export default function AdminView({ userName }: AdminViewProps) {
                 .order('created_at', { ascending: false })
                 .limit(5);
 
-            console.log('📊 Dashboard Stats:', {
-                activosHoy,
-                retrasosCount,
-                solicitudesPendientes,
-                totalEmpleados
-            });
-
             setStats({
                 activos: activosHoy || 0,
                 total: totalEmpleados || 0,

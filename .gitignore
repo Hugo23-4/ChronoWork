@@ -69,3 +69,7 @@ ehthumbs_vista.db
 # Archivos de configuración local de infraestructura
 supabase/.temp/
 supabase/functions/.import_map.json
+
+# --- AGENT CONFIG (no subir al repo) ---
+# Skills, workflows y reglas del agente de IA
+.agent/
