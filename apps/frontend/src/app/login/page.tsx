@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import BiometricButton from '@/components/ui/BiometricButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -160,6 +161,19 @@ export default function LoginPage() {
                 <i className="bi bi-check-circle-fill"></i> {successMsg}
               </div>
             )}
+
+            {/* BOTÓN BIOMÉTRICO — se muestra solo si el dispositivo lo soporta */}
+            <BiometricButton
+              onSuccess={() => router.push('/dashboard')}
+              className="mb-4"
+            />
+
+            {/* Separador */}
+            <div className="d-flex align-items-center gap-3 mb-4">
+              <hr className="flex-grow-1 m-0 border-secondary opacity-25" />
+              <small className="text-muted fw-medium">o continúa con email</small>
+              <hr className="flex-grow-1 m-0 border-secondary opacity-25" />
+            </div>
 
             <form onSubmit={handleLogin}>
               {/* Input Email */}

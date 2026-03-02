@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import PasskeyManager from '@/components/ui/PasskeyManager';
 
 interface ProfileData {
   nombre_completo: string;
@@ -378,21 +379,9 @@ export default function PerfilPage() {
               </button>
             </div>
 
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <span className="fw-bold d-block text-dark d-none d-lg-block">Autenticación en dos pasos (2FA)</span>
-                <small className="text-muted d-none d-lg-block">Añade una capa extra de seguridad.</small>
-                <span className="d-lg-none fw-medium text-dark">Face ID / Biometría</span>
-              </div>
-
-              <div className="form-check form-switch">
-                <input
-                  className="form-check-input fs-4 cursor-pointer"
-                  type="checkbox"
-                  checked={is2FAEnabled}
-                  onChange={() => setIs2FAEnabled(!is2FAEnabled)}
-                />
-              </div>
+            {/* PASSKEY MANAGER */}
+            <div className="d-flex justify-content-between align-items-start">
+              <PasskeyManager />
             </div>
           </div>
 
