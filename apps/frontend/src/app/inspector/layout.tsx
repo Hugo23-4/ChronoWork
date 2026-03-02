@@ -216,8 +216,10 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
             <div className="d-none d-lg-block">
                 <InspectorSidebar
                     remainingTime={formatTime(remainingSeconds)}
-                    sessionsUsed={sessionsUsedThisWeek}
-                    maxSessions={MAX_SESSIONS_PER_WEEK}
+                    daysUsed={sessionsUsedThisWeek}
+                    maxDays={MAX_SESSIONS_PER_WEEK}
+                    minutesUsedToday={MAX_MINUTES_PER_SESSION - Math.floor(remainingSeconds / 60)}
+                    maxMinutesPerDay={MAX_MINUTES_PER_SESSION}
                 />
             </div>
 
