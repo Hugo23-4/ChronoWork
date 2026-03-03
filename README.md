@@ -1,107 +1,47 @@
 # ⏳ ChronoWork
 
-> 
-> **Sistema Integral de Registro de Jornada Laboral.** Solución diseñada para automatizar y securizar el control horario laboral, garantizando la transparencia e inviolabilidad de los datos según la normativa vigente. 
-> 
-> 
-
+> **Sistema Integral de Registro de Jornada Laboral.** Solución web diseñada para automatizar y securizar el control horario laboral, garantizando la transparencia e inviolabilidad de los datos según la normativa vigente en España.
 
 ## 🌍 Visión del Proyecto
 
-ChronoWork nace para solucionar la inseguridad jurídica de los sistemas manuales de registro, ofreciendo una herramienta centralizada y segura. El sistema se fundamenta en la **integridad absoluta del dato**, actuando como la única "fuente de verdad" donde los registros son intocables y actúan como evidencia auditable. 
+ChronoWork nace para solucionar la inseguridad jurídica de los sistemas manuales de registro (como Excel o papel), ofreciendo una herramienta centralizada y segura. El sistema se fundamenta en la **integridad absoluta del dato**, actuando como la única "fuente de verdad" donde los registros (fichajes) son intocables y actúan como evidencia auditable para inspecciones.
 
 ### 🚀 Funcionalidades Principales
 
-* 
-**Sistema de Fichaje:** Registro intuitivo de entrada (Clock-in) y salida (Clock-out). 
+* **Sistema de Fichaje (Geolocalizado):** Registro intuitivo de entrada y salida con validación de ubicación (Geofencing).
+* **Gestión de RRHH:** Módulo completo para la administración de empleados, centros de trabajo y métricas en tiempo real.
+* **Workflows de Solicitud:** Flujo formal de aprobación para vacaciones, bajas médicas y correcciones de errores.
+* **Auditoría y Transparencia:** Registro estricto para garantizar la confianza operativa y evitar manipulaciones.
+* **Directorio Activo:** Interfaz móvil y de escritorio con acciones rápidas para contacto interno de la plantilla.
 
+## 🛠️ Stack Tecnológico (Evolución de Arquitectura)
 
-* 
-**Gestión de RRHH:** Módulo CRUD completo para la administración de empleados y contratos. 
-
-
-* 
-**Workflows de Solicitud:** Flujo formal de aprobación para correcciones de errores y ausencias. 
-
-
-* 
-**Auditoría y Transparencia:** Registro de logs inmutables de cada modificación para garantizar la confianza operativa. 
-
-
-* 
-**Reporting Legal:** Generación de informes exportables en formatos PDF y Excel listos para inspecciones. 
-
-
-
-
-## 🛠️ Stack Tecnológico
-
-Arquitectura cliente-servidor desacoplada diseñada para la escalabilidad. 
+Aunque inicialmente se valoró una arquitectura tradicional (Frontend separado del Backend), el proyecto ha evolucionado hacia una **Arquitectura Serverless y Backend-as-a-Service (BaaS)**, optimizando tiempos de respuesta y escalabilidad:
 
 | Componente | Tecnología | Descripción |
-| --- | --- | --- |
-| **Frontend** | <br>[Next.js](https://nextjs.org/) 
-
- | Framework de React con TypeScript para una SPA robusta. 
-
- |
-| **Backend** | <br>[NestJS](https://nestjs.com/) 
-
- | Framework de Node.js con TypeScript para una API RESTful escalable. 
-
- |
-| **Base de Datos** | <br>[PostgreSQL](https://www.postgresql.org/) 
-
- | Motor relacional robusto gestionado vía [Supabase](https://supabase.com/). 
-
- |
-| **UI Framework** | [Bootstrap 5](https://getbootstrap.com/) | Diseño profesional y responsive adaptable a dispositivos móviles. 
-
- |
-
+| :--- | :--- | :--- |
+| **FullStack Framework** | [Next.js 14](https://nextjs.org/) | App Router (React + TypeScript) gestionando tanto la interfaz gráfica (Client Components) como la lógica de servidor (Server Actions). |
+| **Base de Datos & Backend** | [Supabase](https://supabase.com/) | Motor relacional robusto (PostgreSQL) que integra Autenticación, Storage para justificantes y Row Level Security (RLS). |
+| **Diseño / UI** | [Bootstrap 5](https://getbootstrap.com/) | Diseño profesional, *mobile-first* y responsive, adaptado a vistas de administrador y empleado. |
 
 ## 👥 Roles y Permisos (RBAC)
 
-El acceso está regido por permisos granulares definidos por roles: 
+El acceso está regido por permisos granulares en base de datos:
 
-* 
-**Empleado:** Realiza fichajes, consulta su cómputo de horas y gestiona sus propias solicitudes. 
+* **Empleado:** Realiza fichajes, consulta su cómputo de horas y gestiona sus propias solicitudes de ausencia o baja.
+* **Administrador (RRHH):** Gestión integral de la plantilla, creación de sedes geolocalizadas, panel de métricas en tiempo real y resolución de solicitudes.
+* **Inspector:** (Proyección) Acceso de solo lectura para verificación legal de los registros inmutables.
 
+## 📂 Estructura del Proyecto y Documentación
 
-* 
-**Administrador (RRHH):** Gestión integral de la plantilla, contratos y aprobación de flujos de trabajo. 
+Toda la documentación requerida para la evaluación del proyecto se encuentra centralizada en el directorio `/docs` de este repositorio:
 
-
-* 
-**Inspector:** Acceso de solo lectura a todos los registros y logs de auditoría para verificación legal. 
-
-
-
-
-## 🧱 Estructura del Repositorio
-
-```
+```text
 chronowork/
-├── apps/
-[cite_start]│   ├── frontend/    # Aplicación Web (Next.js) [cite: 105]
-[cite_start]│   └── backend/     # API REST (NestJS) [cite: 106]
-[cite_start]├── docs/            # Documentación técnica y funcional [cite: 176]
-[cite_start]│   └── references/  # Especificaciones originales y diagramas de BBDD [cite: 175]
-└── .github/         # Governance y automatización
-
-```
-
-
-## 🧑‍💻 Autoría e Institución
-
-* 
-**Alumno:** Hugo Pérez Muñoz. 
-
-
-* 
-**Institución:** IES Albarregas (Mérida, España). 
-
-
-* 
-**Proyecto:** Fin de Grado (DAW) - Curso 24/25. 
-
+├── src/                 # Código fuente de la aplicación (Componentes, Rutas, Context)
+├── docs/                # Documentación oficial para la evaluación
+│   ├── 1_Manual_Usuario.md     # Guía visual de uso, pantallas y operativas.
+│   ├── 2_Manual_Tecnico.md     # Arquitectura, Modelo Relacional, Requisitos funcionales.
+│   ├── 3_Manual_Despliegue.md  # Instrucciones para levantar el entorno.
+│   └── 4_Manual_Proyecto.md    # Cronograma, metodología e hitos.
+└── README.md            # Presentación inicial del proyecto
