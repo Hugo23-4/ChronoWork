@@ -1,60 +1,39 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Middleware de autenticación — protege rutas privadas a nivel servidor.
- * Usa @supabase/ssr que es la API oficial para Next.js 14+.
+ * Middleware de autenticación simplificado — solo protege rutas privadas.
+ * No usa @supabase/ssr para evitar problemas con cookies en distintos entornos.
+ * La protección real la hacen los propios layouts (useAuth + redirect).
  */
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Refrescamos la sesión (si hay cookie válida, la renueva automáticamente)
-  const { data: { session } } = await supabase.auth.getSession();
-
   const { pathname } = request.nextUrl;
 
-  // Rutas que requieren sesión activa
+  // Leer la cookie de sesión de Supabase (nombre estándar)
+  const supabaseCookie = request.cookies.getAll().find(
+    (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
+  );
+
+  const hasSession = !!supabaseCookie?.value;
+
+  // Rutas protegidas
   const isProtectedRoute =
     pathname.startsWith('/admin') ||
     pathname.startsWith('/inspector') ||
     pathname.startsWith('/dashboard');
 
-  // Si no hay sesión y la ruta es privada → redirigir a login
-  if (isProtectedRoute && !session) {
+  // Sin sesión y ruta privada → login
+  if (isProtectedRoute && !hasSession) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Si ya tiene sesión y va al login → redirigir a dashboard
-  if (session && pathname === '/login') {
+  // Con sesión y va al login → dashboard
+  if (hasSession && pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {
