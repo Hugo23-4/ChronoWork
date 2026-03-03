@@ -6,24 +6,6 @@ export const dynamic = 'force-dynamic';
 
 const RP_NAME = 'ChronoWork';
 
-/** Extrae el rpID (hostname limpio) del origin real del request */
-function getRpId(req: NextRequest): string {
-    const origin = req.headers.get('origin') ?? req.headers.get('referer') ?? '';
-    try {
-        return new URL(origin).hostname;
-    } catch {
-        return process.env.NEXT_PUBLIC_APP_DOMAIN?.replace(/^https?:\/\//, '').replace(/\/$/, '') ?? 'localhost';
-    }
-}
-
-/** Extrae el origin limpio (sin trailing slash) */
-function getOrigin(req: NextRequest): string {
-    const origin = req.headers.get('origin');
-    if (origin) return origin.replace(/\/$/, '');
-    const domain = getRpId(req);
-    return domain === 'localhost' ? 'http://localhost:3000' : `https://${domain}`;
-}
-
 function getAdmin() {
     return createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,44 +13,63 @@ function getAdmin() {
     );
 }
 
+/** Hostname limpio extraído del origin real del request */
+function getRpId(req: NextRequest): string {
+    const origin = req.headers.get('origin') ?? '';
+    try {
+        const { hostname } = new URL(origin);
+        return hostname;
+    } catch {
+        const env = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost';
+        return env.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const supabaseAdmin = getAdmin();
-        const { userId, userEmail, userName } = await req.json();
+        const body = await req.json();
+        const { userId, userEmail, userName } = body;
 
         if (!userId || !userEmail) {
-            return NextResponse.json({ error: 'userId y userEmail son requeridos' }, { status: 400 });
+            return NextResponse.json({ error: 'Faltan userId o userEmail' }, { status: 400 });
         }
 
         const rpID = getRpId(req);
 
-        // iOS 17.4+ tiene un bug con excludeCredentials — lo omitimos directamente
-        // para evitar el InvalidStateError en Apple devices
         const options = await generateRegistrationOptions({
             rpName: RP_NAME,
             rpID,
-            userID: new TextEncoder().encode(userId), // Uint8Array — requerido por spec
+            userID: new TextEncoder().encode(userId),
             userName: userEmail,
             userDisplayName: userName ?? userEmail,
             attestationType: 'none',
             authenticatorSelection: {
-                authenticatorAttachment: 'platform', // Solo Face ID / Huella (no YubiKey)
-                residentKey: 'required',             // Passkey real (discoverable credential)
-                userVerification: 'required',        // Biometría obligatoria
+                authenticatorAttachment: 'platform',
+                residentKey: 'required',
+                userVerification: 'required',
             },
-            // NO pasamos excludeCredentials — bug de iOS 17.4+ Safari lo ignora y falla
+            // excludeCredentials omitido — bug confirmado en Safari iOS 17.4+
         });
 
-        // Limpiar challenges anteriores del usuario y guardar el nuevo
-        await supabaseAdmin.from('webauthn_challenges').delete().eq('user_id', userId);
-        await supabaseAdmin.from('webauthn_challenges').insert({
-            user_id: userId,
-            challenge: options.challenge,
-        });
+        // Guardar challenge (borrar el anterior del usuario primero)
+        await supabaseAdmin
+            .from('webauthn_challenges')
+            .delete()
+            .eq('user_id', userId);
+
+        const { error: insertErr } = await supabaseAdmin
+            .from('webauthn_challenges')
+            .insert({ user_id: userId, challenge: options.challenge });
+
+        if (insertErr) {
+            console.error('[register-options] challenge insert error:', insertErr);
+            return NextResponse.json({ error: 'Error interno guardando challenge' }, { status: 500 });
+        }
 
         return NextResponse.json(options);
-    } catch (error) {
-        console.error('[register-options]', error);
+    } catch (err) {
+        console.error('[register-options]', err);
         return NextResponse.json({ error: 'Error generando opciones de registro' }, { status: 500 });
     }
 }
