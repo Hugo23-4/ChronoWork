@@ -1,67 +1,23 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Middleware de autenticación — protege rutas privadas a nivel servidor.
- * Usa @supabase/ssr que es la API oficial para Next.js 14+.
+ * Middleware mínimo — no protege rutas en el edge.
+ *
+ * Por qué: el supabase client del proyecto usa localStorage para la sesión
+ * (createClient estándar del browser). El middleware corre en Edge Runtime
+ * y no puede leer localStorage. Bloquear rutas aquí significa que nadie
+ * autenticado podría entrar jamás.
+ *
+ * La protección real la hacen los layouts de cada sección:
+ *  - /admin/layout.tsx  → useAuth + role check
+ *  - /dashboard/layout.tsx → useAuth + redirect
+ *  - /inspector/layout.tsx → session timer + role check
  */
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // Refrescamos la sesión (si hay cookie válida, la renueva automáticamente)
-  const { data: { session } } = await supabase.auth.getSession();
-
-  const { pathname } = request.nextUrl;
-
-  // Rutas que requieren sesión activa
-  const isProtectedRoute =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/inspector') ||
-    pathname.startsWith('/dashboard');
-
-  // Si no hay sesión y la ruta es privada → redirigir a login
-  if (isProtectedRoute && !session) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Si ya tiene sesión y va al login → redirigir a dashboard
-  if (session && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  return response;
+export function middleware(_request: NextRequest) {
+  return NextResponse.next();
 }
 
+// Solo ejecutar en rutas que realmente lo necesitan en el futuro
 export const config = {
-  matcher: [
-    '/admin/:path*',
-    '/inspector/:path*',
-    '/dashboard/:path*',
-    '/login',
-  ],
+  matcher: [],
 };

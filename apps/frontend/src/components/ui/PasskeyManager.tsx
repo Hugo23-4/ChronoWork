@@ -98,6 +98,7 @@ export default function PasskeyManager() {
             if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'Error verificando');
 
             setMessage({ text: '✓ Dispositivo registrado correctamente', type: 'success' });
+            localStorage.setItem('chrono_has_passkey', 'true'); // Flag para auto-trigger en login
             fetchDevices();
         } catch (err: unknown) {
             if (err instanceof Error && err.name === 'InvalidStateError') {
