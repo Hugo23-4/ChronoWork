@@ -1,46 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Middleware de autenticación simplificado — solo protege rutas privadas.
- * No usa @supabase/ssr para evitar problemas con cookies en distintos entornos.
- * La protección real la hacen los propios layouts (useAuth + redirect).
+ * Middleware mínimo — no protege rutas en el edge.
+ *
+ * Por qué: el supabase client del proyecto usa localStorage para la sesión
+ * (createClient estándar del browser). El middleware corre en Edge Runtime
+ * y no puede leer localStorage. Bloquear rutas aquí significa que nadie
+ * autenticado podría entrar jamás.
+ *
+ * La protección real la hacen los layouts de cada sección:
+ *  - /admin/layout.tsx  → useAuth + role check
+ *  - /dashboard/layout.tsx → useAuth + redirect
+ *  - /inspector/layout.tsx → session timer + role check
  */
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Leer la cookie de sesión de Supabase (nombre estándar)
-  const supabaseCookie = request.cookies.getAll().find(
-    (c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token')
-  );
-
-  const hasSession = !!supabaseCookie?.value;
-
-  // Rutas protegidas
-  const isProtectedRoute =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/inspector') ||
-    pathname.startsWith('/dashboard');
-
-  // Sin sesión y ruta privada → login
-  if (isProtectedRoute && !hasSession) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Con sesión y va al login → dashboard
-  if (hasSession && pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
+export function middleware(_request: NextRequest) {
   return NextResponse.next();
 }
 
+// Solo ejecutar en rutas que realmente lo necesitan en el futuro
 export const config = {
-  matcher: [
-    '/admin/:path*',
-    '/inspector/:path*',
-    '/dashboard/:path*',
-    '/login',
-  ],
+  matcher: [],
 };
