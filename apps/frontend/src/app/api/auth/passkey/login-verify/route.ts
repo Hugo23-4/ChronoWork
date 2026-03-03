@@ -4,8 +4,21 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const RP_ID = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_APP_ORIGIN ?? 'http://localhost:3000';
+function getRpId(req: NextRequest): string {
+    const origin = req.headers.get('origin') ?? req.headers.get('referer') ?? '';
+    try {
+        return new URL(origin).hostname;
+    } catch {
+        return process.env.NEXT_PUBLIC_APP_DOMAIN?.replace(/^https?:\/\//, '').replace(/\/$/, '') ?? 'localhost';
+    }
+}
+
+function getOrigin(req: NextRequest): string {
+    const origin = req.headers.get('origin');
+    if (origin) return origin.replace(/\/$/, '');
+    const domain = getRpId(req);
+    return domain === 'localhost' ? 'http://localhost:3000' : `https://${domain}`;
+}
 
 function getAdmin() {
     return createClient(
@@ -18,11 +31,15 @@ export async function POST(req: NextRequest) {
     try {
         const supabaseAdmin = getAdmin();
         const { credential } = await req.json();
-        if (!credential) {
-            return NextResponse.json({ error: 'Credencial requerida' }, { status: 400 });
+
+        if (!credential?.id) {
+            return NextResponse.json({ error: 'Credencial incompleta' }, { status: 400 });
         }
 
-        // 1. Buscar la passkey registrada
+        const rpID = getRpId(req);
+        const origin = getOrigin(req);
+
+        // 1. Buscar passkey por credential_id
         const { data: passkey, error: passkeyErr } = await supabaseAdmin
             .from('passkeys')
             .select('*')
@@ -30,7 +47,9 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (passkeyErr || !passkey) {
-            return NextResponse.json({ error: 'Passkey no encontrada. Regístrala primero desde tu perfil.' }, { status: 404 });
+            return NextResponse.json({
+                error: 'Passkey no encontrada. Regístrala primero en Perfil → Seguridad.',
+            }, { status: 404 });
         }
 
         // 2. Recuperar challenge más reciente
@@ -42,28 +61,36 @@ export async function POST(req: NextRequest) {
             .single();
 
         if (challengeErr || !challengeRow) {
-            return NextResponse.json({ error: 'Challenge expirado. Inténtalo de nuevo.' }, { status: 400 });
+            return NextResponse.json({ error: 'Challenge expirado. Recarga la página e inténtalo de nuevo.' }, { status: 400 });
         }
 
         // 3. Verificar la firma biométrica
-        const verification = await verifyAuthenticationResponse({
-            response: credential,
-            expectedChallenge: challengeRow.challenge,
-            expectedOrigin: ORIGIN,
-            expectedRPID: RP_ID,
-            credential: {
-                id: passkey.credential_id,
-                publicKey: Buffer.from(passkey.public_key, 'base64'),
-                counter: passkey.counter,
-            },
-            requireUserVerification: true,
-        });
-
-        if (!verification.verified) {
-            return NextResponse.json({ error: 'Verificación fallida' }, { status: 401 });
+        let verification;
+        try {
+            verification = await verifyAuthenticationResponse({
+                response: credential,
+                expectedChallenge: challengeRow.challenge,
+                expectedOrigin: origin,
+                expectedRPID: rpID,
+                credential: {
+                    id: passkey.credential_id,
+                    publicKey: Buffer.from(passkey.public_key, 'base64'),
+                    counter: passkey.counter,
+                },
+                requireUserVerification: true,
+            });
+        } catch (verifyErr) {
+            console.error('[login-verify] Verification error:', verifyErr);
+            await supabaseAdmin.from('webauthn_challenges').delete().eq('id', challengeRow.id);
+            return NextResponse.json({ error: 'Verificación biométrica fallida.' }, { status: 401 });
         }
 
-        // 4. Actualizar counter y timestamp
+        if (!verification.verified) {
+            await supabaseAdmin.from('webauthn_challenges').delete().eq('id', challengeRow.id);
+            return NextResponse.json({ error: 'Autenticación rechazada' }, { status: 401 });
+        }
+
+        // 4. Actualizar counter (anti-replay) y last_used_at
         await supabaseAdmin
             .from('passkeys')
             .update({
@@ -75,33 +102,30 @@ export async function POST(req: NextRequest) {
         // 5. Limpiar challenge
         await supabaseAdmin.from('webauthn_challenges').delete().eq('id', challengeRow.id);
 
-        // 6. Obtener email del usuario
+        // 6. Obtener email y generar magic link para crear sesión real
         const { data: userData } = await supabaseAdmin.auth.admin.getUserById(passkey.user_id);
         if (!userData?.user?.email) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
 
-        // 7. Generar magic link — el cliente lo visitará para obtener sesión real
+        const appOrigin = origin.replace(/\/$/, '');
         const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
             type: 'magiclink',
             email: userData.user.email,
-            options: {
-                redirectTo: `${ORIGIN}/dashboard`,
-            },
+            options: { redirectTo: `${appOrigin}/dashboard` },
         });
 
         if (linkErr || !linkData?.properties?.action_link) {
-            // Fallback: devolver email para que lo intente de otra forma
+            console.error('[login-verify] generateLink error:', linkErr);
             return NextResponse.json({ verified: true, email: userData.user.email });
         }
 
         return NextResponse.json({
             verified: true,
             action_link: linkData.properties.action_link,
-            email: userData.user.email,
         });
     } catch (error) {
-        console.error('[passkey/login-verify]', error);
+        console.error('[login-verify]', error);
         return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
     }
 }

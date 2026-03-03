@@ -4,7 +4,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const RP_ID = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost';
+function getRpId(req: NextRequest): string {
+    const origin = req.headers.get('origin') ?? req.headers.get('referer') ?? '';
+    try {
+        return new URL(origin).hostname;
+    } catch {
+        return process.env.NEXT_PUBLIC_APP_DOMAIN?.replace(/^https?:\/\//, '').replace(/\/$/, '') ?? 'localhost';
+    }
+}
 
 function getAdmin() {
     return createClient(
@@ -17,6 +24,7 @@ export async function POST(req: NextRequest) {
     try {
         const supabaseAdmin = getAdmin();
         const { userId } = await req.json();
+        const rpID = getRpId(req);
 
         let allowCredentials: { id: string; type: 'public-key' }[] = [];
         if (userId) {
@@ -32,11 +40,14 @@ export async function POST(req: NextRequest) {
         }
 
         const options = await generateAuthenticationOptions({
-            rpID: RP_ID,
-            userVerification: 'preferred',
-            allowCredentials,
+            rpID,
+            userVerification: 'required',
+            // Si no hay credenciales conocidas, el navegador busca él solo (passkey picker nativo)
+            ...(allowCredentials.length > 0 ? { allowCredentials } : {}),
         });
 
+        // Limpiar challenges viejos sin user_id y guardar el nuevo
+        await supabaseAdmin.from('webauthn_challenges').delete().is('user_id', null);
         await supabaseAdmin.from('webauthn_challenges').insert({
             user_id: userId ?? null,
             challenge: options.challenge,
@@ -44,7 +55,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(options);
     } catch (error) {
-        console.error('[passkey/login-options]', error);
-        return NextResponse.json({ error: 'Error generando opciones de login' }, { status: 500 });
+        console.error('[login-options]', error);
+        return NextResponse.json({ error: 'Error generando opciones de autenticación' }, { status: 500 });
     }
 }
