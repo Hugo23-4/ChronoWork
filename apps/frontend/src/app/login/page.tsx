@@ -49,13 +49,18 @@ export default function LoginPage() {
         body: JSON.stringify({ credential: assertion }),
       });
       const result = await verifyRes.json();
-      if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'verify-failed');
-
-      // Éxito — enviar OTP y redirigir
-      if (result.email) {
-        await supabase.auth.signInWithOtp({ email: result.email, options: { shouldCreateUser: false } });
+      if (!verifyRes.ok || !result.verified) {
+        throw new Error(result.error ?? 'Verificación biométrica fallida');
       }
-      router.push('/dashboard');
+
+      // Éxito — Supabase devuelve un action_link (magic link del admin)
+      // Redirigir a él crea la sesión real sin necesidad de email
+      if (result.action_link) {
+        window.location.href = result.action_link;
+      } else {
+        // Fallback: ir al dashboard (layouts redirigirán si no hay sesión)
+        router.push('/dashboard');
+      }
     } catch (err: unknown) {
       const name = err instanceof Error ? err.name : '';
       const message = err instanceof Error ? err.message : '';
