@@ -19,13 +19,13 @@ El empleado tiene acceso a una interfaz simplificada centrada en su jornada diar
 ### 2.1. Panel de Fichaje
 Desde esta pantalla, el empleado puede registrar su entrada y salida. El sistema verificará su ubicación por GPS para asegurarse de que está dentro del radio de la sede asignada.
 
-*(  UNA CAPTURA DEL BOTÓN DE FICHAR O EL CRONÓMETRO)*
+![alt text](image-1.png)
 > **Figura 2:** Cronómetro y botones de registro de jornada.
 
 ### 2.2. Menú de Navegación Móvil
 Si el usuario accede desde un smartphone, verá un menú inferior adaptado para facilitar la navegación con una sola mano.
 
-*(  UNA CAPTURA DEL MENÚ INFERIOR EN VERSIÓN MÓVIL)*
+![alt text](image-2.png)
 > **Figura 3:** Menú de navegación inferior nativo para móviles.
 
 ---
@@ -37,17 +37,17 @@ El administrador tiene acceso total al control de la plantilla, visualización d
 ### 3.1. Dashboard Principal
 El panel de control muestra estadísticas en tiempo real con tarjetas vistosas indicando empleados activos, alertas y solicitudes pendientes.
 
-*(  UNA CAPTURA DE TU DASHBOARD CON LAS TARJETAS DE COLORES)*
+![alt text](image-3.png)
 > **Figura 4:** Panel de control con métricas en tiempo real.
 
 ### 3.2. Directorio de Empleados
 Lista completa del personal, permitiendo acciones rápidas como llamar por teléfono o enviar un email directamente haciendo clic en los iconos.
 
-*(  UNA CAPTURA DE LA TABLA DE USUARIOS CON LOS ICONOS DE CONTACTO)*
+![alt text](image-4.png)
 > **Figura 5:** Gestión de empleados y acciones de contacto.
 
 ### 3.3. Mapa de Sedes y Geofencing
 Visualización geográfica de los centros de trabajo. Los círculos indican el radio permitido para fichar. Los marcadores muestran los empleados activos en cada sede.
 
-*(  UNA CAPTURA DEL MAPA CON LOS CÍRCULOS Y PINCHES)*
+![alt text](image-5.png)
 > **Figura 6:** Mapa de control de presencia por sedes.
