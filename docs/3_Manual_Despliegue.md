@@ -24,7 +24,7 @@ Sigue estos pasos para ejecutar la aplicación en tu propio ordenador:
 ### Paso 2.1. Clonar el repositorio
 Abre una terminal y clona el proyecto desde GitHub:
 \`\`\`bash
-git clone https://github.com/TU_USUARIO/chronowork.git
+git clone https://github.com/Hugo23-4/chronowork.git
 cd chronowork
 \`\`\`
 
