@@ -7,7 +7,7 @@ Bienvenido a ChronoWork. Este manual tiene como objetivo guiar a cualquier usuar
 ## 1. Inicio de Sesión (Login)
 Para acceder al sistema, el usuario debe introducir su correo electrónico y contraseña proporcionados por la empresa.
 
-*(UNA CAPTURA DE LA PANTALLA DE LOGIN)*
+![alt text](image.png)
 > **Figura 1:** Pantalla principal de acceso a la plataforma.
 
 ---

@@ -68,12 +68,24 @@ export default function LoginPage() {
       const result = await verifyRes.json();
       if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'verify-failed');
 
-      // Redirigir al magic link de Supabase — crea sesión real sin email
+      // OPCIÓN A: servidor devuelve tokens → setSession() directamente (mejor en iOS Safari)
+      if (result.access_token && result.refresh_token) {
+        const { error: sessionErr } = await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token,
+        });
+        if (sessionErr) throw new Error(sessionErr.message);
+        router.push('/dashboard');
+        return;
+      }
+
+      // OPCIÓN B: fallback con action_link
       if (result.action_link) {
         window.location.href = result.action_link;
-      } else {
-        router.push('/dashboard');
+        return;
       }
+
+      router.push('/dashboard');
     } catch (err: unknown) {
       const name = err instanceof Error ? err.name : '';
       const message = err instanceof Error ? err.message : '';
