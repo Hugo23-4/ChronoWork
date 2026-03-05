@@ -27,7 +27,7 @@ export default function LandingPage() {
               <strong> integridad del dato</strong>, la transparencia y el cumplimiento legal.
             </p>
             <div className="d-flex justify-content-center gap-3">
-              <Link href="/login" className="btn btn-primary btn-lg px-5 py-3 shadow">
+              <Link href="/login" className="btn btn-action btn-lg px-5 py-3 shadow hover-scale">
                 Comenzar Fichaje
               </Link>
               <button className="btn btn-outline-secondary btn-lg px-5 py-3">

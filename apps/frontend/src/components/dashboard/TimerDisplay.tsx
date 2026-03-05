@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import ReflectiveCard from '@/components/ui/ReflectiveCard';
 
 interface TimerDisplayProps {
   userId: string;
@@ -249,56 +250,58 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
   };
 
   return (
-    <div className="card border-0 shadow-sm rounded-4 overflow-hidden text-center position-relative bg-white">
-      <div className="card-body p-4 p-lg-5">
+    <ReflectiveCard className="w-100 h-100">
+      <div className="card border-0 rounded-4 overflow-hidden text-center position-relative bg-transparent shadow-none">
+        <div className="card-body p-4 p-lg-5">
 
-        <h2 className="fw-bold mb-1 text-dark">
-          {status === 'fuera' ? 'Hola, Compañero 👋' : '¡A por todas! 🚀'}
-        </h2>
-        <p className="text-secondary mb-4">
-          {status === 'fuera' ? 'Registra tu entrada para comenzar.' : 'Tu jornada está en curso.'}
-        </p>
+          <h2 className="fw-bold mb-1 text-dark">
+            {status === 'fuera' ? 'Hola, Compañero 👋' : '¡A por todas! 🚀'}
+          </h2>
+          <p className="text-secondary mb-4">
+            {status === 'fuera' ? 'Registra tu entrada para comenzar.' : 'Tu jornada está en curso.'}
+          </p>
 
-        <div className="display-1 fw-bold font-monospace my-4 text-dark tracking-tight">
-          {formatTime(elapsed)}
-        </div>
-
-        {blockingError && (
-          <div className="alert alert-danger border-0 bg-danger bg-opacity-10 py-3 small mb-4 fw-bold">
-            {blockingError}
+          <div className="display-1 fw-bold font-monospace my-4 text-dark tracking-tight">
+            {formatTime(elapsed)}
           </div>
-        )}
 
-        {locationError && (
-          <div className="alert alert-warning border-0 bg-warning bg-opacity-10 py-2 small mb-3">
-            {locationError}
-          </div>
-        )}
-
-        <div className="d-grid gap-2 col-md-8 mx-auto">
-          {status === 'fuera' ? (
-            <button
-              onClick={() => handleFichaje('trabajando')}
-              disabled={loading}
-              className="btn btn-dark btn-lg rounded-pill py-3 fw-bold shadow-lg hover-scale transition-all"
-            >
-              {loading ? 'Ubicando...' : 'REGISTRAR ENTRADA'}
-            </button>
-          ) : (
-            <button
-              onClick={() => handleFichaje('fuera')}
-              disabled={loading}
-              className="btn btn-outline-danger btn-lg rounded-pill py-3 fw-bold"
-            >
-              {loading ? 'Procesando...' : 'REGISTRAR SALIDA'}
-            </button>
+          {blockingError && (
+            <div className="alert alert-danger border-0 bg-danger bg-opacity-10 py-3 small mb-4 fw-bold">
+              {blockingError}
+            </div>
           )}
-        </div>
 
+          {locationError && (
+            <div className="alert alert-warning border-0 bg-warning bg-opacity-10 py-2 small mb-3">
+              {locationError}
+            </div>
+          )}
+
+          <div className="d-grid gap-2 col-md-8 mx-auto">
+            {status === 'fuera' ? (
+              <button
+                onClick={() => handleFichaje('trabajando')}
+                disabled={loading}
+                className="btn btn-dark btn-lg rounded-pill py-3 fw-bold shadow-lg hover-scale transition-all"
+              >
+                {loading ? 'Ubicando...' : 'REGISTRAR ENTRADA'}
+              </button>
+            ) : (
+              <button
+                onClick={() => handleFichaje('fuera')}
+                disabled={loading}
+                className="btn btn-outline-danger btn-lg rounded-pill py-3 fw-bold"
+              >
+                {loading ? 'Procesando...' : 'REGISTRAR SALIDA'}
+              </button>
+            )}
+          </div>
+
+        </div>
+        <div className={`progress mt-4 rounded-0`} style={{ height: '6px' }}>
+          <div className={`progress-bar ${status === 'trabajando' ? 'bg-success progress-bar-striped progress-bar-animated' : 'bg-secondary'}`} style={{ width: '100%' }}></div>
+        </div>
       </div>
-      <div className={`progress mt-4 rounded-0`} style={{ height: '6px' }}>
-        <div className={`progress-bar ${status === 'trabajando' ? 'bg-success progress-bar-striped progress-bar-animated' : 'bg-secondary'}`} style={{ width: '100%' }}></div>
-      </div>
-    </div>
+    </ReflectiveCard>
   );
 }

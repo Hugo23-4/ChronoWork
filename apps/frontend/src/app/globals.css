@@ -1,110 +1,339 @@
-/* =========================================
-   CHRONOWORK DESIGN SYSTEM v2.0
-   Based on Figma UI Kit & Brand Guidelines
-   ========================================= */
+/* ============================================================
+   CHRONOWORK DESIGN SYSTEM v3.0
+   Inspirado en ReactBits — glassmorphism, gradientes premium,
+   animaciones fluidas. Sin efectos de rotación.
+   ============================================================ */
 
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+/* ── 01. VARIABLES ─────────────────────────────────────────── */
 :root {
-  /* 01. Arquitectura de Color */
-  --loom-navy: #0F172A;       /* Primary Text / Dark Buttons */
-  --chrono-blue: #2563EB;     /* Actions / Accent */
-  --pure-surface: #FFFFFF;    /* Cards */
-  --bg-body: #F8FAFC;         /* Slate 50 Background */
-  
-  /* Status Colors */
-  --status-success: #10B981;
-  --status-error: #EF4444;
-  --status-warning: #F59E0B;
+  --loom-navy:         #0F172A;
+  --loom-slate:        #1E293B;
+  --chrono-blue:       #2563EB;
+  --chrono-blue-light: #3B82F6;
+  --pure-surface:      #FFFFFF;
+  --bg-body:           #F8FAFC;
+  --bg-subtle:         #F1F5F9;
 
-  /* Overriding Bootstrap Variables via CSS Custom Properties */
+  --status-success:    #10B981;
+  --status-error:      #EF4444;
+  --status-warning:    #F59E0B;
+  --status-info:       #0EA5E9;
+
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+
+  --shadow-sm:  0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-md:  0 4px 12px rgba(15,23,42,0.08), 0 2px 4px rgba(15,23,42,0.04);
+  --shadow-lg:  0 16px 40px rgba(15,23,42,0.12), 0 4px 8px rgba(15,23,42,0.06);
+  --shadow-xl:  0 28px 60px rgba(15,23,42,0.18), 0 8px 16px rgba(15,23,42,0.08);
+
+  --transition-fast:   0.15s cubic-bezier(0.4,0,0.2,1);
+  --transition-normal: 0.25s cubic-bezier(0.4,0,0.2,1);
+  --transition-slow:   0.4s  cubic-bezier(0.4,0,0.2,1);
+
+  /* Bootstrap overrides */
   --bs-body-font-family: 'Inter', sans-serif;
-  --bs-body-bg: var(--bg-body);
-  --bs-primary: var(--loom-navy); /* Redefinimos el "Primary" de Bootstrap al Navy */
-  --bs-link-color: var(--chrono-blue);
+  --bs-body-bg:          var(--bg-body);
+  --bs-primary:          var(--loom-navy);
+  --bs-link-color:       var(--chrono-blue);
+  --bs-border-radius:    var(--radius-md);
 }
+
+/* ── 02. BASE ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--bg-body);
   color: var(--loom-navy);
-  font-family: 'Inter', sans-serif; /* */
-  -webkit-font-smoothing: antialiased; /* Texto más nítido */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
 }
 
-/* 02. Títulos y Tipografía */
-h1, h2, h3, h4, h5, h6, .display-1, .display-2 {
-  font-weight: 700; /* Bold por defecto para títulos */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-weight: 700;
   color: var(--loom-navy);
-  letter-spacing: -0.02em; /* Toque moderno */
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
-/* 03. Componentes Interactivos - BOTONES */
+/* ── 03. BOTONES ────────────────────────────────────────────── */
+.btn {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-md) !important;
+}
+
 .btn-primary {
-  background-color: var(--loom-navy) !important; /* */
+  background: var(--loom-navy) !important;
   border-color: var(--loom-navy) !important;
-  border-radius: 12px !important;
   padding: 12px 24px;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.25);
 }
-
 .btn-primary:hover {
-  background-color: #1e293b !important; /* Un tono un poco más claro para hover */
+  background: var(--loom-slate) !important;
+  border-color: var(--loom-slate) !important;
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(15,23,42,0.3);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-action {
+  background: linear-gradient(135deg, var(--chrono-blue), #1D4ED8) !important;
+  border: none !important;
+  color: white !important;
+  padding: 12px 24px;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.35);
+}
+.btn-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(37,99,235,0.45);
 }
 
-/* Botón de Acción Principal (El Azul "Chrono Blue") */
-/* Crearemos una clase especial para cuando quieras el botón azul brillante */
-.btn-action {
-  background-color: var(--chrono-blue) !important;
+.btn-outline-secondary {
+  border-color: #E2E8F0 !important;
+  color: var(--loom-navy) !important;
+  background: rgba(255,255,255,0.7) !important;
+  backdrop-filter: blur(8px);
+}
+.btn-outline-secondary:hover {
+  background: rgba(255,255,255,0.95) !important;
+  border-color: #CBD5E1 !important;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── 04. CARDS ──────────────────────────────────────────────── */
+.card {
+  background: var(--pure-surface);
+  border: none !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow var(--transition-normal), transform var(--transition-normal);
+}
+.card:hover { box-shadow: var(--shadow-lg); }
+
+/* Card glassmorphism */
+.card-glass {
+  background: rgba(255,255,255,0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.5) !important;
+  box-shadow: var(--shadow-xl), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* Card con borde sutil */
+.card-bordered {
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: var(--shadow-sm);
+}
+.card-bordered:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: var(--shadow-md);
+}
+
+/* ── 05. INPUTS ─────────────────────────────────────────────── */
+.form-control {
+  border-radius: var(--radius-sm) !important;
+  border: 1.5px solid #E2E8F0;
+  padding: 12px 16px;
+  font-size: 0.9375rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background: #F8FAFC;
+}
+.form-control:focus {
   border-color: var(--chrono-blue) !important;
-  color: white !important;
-  border-radius: 12px;
-  padding: 12px 24px;
+  box-shadow: 0 0 0 3.5px rgba(37,99,235,0.12) !important;
+  background: #FFFFFF;
+  outline: none;
+}
+.form-control::placeholder { color: #94A3B8; }
+
+/* ── 06. BADGES & STATUS ────────────────────────────────────── */
+.badge { border-radius: 6px; font-weight: 600; letter-spacing: 0.01em; }
+
+/* ── 07. UTILIDADES DE CURSOR ───────────────────────────────── */
+button, a, .btn, .cursor-pointer { cursor: pointer !important; }
+.no-select { user-select: none; -webkit-user-select: none; }
+
+/* ── 08. ANIMACIONES ────────────────────────────────────────── */
+@keyframes cw-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cw-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes cw-scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes cw-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes cw-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.3); }
+  50%       { box-shadow: 0 0 0 10px rgba(37,99,235,0); }
+}
+
+.anim-fade-up   { animation: cw-fade-up 0.4s ease-out both; }
+.anim-fade-in   { animation: cw-fade-in 0.3s ease-out both; }
+.anim-scale-in  { animation: cw-scale-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+.anim-delay-1 { animation-delay: 0.05s; }
+.anim-delay-2 { animation-delay: 0.10s; }
+.anim-delay-3 { animation-delay: 0.15s; }
+.anim-delay-4 { animation-delay: 0.20s; }
+
+/* Hover lift suave */
+.hover-lift {
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Skelton / Loading shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: cw-shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── 09. REFLECTIVE CARD (inspirado en React Bits) ─────────── */
+.cw-reflective-card {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(20px) saturate(200%);
+  -webkit-backdrop-filter: blur(20px) saturate(200%);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow:
+    var(--shadow-xl),
+    inset 0 1px 0 rgba(255,255,255,0.7),
+    inset 0 -1px 0 rgba(0,0,0,0.03);
+  transition: box-shadow var(--transition-normal);
+}
+.cw-reflective-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 10%, rgba(37,99,235,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 90%, rgba(15,23,42,0.06) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+.cw-reflective-card > * { position: relative; z-index: 1; }
+
+/* Separador con gradiente */
+.divider-gradient {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #E2E8F0, transparent);
+  border: none;
+  margin: 1.5rem 0;
+}
+
+/* ── 10. LOGIN ESPECÍFICO ───────────────────────────────────── */
+.login-bg {
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(37,99,235,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(15,23,42,0.1) 0%, transparent 50%),
+    #0F172A;
+}
+
+.login-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+/* ── 11. SIDEBAR / NAV ──────────────────────────────────────── */
+.sidebar-link {
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  padding: 8px 12px;
+}
+.sidebar-link:hover { background: rgba(37,99,235,0.08); }
+.sidebar-link.active {
+  background: rgba(37,99,235,0.12);
+  color: var(--chrono-blue) !important;
   font-weight: 600;
 }
 
-.btn-action:hover {
-  background-color: #1d4ed8 !important;
+/* ── 12. STAT CARDS ─────────────────────────────────────────── */
+.stat-card {
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  background: var(--pure-surface);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(226,232,240,0.6);
+  transition: all var(--transition-normal);
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(37,99,235,0.15);
 }
 
-/* 04. Tarjetas y Contenedores */
-.card {
-  background-color: var(--pure-surface);
-  border: none; /* Quitamos bordes por defecto de Bootstrap */
-  border-radius: 16px !important; /* */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+/* Indicador de estado animado */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.status-dot.active {
+  background: var(--status-success);
+  box-shadow: 0 0 0 0 rgba(16,185,129,0.5);
+  animation: cw-pulse-glow 2s ease-in-out infinite;
 }
 
-/* 05. Inputs de Formulario */
-.form-control {
-  border-radius: 8px !important; /* */
-  border: 1px solid #E2E8F0;
-  padding: 12px 16px;
-  background-color: #FFFFFF;
+/* ── 13. TABLE ──────────────────────────────────────────────── */
+.table { border-collapse: separate; border-spacing: 0; }
+.table > :not(caption) > * > * { padding: 12px 16px; vertical-align: middle; }
+.table thead > tr > th {
+  background: var(--bg-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748B;
+  border-bottom: 1px solid #E2E8F0;
 }
-
-.form-control:focus {
-  border-color: var(--chrono-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+.table tbody > tr {
+  transition: background var(--transition-fast);
 }
+.table tbody > tr:hover { background: rgba(37,99,235,0.03); }
 
-/* Utilidades de Texto Personalizadas */
-.text-primary { color: var(--loom-navy) !important; }
-.text-accent { color: var(--chrono-blue) !important; }
-
-/* ======================================================
-   EXPERIENCIA TIPO APP
-   user-select desactivado solo en elementos específicos via clase .no-select
-   ====================================================== */
-
-/* Clase opt-in para elementos donde no queremos selección de texto */
-.no-select {
-  user-select: none;
-  -webkit-user-select: none;
+/* ── 14. MODAL ──────────────────────────────────────────────── */
+.modal-content {
+  border-radius: var(--radius-xl) !important;
+  border: none !important;
+  box-shadow: var(--shadow-xl) !important;
 }
+.modal-header { border-bottom: 1px solid #F1F5F9 !important; padding: 20px 24px; }
+.modal-footer { border-top: 1px solid #F1F5F9 !important; padding: 16px 24px; }
 
-/* Asegurar que los botones y enlaces siempre tengan la manita */
-button, a, .btn, .cursor-pointer {
-  cursor: pointer !important;
-}
+/* ── 15. SCROLLBAR PERSONALIZADA ────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
