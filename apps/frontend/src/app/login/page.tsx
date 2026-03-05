@@ -153,18 +153,26 @@ export default function LoginPage() {
       if (rememberMe) localStorage.setItem('chrono_saved_email', email);
       else localStorage.removeItem('chrono_saved_email');
 
-      const { data: profile } = await supabase
-        .from('empleados_info')
-        .select('rol_id')
-        .eq('id', data.user.id)
-        .single();
+      // Consultar rol con timeout de 3s - si falla o tarda mucho, va al dashboard
+      let rolId: number | null = null;
+      try {
+        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+        const query = supabase
+          .from('empleados_info')
+          .select('rol_id')
+          .eq('id', data.user.id)
+          .single()
+          .then(({ data: profile }) => profile?.rol_id ?? null);
+        rolId = await Promise.race([query, timeout]);
+      } catch {
+        // Si falla la query, navegamos igual al dashboard
+      }
 
-      const rolId = profile?.rol_id;
       if (rolId === 1) router.push('/admin');
       else if (rolId === 3) router.push('/inspector');
       else router.push('/dashboard');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '';
+      const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
         setError('Email o contraseña incorrectos.');
       } else {
@@ -174,6 +182,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
 
   const handleForgotPassword = async () => {
     if (!email) { setError('Introduce tu email primero para recuperar la contraseña.'); return; }
