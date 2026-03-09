@@ -19,11 +19,13 @@ export default function AdminRequestsManager() {
     setError('');
 
     try {
+      // Usamos el hint de FK explícito para evitar la ambigüedad de relaciones múltiples
+      // entre 'solicitudes' y 'empleados_info'
       let query = supabase
         .from('solicitudes')
         .select(`
           *,
-          empleados_info ( nombre_completo, dni )
+          empleado:empleados_info!solicitudes_empleado_id_fkey ( nombre_completo, dni )
         `, { count: 'exact' })
         .order('created_at', { ascending: false });
 
@@ -33,16 +35,30 @@ export default function AdminRequestsManager() {
 
       const { data, error: queryError, count } = await query;
 
-
-
       if (queryError) {
-        setError(`Error BD: ${queryError.message}`);
-        console.error('Error fetching solicitudes:', queryError);
+        // Si falla el hint FK, intentamos sin join y mostramos datos básicos
+        console.warn('FK hint fallido, intentando sin join:', queryError.message);
+        const { data: fallbackData, error: fallbackErr, count: fallbackCount } = await supabase
+          .from('solicitudes')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false });
+
+        if (fallbackErr) {
+          setError(`Error BD: ${fallbackErr.message}`);
+        } else {
+          setRequests(fallbackData || []);
+          setTotalCount(fallbackCount || 0);
+        }
       } else {
-        setRequests(data || []);
+        // Normalizar: el alias 'empleado' sustituye a 'empleados_info'
+        const normalized = (data || []).map((r: any) => ({
+          ...r,
+          empleados_info: r.empleado ?? r.empleados_info ?? null,
+        }));
+        setRequests(normalized);
         setTotalCount(count || 0);
         if (!data || data.length === 0) {
-          setError(`No hay solicitudes${filter !== 'todos' ? ` en estado "${filter}"` : ''}. Es posible que no haya datos en la tabla.`);
+          setError(`No hay solicitudes${filter !== 'todos' ? ` en estado "${filter}"` : ''}.`);
         }
       }
     } catch (err: any) {

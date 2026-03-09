@@ -14,22 +14,45 @@ type ProcessedFichaje = {
     status: 'valid' | 'progress' | 'incident';
 };
 
+// Genera las últimas N etiquetas de mes (formato: "YYYY-MM")
+function getLastMonths(n: number): { label: string; value: string }[] {
+    const months: { label: string; value: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < n; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const label = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+        months.push({ label: label.charAt(0).toUpperCase() + label.slice(1), value });
+    }
+    return months;
+}
+
 export default function AdminFichajesPage() {
     const { user } = useAuth();
     const [fichajes, setFichajes] = useState<ProcessedFichaje[]>([]);
     const [loading, setLoading] = useState(true);
+    const monthOptions = getLastMonths(6);
+    const [selectedMonth, setSelectedMonth] = useState(monthOptions[0].value); // Mes actual
 
     useEffect(() => {
-        fetchAllFichajes();
-    }, [user]);
+        fetchAllFichajes(selectedMonth);
+    }, [user, selectedMonth]);
 
-    const fetchAllFichajes = async () => {
+    const fetchAllFichajes = async (month: string) => {
+        setLoading(true);
         try {
+            const [year, mon] = month.split('-');
+            const from = `${year}-${mon}-01`;
+            const lastDay = new Date(Number(year), Number(mon), 0).getDate();
+            const to = `${year}-${mon}-${lastDay}`;
+
             const { data, error } = await supabase
                 .from('fichajes')
                 .select('*, empleados_info(nombre_completo)')
+                .gte('fecha', from)
+                .lte('fecha', to)
                 .order('created_at', { ascending: false })
-                .limit(100);
+                .limit(200);
 
             if (error) throw error;
             if (data) setFichajes(processFichajes(data));
@@ -151,10 +174,15 @@ export default function AdminFichajesPage() {
                 <h2 className="fw-bold mb-0 text-dark">Fichajes del Personal</h2>
 
                 <div className="d-flex gap-2">
-                    <select className="form-select fw-bold border-0 shadow-sm rounded-pill px-4" style={{ width: 'auto', minWidth: '160px' }}>
-                        <option>📅 Febrero 2026</option>
-                        <option>Enero 2026</option>
-                        <option>Diciembre 2025</option>
+                    <select
+                        className="form-select fw-bold border-0 shadow-sm rounded-pill px-4"
+                        style={{ width: 'auto', minWidth: '180px' }}
+                        value={selectedMonth}
+                        onChange={(e) => setSelectedMonth(e.target.value)}
+                    >
+                        {monthOptions.map((m) => (
+                            <option key={m.value} value={m.value}>📅 {m.label}</option>
+                        ))}
                     </select>
 
                     <button
