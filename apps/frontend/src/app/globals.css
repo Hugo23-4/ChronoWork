@@ -217,6 +217,13 @@ a,
   }
 }
 
+/* Clases de delay para animaciones escalonadas */
+.anim-delay-1 { animation-delay: 0.1s !important; }
+.anim-delay-2 { animation-delay: 0.2s !important; }
+.anim-delay-3 { animation-delay: 0.3s !important; }
+.anim-delay-4 { animation-delay: 0.45s !important; }
+
+
 @keyframes cw-fade-in {
   from {
     opacity: 0;
