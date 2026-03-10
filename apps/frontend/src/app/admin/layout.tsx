@@ -33,18 +33,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             setIsAdmin(true);
             setLoading(false);
         } else {
-            // No es admin, redirigir a dashboard empleado
+            // No es admin — redirigir sin dejar el spinner colgado
+            setLoading(false);
             router.push('/dashboard');
         }
     };
 
     if (loading) {
         return (
-            <div className="min-vh-100 d-flex align-items-center justify-content-center">
-                <div className="spinner-border text-primary"></div>
+            <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: '#F8FAFC' }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div className="spinner-border" style={{ color: '#2563EB', width: 40, height: 40, borderWidth: 3 }} role="status" />
+                    <p style={{ color: '#94A3B8', fontSize: '0.875rem', marginTop: 12 }}>Verificando acceso...</p>
+                </div>
             </div>
         );
     }
+
 
     if (!isAdmin) return null;
 
