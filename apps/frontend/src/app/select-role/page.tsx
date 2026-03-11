@@ -45,7 +45,7 @@ export default function RoleSelectionPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner-border" style={{ color: '#3B82F6', width: 40, height: 40, borderWidth: 3 }} />
+        <div className="animate-spin" style={{ color: '#3B82F6', width: 40, height: 40, borderWidth: 3 }} />
       </div>
     );
   }
@@ -78,7 +78,7 @@ export default function RoleSelectionPage() {
       <div className="login-grid-lines" />
 
       {/* Logo + saludo */}
-      <div className="text-center mb-5 anim-fade-up" style={{ position: 'relative', zIndex: 1 }}>
+      <div className="text-center mb-6 anim-fade-up" style={{ position: 'relative', zIndex: 1 }}>
         <div style={{
           width: 56, height: 56, borderRadius: 16,
           background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
@@ -147,7 +147,7 @@ export default function RoleSelectionPage() {
             border: '1px solid rgba(37,99,235,0.3)',
           }}>
             {selecting === 'admin'
-              ? <div className="spinner-border spinner-border-sm" style={{ color: '#3B82F6' }} />
+              ? <div className="animate-spin animate-spin w-4 h-4" style={{ color: '#3B82F6' }} />
               : <i className="bi bi-shield-fill" style={{ fontSize: 22, color: '#60A5FA' }} />
             }
           </div>
@@ -217,7 +217,7 @@ export default function RoleSelectionPage() {
             border: '1px solid rgba(16,185,129,0.25)',
           }}>
             {selecting === 'personal'
-              ? <div className="spinner-border spinner-border-sm" style={{ color: '#10B981' }} />
+              ? <div className="animate-spin animate-spin w-4 h-4" style={{ color: '#10B981' }} />
               : <i className="bi bi-person-fill" style={{ fontSize: 22, color: '#34D399' }} />
             }
           </div>

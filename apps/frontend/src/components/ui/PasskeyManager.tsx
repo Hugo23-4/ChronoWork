@@ -127,10 +127,10 @@ export default function PasskeyManager() {
 
     return (
         <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="flex justify-between items-center mb-3">
                 <div>
-                    <span className="fw-bold d-block text-dark">Face ID / Huella dactilar</span>
-                    <small className="text-muted">
+                    <span className="font-bold block text-navy">Face ID / Huella dactilar</span>
+                    <small className="text-slate-400">
                         {devices.length === 0
                             ? 'Ningún dispositivo registrado'
                             : `${devices.length} dispositivo${devices.length > 1 ? 's' : ''} de confianza`}
@@ -141,10 +141,10 @@ export default function PasskeyManager() {
                     <button
                         onClick={handleRegister}
                         disabled={registering}
-                        className="btn btn-dark btn-sm rounded-pill px-3 d-flex align-items-center gap-2"
+                        className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none btn-sm rounded-full px-3 flex items-center gap-2"
                     >
                         {registering ? (
-                            <><span className="spinner-border spinner-border-sm" /> Registrando...</>
+                            <><span className="animate-spin animate-spin w-4 h-4" /> Registrando...</>
                         ) : (
                             <>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -158,12 +158,12 @@ export default function PasskeyManager() {
                 )}
 
                 {!supported && (
-                    <span className="badge bg-light text-secondary border small">No compatible</span>
+                    <span className="bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-slate-500 border text-sm">No compatible</span>
                 )}
             </div>
 
             {message && (
-                <div className={`alert py-2 small d-flex align-items-center gap-2 rounded-3 mb-3 alert-${message.type === 'success' ? 'success' : message.type === 'warning' ? 'warning' : 'danger'}`}>
+                <div className={`alert py-2 text-sm flex items-center gap-2 rounded-lg mb-3 alert-${message.type === 'success' ? 'success' : message.type === 'warning' ? 'warning' : 'danger'}`}>
                     <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}-fill`} aria-hidden="true"></i>
                     {message.text}
                 </div>
@@ -171,24 +171,24 @@ export default function PasskeyManager() {
 
             {loading ? (
                 <div className="text-center py-3">
-                    <div className="spinner-border spinner-border-sm text-secondary" role="status">
-                        <span className="visually-hidden">Cargando...</span>
+                    <div className="animate-spin animate-spin w-4 h-4 text-slate-500" role="status">
+                        <span className="sr-only">Cargando...</span>
                     </div>
                 </div>
             ) : devices.length > 0 ? (
-                <div className="d-flex flex-column gap-2">
+                <div className="flex flex-col gap-2">
                     {devices.map((device) => (
-                        <div key={device.id} className="d-flex align-items-center justify-content-between p-3 rounded-3 bg-light">
-                            <div className="d-flex align-items-center gap-2">
-                                <div className="rounded-circle bg-dark d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: 32, height: 32 }}>
+                        <div key={device.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+                            <div className="flex items-center gap-2">
+                                <div className="rounded-full bg-navy flex items-center justify-center shrink-0" style={{ width: 32, height: 32 }}>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                         <path d="M9 9H9.01M15 9H15.01M9 15C9.83 15.67 10.83 16 12 16C13.17 16 14.17 15.67 15 15" />
                                         <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <div className="fw-bold small text-dark">{device.device_name}</div>
-                                    <div className="text-muted" style={{ fontSize: '0.72rem' }}>
+                                    <div className="font-bold text-sm text-navy">{device.device_name}</div>
+                                    <div className="text-slate-400" style={{ fontSize: '0.72rem' }}>
                                         Añadido {formatDate(device.created_at)}
                                         {device.last_used_at && ` · Usado ${formatDate(device.last_used_at)}`}
                                     </div>
@@ -196,7 +196,7 @@ export default function PasskeyManager() {
                             </div>
                             <button
                                 onClick={() => handleDelete(device.id)}
-                                className="btn btn-link text-danger p-0"
+                                className="bg-transparent border-none cursor-pointer text-red-500 p-0"
                                 title="Eliminar dispositivo"
                                 aria-label={`Eliminar ${device.device_name}`}
                             >
@@ -206,8 +206,8 @@ export default function PasskeyManager() {
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-3 text-muted small">
-                    <i className="bi bi-shield-lock d-block mb-1 fs-4 opacity-25" aria-hidden="true"></i>
+                <div className="text-center py-3 text-slate-400 text-sm">
+                    <i className="bi bi-shield-lock block mb-1 text-xl opacity-25" aria-hidden="true"></i>
                     {supported
                         ? 'Pulsa "Añadir dispositivo" para registrar tu Face ID o huella'
                         : 'Tu dispositivo no soporta autenticación biométrica'}

@@ -195,7 +195,7 @@ export default function LoginPage() {
 
       {/* ── Panel izquierdo (Desktop) ─────────────────────────────────────── */}
       <div
-        className="d-none d-lg-flex flex-column justify-content-between p-5 position-relative overflow-hidden login-bg"
+        className="hidden lg:flex flex-col justify-between p-6 relative overflow-hidden login-bg"
         style={{ width: '46%', flexShrink: 0 }}
       >
         {/* Grid lines decorativos */}
@@ -218,7 +218,7 @@ export default function LoginPage() {
         {/* Contenido */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           {/* Logo */}
-          <div className="d-flex align-items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mb-6">
             <div style={{
               width: 44, height: 44, borderRadius: 12,
               background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
@@ -254,7 +254,7 @@ export default function LoginPage() {
           </p>
 
           {/* Feature pills */}
-          <div className="d-flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2 mt-4">
             {['Fichaje seguro', 'Face ID / Biometría', 'Reportes en tiempo real'].map((label) => (
               <span key={label} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -279,11 +279,11 @@ export default function LoginPage() {
       </div>
 
       {/* ── Panel derecho — Formulario ────────────────────────────────────── */}
-      <div className="flex-fill d-flex flex-column align-items-center justify-content-center p-4 position-relative"
+      <div className="flex-1 flex flex-col items-center justify-center p-4 relative"
         style={{ background: '#F8FAFC', minHeight: '100vh', overflow: 'hidden' }}>
 
         {/* Fondo decorativo mobile */}
-        <div className="d-lg-none" style={{
+        <div className="lg:hidden" style={{
           position: 'absolute', top: '-40px', right: '-40px',
           width: 220, height: 220, borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)',
@@ -291,8 +291,8 @@ export default function LoginPage() {
         }} />
 
         {/* Header mobile */}
-        <div className="d-lg-none text-center mb-4 anim-fade-up" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
+        <div className="lg:hidden text-center mb-4 anim-fade-up" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="flex items-center justify-center gap-2 mb-2">
             <div style={{
               width: 36, height: 36, borderRadius: 10,
               background: 'linear-gradient(135deg, #0F172A, #1E3A5F)',
@@ -354,18 +354,18 @@ export default function LoginPage() {
             </p>
 
             {bioStatus === 'prompting' && (
-              <div className="d-flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4">
                 {[0, 1, 2].map((i) => (
                   <div key={i}
                     style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563EB', animationDelay: `${i * 0.2}s` }}
-                    className="spinner-grow spinner-grow-sm text-primary" />
+                    className="animate-pulse animate-pulse w-2 h-2 text-chrono-blue" />
                 ))}
               </div>
             )}
 
             {bioStatus === 'failed' && (
               <button type="button" onClick={triggerBiometric}
-                className="btn btn-primary px-5 py-3 rounded-pill fw-bold mb-3">
+                className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none px-6 py-3 rounded-full font-bold mb-3">
                 Reintentar {platformName}
               </button>
             )}
@@ -383,10 +383,10 @@ export default function LoginPage() {
         )}
 
         {/* ── FORMULARIO ────────────────────────────────────────────────────── */}
-        <div className="w-100 anim-fade-up" style={{ maxWidth: 420, position: 'relative', zIndex: 1 }}>
+        <div className="w-full anim-fade-up" style={{ maxWidth: 420, position: 'relative', zIndex: 1 }}>
 
           {/* Heading desktop */}
-          <div className="d-none d-lg-block mb-4">
+          <div className="hidden lg:block mb-4">
             <h2 style={{
               fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
               fontSize: '1.875rem', fontWeight: 800, color: '#0F172A',
@@ -424,7 +424,7 @@ export default function LoginPage() {
           )}
 
           {/* ── Card glassmorphism ── */}
-          <div className="cw-reflective-card p-4 p-sm-5">
+          <div className="cw-reflective-card p-4 sm:p-6">
 
             <form onSubmit={handleLogin} noValidate>
 
@@ -452,7 +452,7 @@ export default function LoginPage() {
                     required
                     disabled={loading}
                     placeholder="nombre@empresa.es"
-                    className="form-control"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
                     style={{ paddingLeft: 40 }}
                   />
                 </div>
@@ -460,7 +460,7 @@ export default function LoginPage() {
 
               {/* Password */}
               <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
+                <div className="flex justify-between items-center mb-2">
                   <label htmlFor="login-pwd" style={{
                     fontSize: '0.8125rem', fontWeight: 600, color: '#374151', letterSpacing: '0.01em',
                   }}>
@@ -493,7 +493,7 @@ export default function LoginPage() {
                     required
                     disabled={loading}
                     placeholder="••••••••••"
-                    className="form-control"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
                     style={{ paddingLeft: 40, paddingRight: 44 }}
                   />
                   <button
@@ -516,12 +516,12 @@ export default function LoginPage() {
               </div>
 
               {/* Remember me */}
-              <div className="d-flex align-items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-4">
                 <input
                   type="checkbox" id="remember-me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="form-check-input"
+                  className="accent-chrono-blue"
                   style={{ width: 16, height: 16, accentColor: '#2563EB', flexShrink: 0, margin: 0 }}
                 />
                 <label htmlFor="remember-me" style={{ fontSize: '0.875rem', color: '#64748B', cursor: 'pointer', marginBottom: 0 }}>
@@ -533,7 +533,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-100 fw-bold"
+                className="w-full font-bold"
                 style={{
                   padding: '13px 24px', borderRadius: 12, border: 'none',
                   background: loading
@@ -549,8 +549,8 @@ export default function LoginPage() {
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 {loading ? (
-                  <span className="d-flex align-items-center justify-content-center gap-2">
-                    <span className="spinner-border spinner-border-sm" style={{ width: 16, height: 16, borderWidth: 2 }} aria-hidden="true" />
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin animate-spin w-4 h-4" style={{ width: 16, height: 16, borderWidth: 2 }} aria-hidden="true" />
                     Accediendo...
                   </span>
                 ) : 'Acceder al Panel'}
@@ -559,7 +559,7 @@ export default function LoginPage() {
               {/* Divisor */}
               {bioSupported && (
                 <>
-                  <div className="d-flex align-items-center gap-3 my-4">
+                  <div className="flex items-center gap-3 my-4">
                     <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #E2E8F0)' }} />
                     <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500, whiteSpace: 'nowrap' }}>
                       o continúa con

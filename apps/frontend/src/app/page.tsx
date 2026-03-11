@@ -4,33 +4,33 @@ import Link from 'next/link';
 
 export default function LandingPage() {
   return (
-    <main className="container-fluid p-0 vh-100 bg-white d-flex flex-column">
+    <main className="container-fluid p-0 h-screen bg-white flex flex-col">
       {/* Navbar con estilo corporativo */}
-      <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm py-3">
+      <nav className="navbar navbar-expand-lg navbar-light bg-white border-b shadow-sm py-3">
         <div className="container">
-          <span className="navbar-brand fw-bold text-primary fs-3">ChronoWork</span>
-          <Link href="/login" className="btn btn-primary fw-bold px-4 rounded-pill">
+          <span className="navbar-brand font-bold text-chrono-blue text-2xl">ChronoWork</span>
+          <Link href="/login" className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none font-bold px-4 rounded-full">
             Acceso Empleados
           </Link>
         </div>
       </nav>
 
       {/* Hero Section centralizado */}
-      <div className="container flex-grow-1 d-flex align-items-center justify-content-center text-center">
-        <div className="row justify-content-center">
+      <div className="container flex-grow flex items-center justify-center text-center">
+        <div className="row justify-center">
           <div className="col-lg-10">
-            <h1 className="display-1 fw-bold text-dark mb-4">
-              Cada segundo <span className="text-primary">cuenta</span>.
+            <h1 className="text-7xl font-bold text-navy mb-4">
+              Cada segundo <span className="text-chrono-blue">cuenta</span>.
             </h1>
-            <p className="lead text-secondary mb-5 fs-4 px-md-5">
+            <p className="lead text-slate-500 mb-6 text-xl px-md-5">
               La plataforma de registro de jornada diseñada para garantizar la 
               <strong> integridad del dato</strong>, la transparencia y el cumplimiento legal.
             </p>
-            <div className="d-flex justify-content-center gap-3">
-              <Link href="/login" className="btn btn-action btn-lg px-5 py-3 shadow hover-scale">
+            <div className="flex justify-center gap-3">
+              <Link href="/login" className="btn btn-action btn-lg px-6 py-3 shadow-md hover-scale">
                 Comenzar Fichaje
               </Link>
-              <button className="btn btn-outline-secondary btn-lg px-5 py-3">
+              <button className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer btn-lg px-6 py-3">
                 Saber más
               </button>
             </div>
@@ -39,8 +39,8 @@ export default function LandingPage() {
       </div>
 
       {/* Footer minimalista */}
-      <footer className="py-4 border-top bg-light text-center">
-        <small className="text-muted">© 2026 ChronoWork - Sistema de Integridad Horaria</small>
+      <footer className="py-4 border-t bg-gray-50 text-center">
+        <small className="text-slate-400">© 2026 ChronoWork - Sistema de Integridad Horaria</small>
       </footer>
     </main>
   );
