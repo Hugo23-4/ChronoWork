@@ -1,20 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import AdminMobileHeader from './AdminMobileHeader';
 import CreateSedeModal from '@/components/admin/CreateSedeModal';
 import SedeListModal from '@/components/admin/SedeListModal';
+import { Users, AlertCircle, Clock, Hourglass, Building2, Plus, List, Loader2 } from 'lucide-react';
 
-// Carga dinámica del mapa (Leaflet no soporta SSR)
 const AdminLocationMap = dynamic(() => import('@/components/admin/AdminLocationMap'), {
     ssr: false,
     loading: () => (
-        <div className="d-flex flex-column align-items-center justify-content-center h-100 bg-light rounded-4">
-            <div className="spinner-border text-primary mb-2" role="status"></div>
-            <small className="text-muted">Cargando mapa...</small>
+        <div className="flex flex-col items-center justify-center h-full bg-bg-subtle rounded-2xl">
+            <Loader2 className="w-6 h-6 text-chrono-blue animate-spin mb-2" />
+            <small className="text-slate-400">Cargando mapa...</small>
         </div>
     )
 });
@@ -51,16 +50,14 @@ export default function AdminView({ userName }: AdminViewProps) {
 
     const fetchDashboardData = async () => {
         try {
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const today = new Date().toISOString().split('T')[0];
 
-            // 1. ACTIVOS EN TURNO HOY (fichajes con hora_entrada hoy y sin hora_salida)
             const { count: activosHoy } = await supabase
                 .from('fichajes')
                 .select('*', { count: 'exact', head: true })
                 .eq('fecha', today)
                 .is('hora_salida', null);
 
-            // 2. RETRASOS HOY (fichajes donde hora_entrada > 09:00:00)
             const { data: fichajesHoy } = await supabase
                 .from('fichajes')
                 .select('hora_entrada')
@@ -68,9 +65,8 @@ export default function AdminView({ userName }: AdminViewProps) {
 
             let retrasosCount = 0;
             if (fichajesHoy) {
-                fichajesHoy.forEach((f: any) => {
+                fichajesHoy.forEach((f: Record<string, string>) => {
                     try {
-                        // Parsear hora_entrada (puede ser ISO o HH:MM:SS)
                         let horaEntrada: Date;
                         if (f.hora_entrada.includes('T') || f.hora_entrada.includes('Z')) {
                             horaEntrada = new Date(f.hora_entrada);
@@ -79,32 +75,26 @@ export default function AdminView({ userName }: AdminViewProps) {
                             horaEntrada = new Date();
                             horaEntrada.setHours(hours, minutes, 0, 0);
                         }
-
-                        // Comparar con 09:00 (consideramos retraso si entrada > 09:00)
                         const limite = new Date();
                         limite.setHours(9, 0, 0, 0);
-
                         if (horaEntrada > limite) {
                             retrasosCount++;
                         }
-                    } catch (err) {
-                        console.error('Error parsing hora_entrada:', err);
+                    } catch {
+                        // Skip invalid entries
                     }
                 });
             }
 
-            // 3. SOLICITUDES PENDIENTES
             const { count: solicitudesPendientes } = await supabase
                 .from('solicitudes')
                 .select('*', { count: 'exact', head: true })
                 .eq('estado', 'pendiente');
 
-            // 4. TOTAL DE EMPLEADOS
             const { count: totalEmpleados } = await supabase
                 .from('empleados_info')
                 .select('*', { count: 'exact', head: true });
 
-            // 5. ÚLTIMAS SOLICITUDES PARA ACTIVIDAD RECIENTE
             const { data: ultimasSolicitudes } = await supabase
                 .from('solicitudes')
                 .select('*, empleados_info(nombre_completo)')
@@ -119,25 +109,23 @@ export default function AdminView({ userName }: AdminViewProps) {
                 pendientes: solicitudesPendientes || 0
             });
 
-            // Formatear actividad reciente
-            const actividadFormateada: ActivityItem[] = (ultimasSolicitudes || []).map((sol: any) => ({
-                id: sol.id,
-                tipo: 'solicitud',
+            const actividadFormateada: ActivityItem[] = (ultimasSolicitudes || []).map((sol: Record<string, unknown>) => ({
+                id: sol.id as string,
+                tipo: 'solicitud' as const,
                 titulo: sol.tipo === 'vacaciones' ? 'Solicitud de Vacaciones' : 'Solicitud de Baja',
-                descripcion: `${sol.empleados_info?.nombre_completo || 'Empleado'}: ${sol.tipo}`,
-                tiempo: formatTiempo(sol.created_at),
-                color: sol.estado === 'pendiente' ? 'bg-warning' : sol.estado === 'aprobado' ? 'bg-success' : 'bg-secondary'
+                descripcion: `${(sol.empleados_info as Record<string, string>)?.nombre_completo || 'Empleado'}: ${sol.tipo}`,
+                tiempo: formatTiempo(sol.created_at as string),
+                color: sol.estado === 'pendiente' ? 'bg-amber-500' : sol.estado === 'aprobado' ? 'bg-emerald-500' : 'bg-gray-400'
             }));
 
             setActividad(actividadFormateada);
         } catch (error) {
-            console.error('❌ Error fetching dashboard data:', error);
+            console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    // Formatear tiempo relativo
     const formatTiempo = (fecha: string) => {
         const ahora = new Date();
         const fechaSol = new Date(fecha);
@@ -151,169 +139,146 @@ export default function AdminView({ userName }: AdminViewProps) {
         return `Hace ${diffDias}d`;
     };
 
+    const statCards = [
+        {
+            label: 'ACTIVOS HOY',
+            value: stats.activos,
+            subtext: 'En turno activo',
+            icon: Users,
+            subIcon: Users,
+            gradient: 'from-emerald-500 to-emerald-600',
+        },
+        {
+            label: 'RETRASOS HOY',
+            value: stats.alertas,
+            subtext: 'Entraron tarde',
+            icon: AlertCircle,
+            subIcon: Clock,
+            gradient: 'from-red-500 to-red-600',
+        },
+        {
+            label: 'PENDIENTES',
+            value: stats.pendientes,
+            subtext: 'Solicitudes',
+            icon: Hourglass,
+            subIcon: Clock,
+            gradient: 'from-blue-500 to-blue-600',
+            hideOnMobile: true,
+        },
+        {
+            label: 'EQUIPO TOTAL',
+            value: stats.total,
+            subtext: 'Empleados',
+            icon: Building2,
+            subIcon: Users,
+            gradient: 'from-slate-800 to-navy',
+            hideOnMobile: true,
+        },
+    ];
+
     return (
-        <div className="fade-in-up pb-5">
+        <div className="animate-fade-up pb-6">
 
             {/* HEADER MÓVIL */}
             <AdminMobileHeader />
 
             {/* HEADER DESKTOP */}
-            <div className="d-flex justify-content-between align-items-end mb-4">
+            <div className="flex justify-between items-end mb-4">
                 <div>
-                    <h6 className="text-primary fw-bold text-uppercase small mb-1 tracking-wide">Estado Actual</h6>
-                    <h2 className="fw-bold text-dark mb-0">Hola, {userName || 'Admin'}</h2>
+                    <h6 className="text-chrono-blue font-bold uppercase text-xs mb-1 tracking-wide">Estado Actual</h6>
+                    <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)]">Hola, {userName || 'Admin'}</h2>
                 </div>
-                <div className="d-none d-lg-block">
-                    <span className="badge bg-light text-secondary border px-3 py-2 rounded-pill">
+                <div className="hidden lg:block">
+                    <span className="bg-bg-subtle text-slate-500 border border-gray-200 px-3 py-2 rounded-full text-sm">
                         {new Date().toLocaleDateString('es-ES', { dateStyle: 'long' })}
                     </span>
                 </div>
             </div>
 
-            {/* ESTADÍSTICAS - Mejorado con gradientes y animaciones */}
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4">
-
-                {/* Card 1: Activos con gradiente verde */}
-                <div className="col">
-                    <div className="card h-100 border-0 shadow rounded-4 p-3 position-relative overflow-hidden"
-                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', transition: 'transform 0.3s ease' }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                        <h6 className="text-white small fw-bold mb-2 opacity-90">ACTIVOS HOY</h6>
-                        <div className="d-flex align-items-baseline gap-1">
-                            <span className="display-4 fw-bold text-white">
-                                {loading ? '...' : stats.activos}
-                            </span>
+            {/* ESTADÍSTICAS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                {statCards.map((card) => {
+                    const DecorIcon = card.icon;
+                    const SubIcon = card.subIcon;
+                    return (
+                        <div
+                            key={card.label}
+                            className={`${card.hideOnMobile ? 'hidden lg:block' : ''}`}
+                        >
+                            <div
+                                className={`relative overflow-hidden rounded-2xl p-4 shadow-md bg-gradient-to-br ${card.gradient} hover:-translate-y-1 transition-transform duration-300 cursor-default`}
+                            >
+                                <h6 className="text-white/90 text-xs font-bold mb-2 uppercase tracking-wide">{card.label}</h6>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-5xl font-bold text-white">
+                                        {loading ? '...' : card.value}
+                                    </span>
+                                </div>
+                                <small className="text-white font-bold flex items-center gap-1 mt-2">
+                                    <SubIcon className="w-3.5 h-3.5" />
+                                    {card.subtext}
+                                </small>
+                                {/* Icono decorativo */}
+                                <DecorIcon className="absolute -right-3 -bottom-3 w-20 h-20 text-white/10" />
+                            </div>
                         </div>
-                        <small className="text-white fw-bold d-flex align-items-center gap-1 mt-2">
-                            <i className="bi bi-people-fill"></i>
-                            En turno activo
-                        </small>
-                        {/* Icono decorativo */}
-                        <i className="bi bi-person-check-fill position-absolute opacity-10"
-                            style={{ fontSize: '5rem', right: '-20px', bottom: '-20px' }}></i>
-                    </div>
-                </div>
-
-                {/* Card 2: Alertas con gradiente rojo */}
-                <div className="col">
-                    <div className="card h-100 border-0 shadow rounded-4 p-3 position-relative overflow-hidden"
-                        style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', transition: 'transform 0.3s ease' }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                        <h6 className="text-white small fw-bold mb-2 opacity-90">RETRASOS HOY</h6>
-                        <div className="d-flex align-items-baseline gap-1">
-                            <span className="display-4 fw-bold text-white">
-                                {loading ? '...' : stats.alertas}
-                            </span>
-                        </div>
-                        <small className="text-white fw-bold d-flex align-items-center gap-1 mt-2">
-                            <i className="bi bi-clock-history"></i>
-                            Entraron tarde
-                        </small>
-                        <i className="bi bi-exclamation-circle-fill position-absolute opacity-10"
-                            style={{ fontSize: '5rem', right: '-20px', bottom: '-20px' }}></i>
-                    </div>
-                </div>
-
-                {/* Card 3: Pendientes con gradiente azul (solo desktop) */}
-                <div className="col d-none d-lg-block">
-                    <div className="card h-100 border-0 shadow rounded-4 p-3 position-relative overflow-hidden"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', transition: 'transform 0.3s ease' }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                        <h6 className="text-white small fw-bold mb-2 opacity-90">PENDIENTES</h6>
-                        <div className="d-flex align-items-baseline gap-1">
-                            <span className="display-4 fw-bold text-white">
-                                {loading ? '...' : stats.pendientes}
-                            </span>
-                        </div>
-                        <small className="text-white fw-bold d-flex align-items-center gap-1 mt-2">
-                            <i className="bi bi-clock-history"></i>
-                            Solicitudes
-                        </small>
-                        <i className="bi bi-hourglass-split position-absolute opacity-10"
-                            style={{ fontSize: '5rem', right: '-20px', bottom: '-20px' }}></i>
-                    </div>
-                </div>
-
-                {/* Card 4: Total con gradiente oscuro (solo desktop) */}
-                <div className="col d-none d-lg-block">
-                    <div className="card h-100 border-0 shadow rounded-4 p-3 position-relative overflow-hidden"
-                        style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', transition: 'transform 0.3s ease' }}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-                        <h6 className="text-white small fw-bold mb-2 opacity-90">EQUIPO TOTAL</h6>
-                        <div className="d-flex align-items-baseline gap-1">
-                            <span className="display-4 fw-bold text-white">
-                                {loading ? '...' : stats.total}
-                            </span>
-                        </div>
-                        <small className="text-white fw-bold d-flex align-items-center gap-1 mt-2">
-                            <i className="bi bi-people"></i>
-                            Empleados
-                        </small>
-                        <i className="bi bi-building position-absolute opacity-10"
-                            style={{ fontSize: '5rem', right: '-20px', bottom: '-20px' }}></i>
-                    </div>
-                </div>
+                    );
+                })}
             </div>
 
             {/* --- MAPA Y ACTIVIDAD --- */}
-            <div className="row g-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
                 {/* MAPA */}
-                <div className="col-12 col-lg-8">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h5 className="fw-bold mb-0">Ubicación de Personal</h5>
-                        <div className="d-flex gap-2">
+                <div className="lg:col-span-2">
+                    <div className="flex justify-between items-center mb-3">
+                        <h5 className="font-bold text-lg font-[family-name:var(--font-jakarta)]">Ubicación de Personal</h5>
+                        <div className="flex gap-2">
                             <button
                                 onClick={() => setShowCreateSedeModal(true)}
-                                className="btn btn-primary btn-sm rounded-pill d-flex align-items-center gap-2 px-3"
+                                className="bg-navy text-white text-sm rounded-full flex items-center gap-2 px-3 py-1.5 border-none cursor-pointer hover:bg-slate-dark transition-colors font-medium"
                             >
-                                <i className="bi bi-plus-lg"></i>
-                                <span className="d-none d-md-inline">Nueva Sede</span>
+                                <Plus className="w-4 h-4" />
+                                <span className="hidden md:inline">Nueva Sede</span>
                             </button>
                             <button
                                 onClick={() => setShowSedeListModal(true)}
-                                className="btn btn-outline-secondary btn-sm rounded-pill d-flex align-items-center gap-2 px-3"
+                                className="bg-white text-navy text-sm rounded-full flex items-center gap-2 px-3 py-1.5 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors font-medium"
                             >
-                                <i className="bi bi-list"></i>
-                                <span className="d-none d-md-inline">Ver Todas</span>
+                                <List className="w-4 h-4" />
+                                <span className="hidden md:inline">Ver Todas</span>
                             </button>
                         </div>
                     </div>
-                    <div className="card border-0 shadow-sm rounded-4 overflow-hidden position-relative" style={{ height: '320px' }}>
+                    <div className="bg-white border-none shadow-sm rounded-2xl overflow-hidden relative h-80">
                         <AdminLocationMap />
                     </div>
                 </div>
 
                 {/* ACTIVIDAD */}
-                <div className="col-12 col-lg-4">
-                    <h5 className="fw-bold mb-3">Actividad Reciente</h5>
-                    <div className="d-flex flex-column gap-3">
+                <div>
+                    <h5 className="font-bold text-lg mb-3 font-[family-name:var(--font-jakarta)]">Actividad Reciente</h5>
+                    <div className="flex flex-col gap-3">
 
                         {loading ? (
                             <div className="text-center py-4">
-                                <div className="spinner-border spinner-border-sm text-primary" role="status">
-                                    <span className="visually-hidden">Cargando...</span>
-                                </div>
+                                <Loader2 className="w-5 h-5 text-chrono-blue animate-spin mx-auto" />
                             </div>
                         ) : actividad.length === 0 ? (
-                            <div className="card border-0 shadow-sm rounded-4 p-3 bg-white text-center">
-                                <small className="text-muted">No hay actividad reciente</small>
+                            <div className="bg-white shadow-sm rounded-2xl p-3 text-center border-none">
+                                <small className="text-slate-400">No hay actividad reciente</small>
                             </div>
                         ) : (
                             actividad.map((item) => (
-                                <div key={item.id} className="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                                    <div className="d-flex gap-3">
+                                <div key={item.id} className="bg-white shadow-sm rounded-2xl p-3 border-none hover:shadow-md transition-shadow">
+                                    <div className="flex gap-3">
                                         <div className="mt-2">
-                                            <span className={`d-block rounded-circle ${item.color}`} style={{ width: '10px', height: '10px' }}></span>
+                                            <span className={`block rounded-full w-2.5 h-2.5 ${item.color}`} />
                                         </div>
                                         <div>
-                                            <h6 className="fw-bold mb-0 text-dark">{item.titulo}</h6>
-                                            <p className="text-muted small mb-0">{item.descripcion}</p>
-                                            <small className="text-secondary opacity-75" style={{ fontSize: '11px' }}>{item.tiempo}</small>
+                                            <h6 className="font-bold text-navy text-sm m-0">{item.titulo}</h6>
+                                            <p className="text-slate-400 text-xs m-0">{item.descripcion}</p>
+                                            <small className="text-slate-300 text-[11px]">{item.tiempo}</small>
                                         </div>
                                     </div>
                                 </div>

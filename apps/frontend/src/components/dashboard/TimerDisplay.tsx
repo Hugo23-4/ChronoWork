@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import ReflectiveCard from '@/components/ui/ReflectiveCard';
+import PausaControl from '@/components/dashboard/PausaControl';
+import { cn } from '@/lib/utils';
 
 interface TimerDisplayProps {
   userId: string;
   onStatusChange?: () => void;
 }
 
-// Utilidad: Calcular distancia (Haversine)
 function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371e3;
   const dLat = deg2rad(lat2 - lat1);
@@ -31,6 +32,7 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [currentFichajeId, setCurrentFichajeId] = useState<string | undefined>();
 
   const [locationError, setLocationError] = useState<string | null>(null);
   const [blockingError, setBlockingError] = useState<string | null>(null);
@@ -52,7 +54,7 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
   const checkCurrentStatus = async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('fichajes')
         .select('*')
         .eq('empleado_id', userId)
@@ -63,15 +65,12 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
         .maybeSingle();
 
       if (data && data.hora_entrada) {
-        // hora_entrada puede ser "HH:MM:SS" o un timestamp completo
-        // Intentamos parsear ambos formatos
+        setCurrentFichajeId(data.id);
         let start: Date;
 
         if (data.hora_entrada.includes('T') || data.hora_entrada.includes('Z')) {
-          // Es un timestamp ISO completo
           start = new Date(data.hora_entrada);
         } else {
-          // Es solo hora "HH:MM:SS"
           const [hours, minutes, seconds] = data.hora_entrada.split(':').map(Number);
           start = new Date();
           start.setHours(hours, minutes, seconds || 0, 0);
@@ -82,15 +81,13 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
           setStartTime(start.getTime());
           setElapsed(Date.now() - start.getTime());
         } else {
-          console.warn('Fecha inválida en fichaje:', data.hora_entrada);
           setStatus('fuera');
         }
       } else {
         setStatus('fuera');
         setElapsed(0);
       }
-    } catch (e) {
-      console.error("Error verificando estado:", e);
+    } catch {
       setStatus('fuera');
     }
   };
@@ -121,7 +118,6 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
         return;
       }
 
-      // Obtener GPS
       let lat = 0;
       let lng = 0;
 
@@ -129,20 +125,18 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
         const pos = await getPosition();
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-      } catch (geoError: any) {
-        console.error("Error GPS:", geoError);
-
+      } catch (geoError: unknown) {
+        const code = (geoError as GeolocationPositionError)?.code;
         let mensaje = "❌ Error desconocido de ubicación.";
-        if (geoError.code === 1) mensaje = "🔒 Permiso denegado. Permite la ubicación en el navegador.";
-        else if (geoError.code === 2) mensaje = "📡 Ubicación no disponible. No hay señal.";
-        else if (geoError.code === 3) mensaje = "⏱️ Tiempo agotado. Inténtalo de nuevo.";
+        if (code === 1) mensaje = "🔒 Permiso denegado. Permite la ubicación en el navegador.";
+        else if (code === 2) mensaje = "📡 Ubicación no disponible. No hay señal.";
+        else if (code === 3) mensaje = "⏱️ Tiempo agotado. Inténtalo de nuevo.";
 
         setBlockingError(mensaje);
         setLoading(false);
         return;
       }
 
-      // Geovalla
       const { data: sedes } = await supabase.from('sedes').select('*').eq('activo', true);
 
       if (sedes && sedes.length > 0) {
@@ -171,10 +165,9 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
         setLocationError("⚠️ Fichaje permitido (Sin sedes activas)");
       }
 
-      // Guardar - Formato compatible con tu BD
       const now = new Date();
-      const fechaActual = now.toISOString().split('T')[0]; // YYYY-MM-DD
-      const horaActual = now.toISOString(); // Timestamp completo ISO
+      const fechaActual = now.toISOString().split('T')[0];
+      const horaActual = now.toISOString();
 
       const { error } = await supabase.from('fichajes').insert({
         empleado_id: userId,
@@ -192,9 +185,9 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
       setStatus(nuevoEstado);
       if (onStatusChange) onStatusChange();
 
-    } catch (error: any) {
-      console.error('Error en fichaje:', error);
-      setBlockingError(`Error: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Error desconocido';
+      setBlockingError(`Error: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -202,21 +195,19 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
 
   const registrarSalida = async () => {
     try {
-      const now = new Date();
-      const horaActual = now.toISOString(); // Timestamp completo ISO
+      const horaActual = new Date().toISOString();
 
-      // Obtener ubicación de salida
       let lat = null;
       let lng = null;
       try {
         const pos = await getPosition();
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-      } catch (e) {
-        console.warn('No se pudo obtener ubicación de salida');
+      } catch {
+        // No se pudo obtener ubicación de salida
       }
 
-      const updateData: any = { hora_salida: horaActual };
+      const updateData: Record<string, unknown> = { hora_salida: horaActual };
       if (lat && lng) {
         updateData.latitud_salida = lat;
         updateData.longitud_salida = lng;
@@ -235,8 +226,7 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
       setElapsed(0);
       setStatus('fuera');
       if (onStatusChange) onStatusChange();
-    } catch (error: any) {
-      console.error('Error registrando salida:', error);
+    } catch (error: unknown) {
       throw error;
     }
   };
@@ -250,39 +240,44 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
   };
 
   return (
-    <ReflectiveCard className="w-100 h-100">
-      <div className="card border-0 rounded-4 overflow-hidden text-center position-relative bg-transparent shadow-none">
-        <div className="card-body p-4 p-lg-5">
+    <ReflectiveCard className="w-full h-full">
+      <div className="rounded-2xl overflow-hidden text-center relative bg-transparent">
+        <div className="p-4 lg:p-8">
 
-          <h2 className="fw-bold mb-1 text-dark">
+          <h2 className="font-bold mb-1 text-navy text-xl font-[family-name:var(--font-jakarta)]">
             {status === 'fuera' ? 'Hola, Compañero 👋' : '¡A por todas! 🚀'}
           </h2>
-          <p className="text-secondary mb-4">
+          <p className="text-slate-400 mb-4">
             {status === 'fuera' ? 'Registra tu entrada para comenzar.' : 'Tu jornada está en curso.'}
           </p>
 
-          <div className="display-1 fw-bold font-monospace my-4 text-dark tracking-tight">
+          <div className="text-6xl font-bold font-mono my-4 text-navy tracking-tight">
             {formatTime(elapsed)}
           </div>
 
           {blockingError && (
-            <div className="alert alert-danger border-0 bg-danger bg-opacity-10 py-3 small mb-4 fw-bold">
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl py-3 px-4 text-sm mb-4 font-bold">
               {blockingError}
             </div>
           )}
 
           {locationError && (
-            <div className="alert alert-warning border-0 bg-warning bg-opacity-10 py-2 small mb-3">
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-xl py-2 px-4 text-sm mb-3">
               {locationError}
             </div>
           )}
 
-          <div className="d-grid gap-2 col-md-8 mx-auto">
+          <div className="max-w-md mx-auto">
             {status === 'fuera' ? (
               <button
                 onClick={() => handleFichaje('trabajando')}
                 disabled={loading}
-                className="btn btn-dark btn-lg rounded-pill py-3 fw-bold shadow-lg hover-scale transition-all"
+                className={cn(
+                  'w-full py-3.5 rounded-full font-bold text-base shadow-lg transition-all cursor-pointer border-none',
+                  loading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-navy text-white hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0'
+                )}
               >
                 {loading ? 'Ubicando...' : 'REGISTRAR ENTRADA'}
               </button>
@@ -290,16 +285,32 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
               <button
                 onClick={() => handleFichaje('fuera')}
                 disabled={loading}
-                className="btn btn-outline-danger btn-lg rounded-pill py-3 fw-bold"
+                className={cn(
+                  'w-full py-3.5 rounded-full font-bold text-base transition-all cursor-pointer',
+                  loading
+                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                    : 'bg-transparent text-red-500 border-2 border-red-500 hover:bg-red-50'
+                )}
               >
                 {loading ? 'Procesando...' : 'REGISTRAR SALIDA'}
               </button>
             )}
           </div>
 
+          {/* Pausas */}
+          <div className="max-w-md mx-auto">
+            <PausaControl userId={userId} isWorking={status === 'trabajando'} fichajeId={currentFichajeId} />
+          </div>
+
         </div>
-        <div className={`progress mt-4 rounded-0`} style={{ height: '6px' }}>
-          <div className={`progress-bar ${status === 'trabajando' ? 'bg-success progress-bar-striped progress-bar-animated' : 'bg-secondary'}`} style={{ width: '100%' }}></div>
+        {/* Progress bar */}
+        <div className="h-1.5">
+          <div
+            className={cn(
+              'h-full w-full transition-colors',
+              status === 'trabajando' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'
+            )}
+          />
         </div>
       </div>
     </ReflectiveCard>

@@ -137,10 +137,10 @@ export default function TurnosPage() {
     name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="anim-fade-up pb-5">
+    <div className="anim-fade-up pb-6">
 
       {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-start align-items-md-center mb-4 flex-column flex-md-row gap-3">
+      <div className="flex justify-between items-start align-items-md-center mb-4 flex-col flex-md-row gap-3">
         <div>
           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Gestión</p>
           <h2 style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: 4 }}>
@@ -150,7 +150,7 @@ export default function TurnosPage() {
             Configura los horarios semanales de tu equipo. Haz clic en cualquier celda para asignar o editar un turno.
           </p>
         </div>
-        <div className="d-flex gap-2">
+        <div className="flex gap-2">
           {['mañana', 'tarde', 'completo', 'libre'].map((tipo) => {
             const c = TURNO_COLORS[tipo];
             return (
@@ -179,8 +179,8 @@ export default function TurnosPage() {
 
       {/* TABLA */}
       {loading ? (
-        <div className="d-flex justify-content-center py-5">
-          <div className="spinner-border" style={{ color: '#2563EB', width: 36, height: 36, borderWidth: 3 }} />
+        <div className="flex justify-center py-6">
+          <div className="animate-spin" style={{ color: '#2563EB', width: 36, height: 36, borderWidth: 3 }} />
         </div>
       ) : empleados.length === 0 ? (
         <div style={{
@@ -320,12 +320,12 @@ export default function TurnosPage() {
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Hora entrada</label>
                   <input type="time" value={modalInicio} onChange={e => setModalInicio(e.target.value)}
-                    className="form-control" style={{ fontWeight: 600 }} />
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm" style={{ fontWeight: 600 }} />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Hora salida</label>
                   <input type="time" value={modalFin} onChange={e => setModalFin(e.target.value)}
-                    className="form-control" style={{ fontWeight: 600 }} />
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm" style={{ fontWeight: 600 }} />
                 </div>
               </div>
             )}
@@ -353,7 +353,7 @@ export default function TurnosPage() {
                 color: 'white', cursor: saving ? 'wait' : 'pointer', fontWeight: 700, fontSize: '0.875rem',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
-                {saving ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} /> Guardando...</> : 'Guardar turno'}
+                {saving ? <><span className="animate-spin animate-spin w-4 h-4" style={{ width: 14, height: 14, borderWidth: 2 }} /> Guardando...</> : 'Guardar turno'}
               </button>
             </div>
           </div>

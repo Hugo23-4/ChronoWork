@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileMenu from '@/components/admin/AdminMobileMenu';
+import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
@@ -33,7 +34,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             setIsAdmin(true);
             setLoading(false);
         } else {
-            // No es admin — redirigir sin dejar el spinner colgado
             setLoading(false);
             router.push('/dashboard');
         }
@@ -41,34 +41,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (loading) {
         return (
-            <div className="min-vh-100 d-flex align-items-center justify-content-center" style={{ background: '#F8FAFC' }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div className="spinner-border" style={{ color: '#2563EB', width: 40, height: 40, borderWidth: 3 }} role="status" />
-                    <p style={{ color: '#94A3B8', fontSize: '0.875rem', marginTop: 12 }}>Verificando acceso...</p>
+            <div className="min-h-screen flex items-center justify-center bg-bg-body">
+                <div className="text-center">
+                    <Loader2 className="w-10 h-10 text-chrono-blue animate-spin mx-auto" />
+                    <p className="text-slate-400 text-sm mt-3">Verificando acceso...</p>
                 </div>
             </div>
         );
     }
 
-
     if (!isAdmin) return null;
 
     return (
-        <div className="d-flex vh-100 overflow-hidden">
+        <div className="flex h-screen overflow-hidden">
             {/* Sidebar Desktop */}
-            <div className="d-none d-lg-block">
+            <div className="hidden lg:block">
                 <AdminSidebar />
             </div>
 
             {/* Contenido Principal */}
-            <main className="flex-grow-1 overflow-auto bg-light position-relative">
-                <div className="p-3 p-md-4">
+            <main className="flex-grow overflow-auto bg-bg-body relative">
+                <div className="p-3 md:p-4">
                     {children}
                 </div>
             </main>
 
             {/* Menu Mobile Admin */}
-            <div className="d-lg-none">
+            <div className="lg:hidden">
                 <AdminMobileMenu />
             </div>
         </div>

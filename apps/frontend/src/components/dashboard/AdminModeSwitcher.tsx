@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { ShieldCheck } from 'lucide-react';
 
 export default function AdminModeSwitcher() {
     const router = useRouter();
@@ -35,32 +36,19 @@ export default function AdminModeSwitcher() {
             {/* Botón Desktop - Bottom Right */}
             <button
                 onClick={() => router.push('/admin')}
-                className="d-none d-lg-flex position-fixed btn btn-dark shadow-lg rounded-pill px-4 py-2 fw-bold align-items-center gap-2"
-                style={{
-                    bottom: '24px',
-                    right: '24px',
-                    zIndex: 1050
-                }}
+                className="hidden lg:flex fixed bottom-6 right-6 z-[1050] bg-navy text-white shadow-lg rounded-full px-4 py-2.5 font-bold items-center gap-2 border-none cursor-pointer hover:bg-slate-dark hover:-translate-y-0.5 hover:shadow-xl transition-all"
             >
-                <i className="bi bi-shield-lock-fill"></i>
+                <ShieldCheck className="w-4 h-4" />
                 Panel Admin
             </button>
 
             {/* Botón Mobile - Top Right pequeño y discreto */}
             <button
                 onClick={() => router.push('/admin')}
-                className="d-lg-none position-fixed btn btn-dark shadow-sm rounded-circle d-flex align-items-center justify-content-center"
-                style={{
-                    top: '12px',
-                    right: '12px',
-                    zIndex: 1050,
-                    width: '40px',
-                    height: '40px',
-                    padding: 0
-                }}
+                className="lg:hidden fixed top-3 right-3 z-[1050] bg-navy text-white shadow-sm rounded-full w-10 h-10 flex items-center justify-center border-none cursor-pointer hover:bg-slate-dark transition-colors"
                 title="Panel Admin"
             >
-                <i className="bi bi-shield-fill-check"></i>
+                <ShieldCheck className="w-4 h-4" />
             </button>
         </>
     );

@@ -21,10 +21,7 @@ export default function AdminRequestsManager() {
     try {
       let query = supabase
         .from('solicitudes')
-        .select(`
-          *,
-          empleados_info ( nombre_completo, dni )
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       if (filter !== 'todos') {
@@ -39,7 +36,26 @@ export default function AdminRequestsManager() {
         setError(`Error BD: ${queryError.message}`);
         console.error('Error fetching solicitudes:', queryError);
       } else {
-        setRequests(data || []);
+        // Batch fetch employee names (empleados_info is a view, can't FK embed)
+        const empIds = [...new Set((data || []).map((r: any) => r.empleado_id).filter(Boolean))];
+        const empMap: Record<string, { nombre_completo: string; dni: string }> = {};
+
+        if (empIds.length > 0) {
+          const { data: emps } = await supabase
+            .from('empleados_info')
+            .select('id, nombre_completo, dni')
+            .in('id', empIds);
+          (emps || []).forEach((e: any) => {
+            empMap[e.id] = { nombre_completo: e.nombre_completo, dni: e.dni };
+          });
+        }
+
+        const enriched = (data || []).map((r: any) => ({
+          ...r,
+          empleados_info: empMap[r.empleado_id] || { nombre_completo: 'Desconocido', dni: '' },
+        }));
+
+        setRequests(enriched);
         setTotalCount(count || 0);
         if (!data || data.length === 0) {
           setError(`No hay solicitudes${filter !== 'todos' ? ` en estado "${filter}"` : ''}. Es posible que no haya datos en la tabla.`);
@@ -68,67 +84,70 @@ export default function AdminRequestsManager() {
   };
 
   return (
-    <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div className="card border-0 shadow-sm rounded-2xl overflow-hidden">
 
       {/* HEADER */}
-      <div className="card-header bg-white p-4 border-bottom border-light">
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div className="p-4 border-b border-gray-100 bg-white p-4 border-b border-light">
+        <div className="flex flex-col flex-md-row justify-between align-items-md-center gap-3">
           <div>
-            <h5 className="fw-bold mb-1">Solicitudes del Personal</h5>
-            <small className="text-muted">
+            <h5 className="font-bold mb-1">Solicitudes del Personal</h5>
+            <small className="text-slate-400">
               {loading ? 'Cargando...' : error ? `⚠️ ${error}` : `✅ ${totalCount} solicitu${totalCount === 1 ? 'd' : 'des'} encontrada${totalCount === 1 ? '' : 's'}`}
             </small>
           </div>
           <div className="btn-group">
-            <button className={`btn btn-sm ${filter === 'todos' ? 'btn-dark' : 'btn-outline-secondary'}`} onClick={() => setFilter('todos')}>Todas</button>
-            <button className={`btn btn-sm ${filter === 'pendiente' ? 'btn-warning text-dark' : 'btn-outline-secondary'}`} onClick={() => setFilter('pendiente')}>Pendientes</button>
-            <button className={`btn btn-sm ${filter === 'aprobado' ? 'btn-success text-white' : 'btn-outline-secondary'}`} onClick={() => setFilter('aprobado')}>Aprobadas</button>
-            <button className={`btn btn-sm ${filter === 'rechazado' ? 'btn-danger text-white' : 'btn-outline-secondary'}`} onClick={() => setFilter('rechazado')}>Rechazadas</button>
+            <button className={`text-sm py-1.5 px-3 ${filter === 'todos' ? 'btn-dark' : 'btn-outline-secondary'}`} onClick={() => setFilter('todos')}>Todas</button>
+            <button className={`text-sm py-1.5 px-3 ${filter === 'pendiente' ? 'btn-warning text-navy' : 'btn-outline-secondary'}`} onClick={() => setFilter('pendiente')}>Pendientes</button>
+            <button className={`text-sm py-1.5 px-3 ${filter === 'aprobado' ? 'btn-success text-white' : 'btn-outline-secondary'}`} onClick={() => setFilter('aprobado')}>Aprobadas</button>
+            <button className={`text-sm py-1.5 px-3 ${filter === 'rechazado' ? 'btn-danger text-white' : 'btn-outline-secondary'}`} onClick={() => setFilter('rechazado')}>Rechazadas</button>
           </div>
         </div>
       </div>
 
       {/* TABLE DESKTOP */}
-      <div className="table-responsive d-none d-md-block">
-        <table className="table table-hover align-middle mb-0">
-          <thead className="bg-light">
+      <div className="table-responsive hidden md:block">
+        <table className="w-full table-hover align-middle mb-0">
+          <thead className="bg-gray-50">
             <tr>
-              <th className="ps-4 py-3 text-secondary small text-uppercase">Empleado</th>
-              <th className="py-3 text-secondary small text-uppercase">Tipo</th>
-              <th className="py-3 text-secondary small text-uppercase">Fechas</th>
-              <th className="py-3 text-secondary small text-uppercase">Archivo</th>
-              <th className="py-3 text-secondary small text-uppercase">Estado</th>
-              <th className="pe-4 py-3 text-end text-secondary small text-uppercase">Acciones</th>
+              <th className="ps-4 py-3 text-slate-500 text-sm uppercase">Empleado</th>
+              <th className="py-3 text-slate-500 text-sm uppercase">Tipo</th>
+              <th className="py-3 text-slate-500 text-sm uppercase">Fechas</th>
+              <th className="py-3 text-slate-500 text-sm uppercase">Archivo</th>
+              <th className="py-3 text-slate-500 text-sm uppercase">Estado</th>
+              <th className="pe-4 py-3 text-right text-slate-500 text-sm uppercase">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="text-center py-5">
-                <div className="spinner-border text-primary"></div>
+              <tr><td colSpan={6} className="text-center py-6">
+                <div className="animate-spin text-chrono-blue"></div>
               </td></tr>
             ) : requests.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-5">
-                <i className="bi bi-inbox fs-1 d-block mb-3 text-muted opacity-25"></i>
-                <p className="text-muted mb-2">{error || 'No hay solicitudes'}</p>
-                {!error && <small className="text-secondary">Las solicitudes aparecerán aquí cuando los empleados las creen</small>}
+              <tr><td colSpan={6} className="text-center py-6">
+                <i className="bi bi-inbox text-4xl block mb-3 text-slate-400 opacity-25"></i>
+                <p className="text-slate-400 mb-2">{error || 'No hay solicitudes'}</p>
+                {!error && <small className="text-slate-500">Las solicitudes aparecerán aquí cuando los empleados las creen</small>}
               </td></tr>
             ) : (
               requests.map((req) => (
                 <tr key={req.id}>
                   <td className="ps-4">
-                    <div className="fw-bold text-dark">{req.empleados_info?.nombre_completo || 'Desconocido'}</div>
-                    <small className="text-muted">{req.empleados_info?.dni}</small>
+                    <div className="font-bold text-navy">{req.empleados_info?.nombre_completo || 'Desconocido'}</div>
+                    <small className="text-slate-400">{req.empleados_info?.dni}</small>
                   </td>
 
                   <td>
-                    {req.tipo === 'vacaciones' ?
-                      <span className="badge bg-warning text-dark bg-opacity-25 border border-warning"><i className="bi bi-sun me-1"></i>Vacaciones</span> :
-                      <span className="badge bg-danger text-danger bg-opacity-10 border border-danger"><i className="bi bi-bandaid me-1"></i>Baja Médica</span>
-                    }
+                    {req.es_parcial ? (
+                      <span className="bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold text-white bg-opacity-75 border border-info"><i className="bi bi-clock mr-1"></i>Parcial ({req.horas_ausencia}h)</span>
+                    ) : req.tipo === 'vacaciones' ? (
+                      <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold text-navy bg-opacity-25 border border-warning"><i className="bi bi-sun mr-1"></i>Vacaciones</span>
+                    ) : (
+                      <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold text-red-500 bg-opacity-10 border border-danger"><i className="bi bi-bandaid mr-1"></i>Baja Médica</span>
+                    )}
                   </td>
 
                   <td>
-                    <small className="text-dark">
+                    <small className="text-navy">
                       {req.fecha_inicio && new Date(req.fecha_inicio).toLocaleDateString('es-ES')}
                       {req.fecha_fin && ` - ${new Date(req.fecha_fin).toLocaleDateString('es-ES')}`}
                     </small>
@@ -138,34 +157,34 @@ export default function AdminRequestsManager() {
                     {req.archivo_path ? (
                       <button
                         onClick={() => handleViewFile(req.archivo_path)}
-                        className="btn btn-sm btn-light rounded-pill"
+                        className="text-sm py-1.5 px-3 btn-light rounded-full"
                       >
-                        <i className="bi bi-file-earmark-pdf text-danger me-1"></i> Ver
+                        <i className="bi bi-file-earmark-pdf text-red-500 mr-1"></i> Ver
                       </button>
                     ) : (
-                      <span className="text-muted small">-</span>
+                      <span className="text-slate-400 text-sm">-</span>
                     )}
                   </td>
 
                   <td>
-                    {req.estado === 'pendiente' && <span className="badge bg-warning text-dark">Pendiente</span>}
-                    {req.estado === 'aprobado' && <span className="badge bg-success">Aprobado</span>}
-                    {req.estado === 'rechazado' && <span className="badge bg-danger">Rechazado</span>}
+                    {req.estado === 'pendiente' && <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold text-navy">Pendiente</span>}
+                    {req.estado === 'aprobado' && <span className="bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">Aprobado</span>}
+                    {req.estado === 'rechazado' && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">Rechazado</span>}
                   </td>
 
-                  <td className="pe-4 text-end">
+                  <td className="pe-4 text-right">
                     {req.estado === 'pendiente' && (
-                      <div className="d-flex gap-2 justify-content-end">
+                      <div className="flex gap-2 justify-end">
                         <button
                           onClick={() => updateStatus(req.id, 'aprobado')}
-                          className="btn btn-sm btn-success rounded-pill px-3"
+                          className="text-sm py-1.5 px-3 btn-success rounded-full px-3"
                           title="Aprobar"
                         >
                           <i className="bi bi-check-lg"></i>
                         </button>
                         <button
                           onClick={() => updateStatus(req.id, 'rechazado')}
-                          className="btn btn-sm btn-danger rounded-pill px-3"
+                          className="text-sm py-1.5 px-3 btn-danger rounded-full px-3"
                           title="Rechazar"
                         >
                           <i className="bi bi-x-lg"></i>
@@ -183,54 +202,54 @@ export default function AdminRequestsManager() {
       {/* CARDS MOBILE */}
       <div className="d-md-none p-3">
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary"></div>
+          <div className="text-center py-6">
+            <div className="animate-spin text-chrono-blue"></div>
           </div>
         ) : requests.length === 0 ? (
-          <div className="text-center py-5">
-            <i className="bi bi-inbox fs-1 d-block mb-3 text-muted opacity-25"></i>
-            <p className="text-muted mb-2">{error || 'No hay solicitudes'}</p>
-            {!error && <small className="text-secondary">Las solicitudes aparecerán aquí cuando los empleados las creen</small>}
+          <div className="text-center py-6">
+            <i className="bi bi-inbox text-4xl block mb-3 text-slate-400 opacity-25"></i>
+            <p className="text-slate-400 mb-2">{error || 'No hay solicitudes'}</p>
+            {!error && <small className="text-slate-500">Las solicitudes aparecerán aquí cuando los empleados las creen</small>}
           </div>
         ) : (
-          <div className="d-grid gap-3 pb-5">
+          <div className="grid gap-3 pb-6">
             {requests.map((req) => (
-              <div key={req.id} className="card border-0 shadow-sm rounded-4 p-3">
-                <div className="d-flex justify-content-between align-items-start mb-2">
+              <div key={req.id} className="card border-0 shadow-sm rounded-2xl p-3">
+                <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h6 className="fw-bold mb-0">{req.empleados_info?.nombre_completo || 'Desconocido'}</h6>
-                    <small className="text-muted">{req.empleados_info?.dni}</small>
+                    <h6 className="font-bold mb-0">{req.empleados_info?.nombre_completo || 'Desconocido'}</h6>
+                    <small className="text-slate-400">{req.empleados_info?.dni}</small>
                   </div>
-                  {req.estado === 'pendiente' && <span className="badge bg-warning text-dark">Pendiente</span>}
-                  {req.estado === 'aprobado' && <span className="badge bg-success">Aprobado</span>}
-                  {req.estado === 'rechazado' && <span className="badge bg-danger">Rechazado</span>}
+                  {req.estado === 'pendiente' && <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold text-navy">Pendiente</span>}
+                  {req.estado === 'aprobado' && <span className="bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">Aprobado</span>}
+                  {req.estado === 'rechazado' && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">Rechazado</span>}
                 </div>
 
                 <div className="mb-2">
                   {req.tipo === 'vacaciones' ?
-                    <span className="badge bg-warning text-dark"><i className="bi bi-sun me-1"></i>Vacaciones</span> :
-                    <span className="badge bg-danger"><i className="bi bi-bandaid me-1"></i>Baja</span>
+                    <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold text-navy"><i className="bi bi-sun mr-1"></i>Vacaciones</span> :
+                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-bold"><i className="bi bi-bandaid mr-1"></i>Baja</span>
                   }
                 </div>
 
-                <div className="small text-secondary mb-2">
+                <div className="text-sm text-slate-500 mb-2">
                   {req.fecha_inicio && new Date(req.fecha_inicio).toLocaleDateString('es-ES')}
                   {req.fecha_fin && ` - ${new Date(req.fecha_fin).toLocaleDateString('es-ES')}`}
                 </div>
 
                 {req.estado === 'pendiente' && (
-                  <div className="d-flex gap-2 mt-2">
+                  <div className="flex gap-2 mt-2">
                     <button
                       onClick={() => updateStatus(req.id, 'aprobado')}
-                      className="btn btn-sm btn-success rounded-pill flex-grow-1"
+                      className="text-sm py-1.5 px-3 btn-success rounded-full flex-grow"
                     >
-                      <i className="bi bi-check-lg me-1"></i> Aprobar
+                      <i className="bi bi-check-lg mr-1"></i> Aprobar
                     </button>
                     <button
                       onClick={() => updateStatus(req.id, 'rechazado')}
-                      className="btn btn-sm btn-danger rounded-pill flex-grow-1"
+                      className="text-sm py-1.5 px-3 btn-danger rounded-full flex-grow"
                     >
-                      <i className="bi bi-x-lg me-1"></i> Rechazar
+                      <i className="bi bi-x-lg mr-1"></i> Rechazar
                     </button>
                   </div>
                 )}

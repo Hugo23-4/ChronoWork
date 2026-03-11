@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 const LocationPicker = dynamic(() => import('@/components/admin/LocationPicker'), {
     ssr: false,
-    loading: () => <div className="d-flex justify-content-center"><div className="spinner-border text-primary"></div></div>
+    loading: () => <div className="flex justify-center"><div className="animate-spin text-chrono-blue"></div></div>
 });
 
 interface SedeListModalProps {
@@ -148,100 +148,100 @@ export default function SedeListModal({ isOpen, onClose }: SedeListModalProps) {
             ></div>
 
             {/* Modal */}
-            <div className="modal fade show d-block" style={{ zIndex: 1055 }} tabIndex={-1}>
-                <div className="modal-dialog modal-dialog-centered modal-xl">
-                    <div className="modal-content border-0 shadow-lg rounded-4">
+            <div className="modal fade show block" style={{ zIndex: 1055 }} tabIndex={-1}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-dialog-centered modal-xl">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto border-0 shadow-lg rounded-2xl">
 
                         {/* Header */}
-                        <div className="modal-header border-0 pb-2">
-                            <div className="d-flex align-items-center gap-2">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 border-0 pb-2">
+                            <div className="flex items-center gap-2">
                                 {(editMode === 'edit' || editMode === 'create') && (
                                     <button
-                                        className="btn btn-sm btn-light rounded-circle"
+                                        className="text-sm py-1.5 px-3 btn-light rounded-full"
                                         onClick={handleCancel}
                                     >
                                         <i className="bi bi-arrow-left"></i>
                                     </button>
                                 )}
-                                <h5 className="modal-title fw-bold text-dark mb-0">
-                                    <i className="bi bi-geo-alt-fill text-primary me-2"></i>
+                                <h5 className="font-bold text-lg text-navy font-bold text-navy mb-0">
+                                    <i className="bi bi-geo-alt-fill text-chrono-blue mr-2"></i>
                                     {editMode === 'create' ? 'Nuevo Centro' : editMode === 'edit' ? 'Editar Centro' : 'Centros de Trabajo'}
                                 </h5>
                             </div>
                             <button
                                 type="button"
-                                className="btn-close"
+                                className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-none text-xl"
                                 onClick={onClose}
                             ></button>
                         </div>
 
                         {/* Body */}
-                        <div className="modal-body px-4" style={{ minHeight: '500px', maxHeight: '70vh', overflowY: 'auto' }}>
+                        <div className="p-6 px-4" style={{ minHeight: '500px', maxHeight: '70vh', overflowY: 'auto' }}>
 
                             {/* LIST VIEW */}
                             {editMode === 'list' && (
                                 <>
                                     {loading ? (
-                                        <div className="text-center py-5">
-                                            <div className="spinner-border text-primary"></div>
-                                            <p className="text-muted mt-2 small">Cargando sedes...</p>
+                                        <div className="text-center py-6">
+                                            <div className="animate-spin text-chrono-blue"></div>
+                                            <p className="text-slate-400 mt-2 text-sm">Cargando sedes...</p>
                                         </div>
                                     ) : sedes.length === 0 ? (
-                                        <div className="text-center py-5">
-                                            <i className="bi bi-geo-alt fs-1 text-muted opacity-50"></i>
-                                            <h6 className="fw-bold mt-3">No hay centros creados</h6>
-                                            <p className="text-secondary small">Crea el primero con el botón "Nuevo Centro"</p>
+                                        <div className="text-center py-6">
+                                            <i className="bi bi-geo-alt text-4xl text-slate-400 opacity-50"></i>
+                                            <h6 className="font-bold mt-3">No hay centros creados</h6>
+                                            <p className="text-slate-500 text-sm">Crea el primero con el botón "Nuevo Centro"</p>
                                         </div>
                                     ) : (
-                                        <div className="row g-3">
+                                        <div className="row gap-3">
                                             {sedes.map((sede) => (
-                                                <div key={sede.id} className="col-md-6">
-                                                    <div className="card border-0 shadow-sm rounded-4 p-3 h-100">
-                                                        <div className="d-flex align-items-start gap-3">
+                                                <div key={sede.id} className="md:col-span-6">
+                                                    <div className="card border-0 shadow-sm rounded-2xl p-3 h-full">
+                                                        <div className="flex items-start gap-3">
                                                             {/* Icon */}
-                                                            <div className="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                                                            <div className="bg-chrono-blue bg-opacity-10 rounded-full flex items-center justify-center shrink-0"
                                                                 style={{ width: '48px', height: '48px' }}>
-                                                                <i className="bi bi-building-fill text-primary fs-5"></i>
+                                                                <i className="bi bi-building-fill text-chrono-blue text-lg"></i>
                                                             </div>
 
                                                             {/* Content */}
-                                                            <div className="flex-grow-1 min-w-0">
-                                                                <h6 className="fw-bold mb-1 text-dark">{sede.nombre}</h6>
+                                                            <div className="flex-grow min-w-0">
+                                                                <h6 className="font-bold mb-1 text-navy">{sede.nombre}</h6>
 
                                                                 {sede.direccion && (
-                                                                    <div className="d-flex align-items-center text-secondary small mb-2">
-                                                                        <i className="bi bi-pin-map me-1"></i>
-                                                                        <span className="text-truncate">{sede.direccion}</span>
+                                                                    <div className="flex items-center text-slate-500 text-sm mb-2">
+                                                                        <i className="bi bi-pin-map mr-1"></i>
+                                                                        <span className="truncate">{sede.direccion}</span>
                                                                     </div>
                                                                 )}
 
-                                                                <div className="d-flex align-items-center text-secondary small mb-2">
-                                                                    <i className="bi bi-geo me-1"></i>
-                                                                    <span className="font-monospace" style={{ fontSize: '0.7rem' }}>
+                                                                <div className="flex items-center text-slate-500 text-sm mb-2">
+                                                                    <i className="bi bi-geo mr-1"></i>
+                                                                    <span className="font-mono" style={{ fontSize: '0.7rem' }}>
                                                                         {sede.latitud?.toFixed(4)}, {sede.longitud?.toFixed(4)}
                                                                     </span>
                                                                 </div>
 
-                                                                <span className="badge bg-light text-dark border fw-normal rounded-pill px-3">
+                                                                <span className="bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-navy border font-normal rounded-full px-3">
                                                                     Radio: <strong>{sede.radio_metros}m</strong>
                                                                 </span>
                                                             </div>
 
                                                             {/* Actions */}
-                                                            <div className="d-flex flex-column gap-2">
+                                                            <div className="flex flex-col gap-2">
                                                                 <button
                                                                     onClick={() => handleEdit(sede)}
-                                                                    className="btn btn-sm btn-light rounded-circle"
+                                                                    className="text-sm py-1.5 px-3 btn-light rounded-full"
                                                                     title="Editar"
                                                                 >
-                                                                    <i className="bi bi-pencil text-primary"></i>
+                                                                    <i className="bi bi-pencil text-chrono-blue"></i>
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => handleDelete(sede.id, e)}
-                                                                    className="btn btn-sm btn-light rounded-circle"
+                                                                    className="text-sm py-1.5 px-3 btn-light rounded-full"
                                                                     title="Eliminar"
                                                                 >
-                                                                    <i className="bi bi-trash text-danger"></i>
+                                                                    <i className="bi bi-trash text-red-500"></i>
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -255,14 +255,14 @@ export default function SedeListModal({ isOpen, onClose }: SedeListModalProps) {
 
                             {/* EDIT/CREATE VIEW */}
                             {(editMode === 'edit' || editMode === 'create') && (
-                                <div className="row g-4">
+                                <div className="row gap-4">
                                     {/* Form */}
-                                    <div className="col-lg-4">
+                                    <div className="lg:col-span-4">
                                         <div className="mb-3">
-                                            <label className="form-label fw-bold">Nombre del Centro *</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold">Nombre del Centro *</label>
                                             <input
                                                 type="text"
-                                                className="form-control"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
                                                 placeholder="Ej: Oficina Central"
                                                 value={formData.nombre}
                                                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
@@ -270,10 +270,10 @@ export default function SedeListModal({ isOpen, onClose }: SedeListModalProps) {
                                         </div>
 
                                         <div className="mb-3">
-                                            <label className="form-label fw-bold">Dirección (Opcional)</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold">Dirección (Opcional)</label>
                                             <input
                                                 type="text"
-                                                className="form-control"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
                                                 placeholder="Calle, número..."
                                                 value={formData.direccion}
                                                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
@@ -281,9 +281,9 @@ export default function SedeListModal({ isOpen, onClose }: SedeListModalProps) {
                                         </div>
 
                                         <div className="mb-3">
-                                            <div className="d-flex justify-content-between mb-2">
-                                                <label className="form-label fw-bold">Radio de Fichaje</label>
-                                                <span className="badge bg-primary">{formData.radio_metros}m</span>
+                                            <div className="flex justify-between mb-2">
+                                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold">Radio de Fichaje</label>
+                                                <span className="bg-chrono-blue text-white text-xs px-2 py-0.5 rounded-full font-bold">{formData.radio_metros}m</span>
                                             </div>
                                             <input
                                                 type="range"
@@ -294,22 +294,22 @@ export default function SedeListModal({ isOpen, onClose }: SedeListModalProps) {
                                                 value={formData.radio_metros}
                                                 onChange={(e) => setFormData({ ...formData, radio_metros: Number(e.target.value) })}
                                             />
-                                            <div className="d-flex justify-content-between small text-muted">
+                                            <div className="flex justify-between text-sm text-slate-400">
                                                 <span>20m</span>
                                                 <span>500m</span>
                                             </div>
                                         </div>
 
-                                        <div className="alert alert-info">
+                                        <div className="bg-sky-50 border border-sky-200 text-sky-700 rounded-xl p-3 text-sm">
                                             <small>
-                                                <i className="bi bi-info-circle me-1"></i>
+                                                <i className="bi bi-info-circle mr-1"></i>
                                                 Haz clic en el mapa para cambiar la ubicación
                                             </small>
                                         </div>
                                     </div>
 
                                     {/* Map */}
-                                    <div className="col-lg-8">
+                                    <div className="lg:col-span-8">
                                         <div style={{ height: '400px', borderRadius: '12px', overflow: 'hidden' }}>
                                             <LocationPicker
                                                 lat={formData.latitud}
@@ -325,31 +325,31 @@ export default function SedeListModal({ isOpen, onClose }: SedeListModalProps) {
                         </div>
 
                         {/* Footer */}
-                        <div className="modal-footer border-0">
+                        <div className="flex justify-end gap-2 p-6 border-t border-gray-100 border-0">
                             {editMode === 'list' ? (
                                 <>
-                                    <button onClick={onClose} className="btn btn-light rounded-pill px-4">
+                                    <button onClick={onClose} className="bg-white text-navy px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 rounded-full px-4">
                                         Cerrar
                                     </button>
-                                    <button onClick={handleNew} className="btn btn-primary rounded-pill px-4">
-                                        <i className="bi bi-plus-lg me-2"></i>
+                                    <button onClick={handleNew} className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4">
+                                        <i className="bi bi-plus-lg mr-2"></i>
                                         Nuevo Centro
                                     </button>
                                 </>
                             ) : (
                                 <>
-                                    <button onClick={handleCancel} className="btn btn-light rounded-pill px-4">
+                                    <button onClick={handleCancel} className="bg-white text-navy px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 rounded-full px-4">
                                         Cancelar
                                     </button>
-                                    <button onClick={handleSave} disabled={saving} className="btn btn-primary rounded-pill px-4">
+                                    <button onClick={handleSave} disabled={saving} className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4">
                                         {saving ? (
                                             <>
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                <span className="animate-spin animate-spin w-4 h-4 mr-2"></span>
                                                 Guardando...
                                             </>
                                         ) : (
                                             <>
-                                                <i className="bi bi-check-lg me-2"></i>
+                                                <i className="bi bi-check-lg mr-2"></i>
                                                 Guardar
                                             </>
                                         )}

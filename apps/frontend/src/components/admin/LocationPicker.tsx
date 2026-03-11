@@ -42,7 +42,7 @@ function MapEvents({ onSelect }: { onSelect: (lat: number, lng: number) => void 
 
 export default function LocationPicker({ lat, lng, radio, onLocationSelect }: LocationPickerProps) {
   return (
-    <div className="h-100 w-100 position-relative" style={{ minHeight: '400px', zIndex: 1 }}>
+    <div className="h-full w-full relative" style={{ minHeight: '400px', zIndex: 1 }}>
       <MapContainer center={[lat, lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

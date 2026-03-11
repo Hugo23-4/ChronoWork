@@ -203,16 +203,16 @@ export default function AdminLocationMap() {
 
     if (loading) {
         return (
-            <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-4">
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Cargando mapa...</span>
+            <div className="flex items-center justify-center h-full bg-gray-50 rounded-2xl">
+                <div className="animate-spin text-chrono-blue" role="status">
+                    <span className="sr-only">Cargando mapa...</span>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="h-100 w-100 rounded-4 overflow-hidden">
+        <div className="h-full w-full rounded-2xl overflow-hidden">
             <MapContainer
                 center={center}
                 zoom={14}
@@ -234,37 +234,37 @@ export default function AdminLocationMap() {
                     >
                         <Popup maxWidth={300}>
                             <div className="p-2">
-                                <div className="d-flex align-items-center gap-2 mb-2">
-                                    <i className="bi bi-building-fill text-primary fs-5"></i>
-                                    <strong className="fs-6">{sede.nombre}</strong>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <i className="bi bi-building-fill text-chrono-blue text-lg"></i>
+                                    <strong className="text-base">{sede.nombre}</strong>
                                 </div>
 
                                 {sede.direccion && (
-                                    <div className="text-muted small mb-2">
-                                        <i className="bi bi-geo-alt me-1"></i>
+                                    <div className="text-slate-400 text-sm mb-2">
+                                        <i className="bi bi-geo-alt mr-1"></i>
                                         {sede.direccion}
                                     </div>
                                 )}
 
-                                <div className="small text-secondary mb-3">
+                                <div className="text-sm text-slate-500 mb-3">
                                     Radio: {sede.radio_metros}m
                                 </div>
 
                                 {/* Lista de empleados en esta sede */}
-                                <div className="border-top pt-2">
-                                    <div className="d-flex align-items-center justify-content-between mb-2">
-                                        <strong className="small">Empleados en esta sede</strong>
-                                        <span className="badge bg-primary rounded-pill">{sede.empleados.length}</span>
+                                <div className="border-t pt-2">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <strong className="text-sm">Empleados en esta sede</strong>
+                                        <span className="bg-chrono-blue text-white text-xs px-2 py-0.5 rounded-full font-bold rounded-full">{sede.empleados.length}</span>
                                     </div>
 
                                     {sede.empleados.length === 0 ? (
-                                        <div className="text-muted small">No hay empleados asignados</div>
+                                        <div className="text-slate-400 text-sm">No hay empleados asignados</div>
                                     ) : (
-                                        <div className="d-flex flex-column gap-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                        <div className="flex flex-col gap-2" style={{ maxHeight: '200px', overflowY: 'auto' }}>
                                             {sede.empleados.map(emp => (
-                                                <div key={emp.id} className="d-flex align-items-center gap-2 small">
+                                                <div key={emp.id} className="flex items-center gap-2 text-sm">
                                                     <div
-                                                        className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+                                                        className="rounded-full flex items-center justify-center text-white font-bold shrink-0"
                                                         style={{
                                                             width: '28px',
                                                             height: '28px',
@@ -274,19 +274,19 @@ export default function AdminLocationMap() {
                                                     >
                                                         {getInitials(emp.nombre)}
                                                     </div>
-                                                    <div className="flex-grow-1 min-w-0">
-                                                        <div className="fw-bold text-truncate" style={{ fontSize: '0.8rem' }}>
+                                                    <div className="flex-grow min-w-0">
+                                                        <div className="font-bold truncate" style={{ fontSize: '0.8rem' }}>
                                                             {emp.nombre}
                                                         </div>
-                                                        <div className="text-muted text-truncate" style={{ fontSize: '0.7rem' }}>
+                                                        <div className="text-slate-400 truncate" style={{ fontSize: '0.7rem' }}>
                                                             {emp.puesto}
                                                             {emp.hora_fichaje && (
-                                                                <span className="ms-1">• Fichó {emp.hora_fichaje}</span>
+                                                                <span className="ml-1">• Fichó {emp.hora_fichaje}</span>
                                                             )}
                                                         </div>
                                                     </div>
                                                     {emp.enZona !== undefined && (
-                                                        <div className={`badge ${emp.enZona ? 'bg-success' : 'bg-danger'} rounded-pill`}
+                                                        <div className={`badge ${emp.enZona ? 'bg-emerald-500' : 'bg-red-500'} rounded-full`}
                                                             style={{ fontSize: '0.6rem' }}>
                                                             {emp.enZona ? '✓' : '⚠'}
                                                         </div>
@@ -308,7 +308,7 @@ export default function AdminLocationMap() {
                             <div className="text-center">
                                 <strong>📍 {sede.nombre}</strong>
                                 <div className="mt-1">
-                                    <span className="badge bg-success">{sede.empleados_activos} activos</span>
+                                    <span className="bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">{sede.empleados_activos} activos</span>
                                 </div>
                             </div>
                         </Popup>
@@ -330,7 +330,7 @@ export default function AdminLocationMap() {
                                         <strong>{emp.nombre}</strong><br />
                                         <small>{emp.puesto}</small><br />
                                         <small>Fichó a las {emp.hora_fichaje}</small><br />
-                                        <span className={emp.enZona ? 'text-success' : 'text-danger'}>
+                                        <span className={emp.enZona ? 'text-emerald-500' : 'text-red-500'}>
                                             {emp.enZona ? '✓ En zona permitida' : '⚠ Fuera de zona'}
                                         </span>
                                     </div>
@@ -351,7 +351,7 @@ export default function AdminLocationMap() {
                                 <strong>{emp.nombre}</strong><br />
                                 <small>{emp.puesto}</small><br />
                                 <small>Fichó a las {emp.hora_fichaje}</small><br />
-                                <span className="text-warning">⚠ Sin sede asignada</span>
+                                <span className="text-amber-500">⚠ Sin sede asignada</span>
                             </div>
                         </Popup>
                     </Marker>

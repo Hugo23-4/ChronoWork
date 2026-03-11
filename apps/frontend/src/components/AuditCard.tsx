@@ -21,9 +21,9 @@ export default function AuditCard({ data }: { data: AuditLogProps }) {
   const getCardStyle = () => {
     switch (data.tipo) {
       case 'modificacion':
-        return 'border-warning border-2 bg-warning bg-opacity-10'; 
+        return 'border-warning border-2 bg-amber-500 bg-opacity-10'; 
       case 'error':
-        return 'border-danger border-opacity-25 bg-danger bg-opacity-10'; 
+        return 'border-danger border-opacity-25 bg-red-500 bg-opacity-10'; 
       default:
         return 'border-0 shadow-sm bg-white'; 
     }
@@ -32,32 +32,32 @@ export default function AuditCard({ data }: { data: AuditLogProps }) {
   const getTitleColor = () => {
     switch (data.tipo) {
       case 'modificacion': return 'text-warning-emphasis'; 
-      case 'error': return 'text-danger';
-      default: return 'text-success';
+      case 'error': return 'text-red-500';
+      default: return 'text-emerald-500';
     }
   };
 
   return (
-    <div className={`card mb-3 p-3 rounded-4 ${getCardStyle()}`}>
+    <div className={`card mb-3 p-3 rounded-2xl ${getCardStyle()}`}>
       {/* Cabecera */}
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <span className={`small fw-bold text-uppercase ${getTitleColor()}`} style={{ fontSize: '0.75rem' }}>
+      <div className="flex justify-between items-center mb-2">
+        <span className={`text-sm font-bold uppercase ${getTitleColor()}`} style={{ fontSize: '0.75rem' }}>
           {data.tipo === 'modificacion' ? 'MODIFICACIÓN MANUAL' : 
            data.tipo === 'error' ? 'INTENTO FALLIDO' : 'ENTRADA REGISTRADA'}
         </span>
-        <small className="text-muted font-monospace">{data.fechaCorta}</small>
+        <small className="text-slate-400 font-mono">{data.fechaCorta}</small>
       </div>
 
-      <h5 className="fw-bold mb-2 text-dark">{data.titulo}</h5>
+      <h5 className="font-bold mb-2 text-navy">{data.titulo}</h5>
 
       {/* CORRECCIÓN AQUI: Usamos data.detalle.valorAntiguo en lugar de data.valorAntiguo */}
       <div className="mb-3">
         {data.detalle.valorAntiguo && (
-          <span className="text-decoration-line-through text-danger me-2 opacity-75">
+          <span className="text-decoration-line-through text-red-500 mr-2 opacity-75">
             {data.detalle.label} {data.detalle.valorAntiguo}
           </span>
         )}
-        <span className="fw-bold text-dark">
+        <span className="font-bold text-navy">
            {/* También corregimos aquí la condición */}
            {data.detalle.valorAntiguo && <i className="bi bi-arrow-right-short mx-1"></i>}
            
@@ -69,13 +69,13 @@ export default function AuditCard({ data }: { data: AuditLogProps }) {
       <hr className="opacity-25 my-2" />
 
       {/* Footer */}
-      <div className="d-flex justify-content-between align-items-center mt-2">
-        <div className="d-flex align-items-center gap-2">
-            <div className={`rounded-circle ${data.tipo === 'modificacion' ? 'bg-danger' : 'bg-primary'}`} 
+      <div className="flex justify-between items-center mt-2">
+        <div className="flex items-center gap-2">
+            <div className={`rounded-full ${data.tipo === 'modificacion' ? 'bg-red-500' : 'bg-chrono-blue'}`} 
                  style={{ width: '10px', height: '10px' }}></div>
-            <small className="fw-bold text-dark">{data.actor}</small>
+            <small className="font-bold text-navy">{data.actor}</small>
         </div>
-        <small className="font-monospace text-warning-emphasis" style={{ fontSize: '0.7rem' }}>
+        <small className="font-mono text-warning-emphasis" style={{ fontSize: '0.7rem' }}>
           Hash: {data.hash.substring(0, 10)}...
         </small>
       </div>

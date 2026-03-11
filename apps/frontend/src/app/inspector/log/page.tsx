@@ -216,17 +216,17 @@ export default function InspectorLogPage() {
         <div className="fade-in-up">
 
             {/* Header */}
-            <div className="mb-4 p-4 rounded-4" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
-                <h2 className="fw-bold text-white mb-1">Registro de Auditoría</h2>
-                <p className="text-white-50 small mb-0">Log de inmutabilidad (Blockchain)</p>
-                <div className="d-flex align-items-center gap-2 mt-2">
-                    <i className="bi bi-shield-lock-fill text-warning"></i>
-                    <span className="fw-bold text-warning small">MODO LECTURA: NO EDITABLE</span>
+            <div className="mb-4 p-4 rounded-2xl" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' }}>
+                <h2 className="font-bold text-white mb-1">Registro de Auditoría</h2>
+                <p className="text-white/50 text-sm mb-0">Log de inmutabilidad (Blockchain)</p>
+                <div className="flex items-center gap-2 mt-2">
+                    <i className="bi bi-shield-lock-fill text-amber-500"></i>
+                    <span className="font-bold text-amber-500 text-sm">MODO LECTURA: NO EDITABLE</span>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="d-flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2 mb-3">
                 {[
                     { value: 'todos', label: 'Todos' },
                     { value: 'entrada', label: 'Entradas' },
@@ -236,69 +236,69 @@ export default function InspectorLogPage() {
                 ].map(f => (
                     <button
                         key={f.value}
-                        className={`btn btn-sm rounded-pill ${filterTipo === f.value ? 'btn-dark' : 'btn-outline-secondary'}`}
+                        className={`text-sm py-1.5 px-3 rounded-full ${filterTipo === f.value ? 'btn-dark' : 'btn-outline-secondary'}`}
                         onClick={() => setFilterTipo(f.value)}
                     >
                         {f.label}
                     </button>
                 ))}
-                <span className="badge bg-light text-dark border rounded-pill px-3 py-2 ms-auto">
+                <span className="bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-navy border rounded-full px-3 py-2 ml-auto">
                     {filteredEntries.length} movimientos
                 </span>
             </div>
 
             {/* Section Title */}
-            <h6 className="text-warning fw-bold text-uppercase small mb-3" style={{ letterSpacing: '0.1em' }}>
+            <h6 className="text-amber-500 font-bold uppercase text-sm mb-3" style={{ letterSpacing: '0.1em' }}>
                 ÚLTIMOS MOVIMIENTOS
             </h6>
 
             {/* Log Entries */}
             {loading ? (
-                <div className="text-center py-5">
-                    <div className="spinner-border text-warning"></div>
-                    <p className="text-muted small mt-2">Cargando registro inmutable...</p>
+                <div className="text-center py-6">
+                    <div className="animate-spin text-amber-500"></div>
+                    <p className="text-slate-400 text-sm mt-2">Cargando registro inmutable...</p>
                 </div>
             ) : filteredEntries.length === 0 ? (
-                <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
-                    <i className="bi bi-journal-x text-muted mb-2" style={{ fontSize: '2.5rem' }}></i>
-                    <p className="text-muted">No hay movimientos registrados</p>
+                <div className="card border-0 shadow-sm rounded-2xl p-4 text-center">
+                    <i className="bi bi-journal-x text-slate-400 mb-2" style={{ fontSize: '2.5rem' }}></i>
+                    <p className="text-slate-400">No hay movimientos registrados</p>
                 </div>
             ) : (
-                <div className="d-flex flex-column gap-3">
+                <div className="flex flex-col gap-3">
                     {filteredEntries.map((entry) => {
                         const config = getTipoConfig(entry.tipo);
 
                         return (
-                            <div key={entry.id} className="card border-0 shadow-sm rounded-4 overflow-hidden"
+                            <div key={entry.id} className="card border-0 shadow-sm rounded-2xl overflow-hidden"
                                 style={{ borderLeft: `4px solid ${config.borderColor}` }}>
-                                <div className="p-3 p-md-4" style={{ background: config.bg }}>
+                                <div className="p-3 md:p-4" style={{ background: config.bg }}>
 
                                     {/* Header */}
-                                    <div className="d-flex justify-content-between align-items-start mb-2">
-                                        <span className="fw-bold" style={{
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="font-bold" style={{
                                             color: config.color,
                                             fontSize: '0.7rem',
                                             letterSpacing: '0.05em'
                                         }}>
                                             {config.label}
                                         </span>
-                                        <span className="text-muted font-monospace" style={{ fontSize: '0.75rem' }}>
+                                        <span className="text-slate-400 font-mono" style={{ fontSize: '0.75rem' }}>
                                             {formatDate(entry.fecha)} • {formatTime(entry.hora)}
                                         </span>
                                     </div>
 
                                     {/* Content */}
-                                    <h6 className="fw-bold text-dark mb-1">{entry.detalle}</h6>
-                                    <div className="d-flex align-items-center gap-2 mb-2">
-                                        <span className={`small ${entry.tipo === 'intento_fallido' ? 'text-danger fw-bold' : 'text-muted'}`}>
+                                    <h6 className="font-bold text-navy mb-1">{entry.detalle}</h6>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className={`text-sm ${entry.tipo === 'intento_fallido' ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
                                             {entry.subdetalle}
                                         </span>
                                     </div>
 
                                     {/* Footer */}
-                                    <div className="d-flex justify-content-between align-items-center pt-2 border-top">
-                                        <div className="d-flex align-items-center gap-2">
-                                            <div className="rounded-circle d-flex align-items-center justify-content-center"
+                                    <div className="flex justify-between items-center pt-2 border-t">
+                                        <div className="flex items-center gap-2">
+                                            <div className="rounded-full flex items-center justify-center"
                                                 style={{
                                                     width: 24, height: 24,
                                                     background: entry.tipo === 'intento_fallido' ? '#FEE2E2' :
@@ -306,9 +306,9 @@ export default function InspectorLogPage() {
                                                 }}>
                                                 <i className={`bi ${config.icon}`} style={{ fontSize: '0.6rem', color: config.color }}></i>
                                             </div>
-                                            <span className="text-muted small">{entry.actor}</span>
+                                            <span className="text-slate-400 text-sm">{entry.actor}</span>
                                         </div>
-                                        <code className="text-warning" style={{ fontSize: '0.65rem' }}>
+                                        <code className="text-amber-500" style={{ fontSize: '0.65rem' }}>
                                             Hash: {entry.hash}
                                         </code>
                                     </div>

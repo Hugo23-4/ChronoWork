@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 
 const LocationPicker = dynamic(() => import('@/components/admin/LocationPicker'), {
     ssr: false,
-    loading: () => <div className="text-center py-4"><div className="spinner-border text-primary"></div></div>
+    loading: () => <div className="text-center py-4"><div className="animate-spin text-chrono-blue"></div></div>
 });
 
 interface CreateSedeModalProps {
@@ -74,35 +74,35 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
             ></div>
 
             {/* Modal */}
-            <div className="modal fade show d-block" style={{ zIndex: 1055 }} tabIndex={-1}>
-                <div className="modal-dialog modal-dialog-centered modal-lg">
-                    <div className="modal-content border-0 shadow-lg rounded-4">
+            <div className="modal fade show block" style={{ zIndex: 1055 }} tabIndex={-1}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-dialog-centered modal-lg">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto border-0 shadow-lg rounded-2xl">
 
                         {/* Header */}
-                        <div className="modal-header border-0 pb-0">
-                            <h5 className="modal-title fw-bold text-dark">
-                                <i className="bi bi-geo-alt-fill text-primary me-2"></i>
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 border-0 pb-0">
+                            <h5 className="font-bold text-lg text-navy font-bold text-navy">
+                                <i className="bi bi-geo-alt-fill text-chrono-blue mr-2"></i>
                                 Nueva Sede / Centro de Trabajo
                             </h5>
                             <button
                                 type="button"
-                                className="btn-close"
+                                className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-none text-xl"
                                 onClick={handleClose}
                                 disabled={saving}
                             ></button>
                         </div>
 
                         {/* Body */}
-                        <div className="modal-body px-4">
+                        <div className="p-6 px-4">
 
                             {/* Nombre */}
                             <div className="mb-3">
-                                <label className="form-label fw-bold small text-secondary text-uppercase">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase">
                                     Nombre de la Sede *
                                 </label>
                                 <input
                                     type="text"
-                                    className="form-control rounded-pill shadow-sm border-0"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm rounded-full shadow-sm border-0"
                                     placeholder="Ej: Oficina Central, Obra Madrid Norte..."
                                     value={formData.nombre}
                                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
@@ -111,12 +111,12 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
 
                             {/* Dirección */}
                             <div className="mb-3">
-                                <label className="form-label fw-bold small text-secondary text-uppercase">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase">
                                     Dirección
                                 </label>
                                 <input
                                     type="text"
-                                    className="form-control rounded-pill shadow-sm border-0"
+                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm rounded-full shadow-sm border-0"
                                     placeholder="Calle, número, ciudad..."
                                     value={formData.direccion}
                                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
@@ -125,9 +125,9 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
 
                             {/* Radio */}
                             <div className="mb-3">
-                                <label className="form-label fw-bold small text-secondary text-uppercase d-flex align-items-center justify-content-between">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase flex items-center justify-between">
                                     <span>Radio de Geofencing</span>
-                                    <span className="badge bg-primary">{formData.radio}m</span>
+                                    <span className="bg-chrono-blue text-white text-xs px-2 py-0.5 rounded-full font-bold">{formData.radio}m</span>
                                 </label>
                                 <input
                                     type="range"
@@ -138,18 +138,18 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
                                     value={formData.radio}
                                     onChange={(e) => setFormData({ ...formData, radio: parseInt(e.target.value) })}
                                 />
-                                <div className="d-flex justify-content-between">
-                                    <small className="text-muted">50m</small>
-                                    <small className="text-muted">500m</small>
+                                <div className="flex justify-between">
+                                    <small className="text-slate-400">50m</small>
+                                    <small className="text-slate-400">500m</small>
                                 </div>
                             </div>
 
                             {/* Mapa */}
                             <div className="mb-3">
-                                <label className="form-label fw-bold small text-secondary text-uppercase">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase">
                                     Ubicación en el Mapa
                                 </label>
-                                <div style={{ height: '300px' }} className="rounded-4 overflow-hidden shadow-sm">
+                                <div style={{ height: '300px' }} className="rounded-2xl overflow-hidden shadow-sm">
                                     <LocationPicker
                                         lat={formData.lat}
                                         lng={formData.lng}
@@ -163,8 +163,8 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
                                         }}
                                     />
                                 </div>
-                                <small className="text-muted d-block mt-2">
-                                    <i className="bi bi-info-circle me-1"></i>
+                                <small className="text-slate-400 block mt-2">
+                                    <i className="bi bi-info-circle mr-1"></i>
                                     Click en el mapa para seleccionar la ubicación exacta
                                 </small>
                             </div>
@@ -172,10 +172,10 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
                         </div>
 
                         {/* Footer */}
-                        <div className="modal-footer border-0 pt-0">
+                        <div className="flex justify-end gap-2 p-6 border-t border-gray-100 border-0 pt-0">
                             <button
                                 type="button"
-                                className="btn btn-outline-secondary rounded-pill px-4"
+                                className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer rounded-full px-4"
                                 onClick={handleClose}
                                 disabled={saving}
                             >
@@ -183,13 +183,13 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
                             </button>
                             <button
                                 type="button"
-                                className="btn btn-primary rounded-pill px-4 d-flex align-items-center gap-2"
+                                className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4 flex items-center gap-2"
                                 onClick={handleSave}
                                 disabled={saving}
                             >
                                 {saving ? (
                                     <>
-                                        <span className="spinner-border spinner-border-sm"></span>
+                                        <span className="animate-spin animate-spin w-4 h-4"></span>
                                         Guardando...
                                     </>
                                 ) : (

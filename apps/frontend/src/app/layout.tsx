@@ -1,14 +1,21 @@
 import { AuthProvider } from '@/context/AuthContext';
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Inter } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import type { Metadata } from 'next';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   display: 'swap',
+  variable: '--font-inter',
+});
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-jakarta',
 });
 
 export const metadata: Metadata = {
@@ -31,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={inter.className}>
-      <body>
+    <html lang="es" className={`${inter.variable} ${jakarta.variable}`}>
+      <body className={`${inter.className} antialiased`}>
         <AuthProvider>
           {children}
           <SpeedInsights />

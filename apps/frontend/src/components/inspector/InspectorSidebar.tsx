@@ -22,10 +22,10 @@ export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, min
     };
 
     const linkClass = (path: string) => `
-        nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-3 position-relative
+        nav-link flex items-center gap-3 px-3 py-2 rounded-lg relative
         ${isActive(path)
-            ? 'text-white fw-bold'
-            : 'text-white-50'}
+            ? 'text-white font-bold'
+            : 'text-white/50'}
     `;
 
     const menuItems = [
@@ -41,30 +41,30 @@ export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, min
     const usagePercent = Math.round(((maxMinutesPerDay - remainingMinutes) / maxMinutesPerDay) * 100);
 
     return (
-        <div className="d-flex flex-column h-100 text-white p-3" style={{ width: '280px', backgroundColor: '#0F172A' }}>
+        <div className="flex flex-col h-full text-white p-3" style={{ width: '280px', backgroundColor: '#0F172A' }}>
 
             {/* Logo */}
             <div className="mb-4 px-2 mt-2">
-                <div className="d-flex align-items-baseline gap-1">
-                    <h4 className="fw-bold m-0">ChronoWork</h4>
-                    <span className="text-warning fw-bold" style={{ fontSize: '0.7rem' }}>AUDIT</span>
+                <div className="flex items-baseline gap-1">
+                    <h4 className="font-bold m-0">ChronoWork</h4>
+                    <span className="text-amber-500 font-bold" style={{ fontSize: '0.7rem' }}>AUDIT</span>
                 </div>
                 <div style={{ width: '40px', height: '3px', background: '#F59E0B', borderRadius: '2px', marginTop: '8px' }}></div>
             </div>
 
             {/* Menu */}
-            <small className="text-secondary text-uppercase fw-bold px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.08em' }}>
+            <small className="text-slate-500 uppercase font-bold px-3 mb-2" style={{ fontSize: '0.65rem', letterSpacing: '0.08em' }}>
                 Herramientas
             </small>
-            <ul className="nav nav-pills flex-column mb-4 gap-1">
+            <ul className="nav gap-1 flex-col mb-4 gap-1">
                 {menuItems.map((item) => (
-                    <li className="nav-item" key={item.href}>
+                    <li className="list-none" key={item.href}>
                         <Link href={item.href} className={linkClass(item.href)}>
                             {isActive(item.href) && (
-                                <div className="position-absolute start-0 top-50 translate-middle-y bg-warning rounded-end"
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 bg-amber-500 rounded-r"
                                     style={{ width: '4px', height: '60%' }}></div>
                             )}
-                            <i className={`bi ${item.icon} fs-5`}></i>
+                            <i className={`bi ${item.icon} text-lg`}></i>
                             <span>{item.label}</span>
                         </Link>
                     </li>
@@ -72,22 +72,22 @@ export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, min
             </ul>
 
             {/* Session Info Card */}
-            <div className="rounded-4 p-3 mb-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-                <div className="d-flex align-items-center gap-2 mb-2">
-                    <i className="bi bi-clock text-warning"></i>
-                    <small className="text-warning fw-bold">SESIÓN ACTIVA</small>
+            <div className="rounded-2xl p-3 mb-3" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                    <i className="bi bi-clock text-amber-500"></i>
+                    <small className="text-amber-500 font-bold">SESIÓN ACTIVA</small>
                 </div>
 
                 {/* Timer */}
-                <div className="font-monospace fw-bold text-white mb-1" style={{ fontSize: '1.5rem' }}>
+                <div className="font-mono font-bold text-white mb-1" style={{ fontSize: '1.5rem' }}>
                     {remainingTime}
                 </div>
-                <small className="text-white-50">Tiempo restante hoy</small>
+                <small className="text-white/50">Tiempo restante hoy</small>
 
                 {/* Today progress bar */}
                 <div className="mt-2 mb-2">
-                    <div className="rounded-pill overflow-hidden" style={{ height: '4px', background: 'rgba(255,255,255,0.1)' }}>
-                        <div className="rounded-pill" style={{
+                    <div className="rounded-full overflow-hidden" style={{ height: '4px', background: 'rgba(255,255,255,0.1)' }}>
+                        <div className="rounded-full" style={{
                             height: '100%',
                             width: `${usagePercent}%`,
                             background: usagePercent > 80 ? '#EF4444' : '#F59E0B',
@@ -98,50 +98,50 @@ export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, min
 
                 {/* Days indicator */}
                 <div className="mt-2">
-                    <small className="text-white-50 d-block mb-1" style={{ fontSize: '0.65rem' }}>DÍAS ESTA SEMANA</small>
-                    <div className="d-flex gap-1">
+                    <small className="text-white/50 block mb-1" style={{ fontSize: '0.65rem' }}>DÍAS ESTA SEMANA</small>
+                    <div className="flex gap-1">
                         {Array.from({ length: maxDays }).map((_, i) => (
-                            <div key={i} className="flex-grow-1 rounded-pill" style={{
+                            <div key={i} className="flex-grow rounded-full" style={{
                                 height: '6px',
                                 background: i < daysUsed ? '#F59E0B' : 'rgba(255,255,255,0.1)'
                             }}></div>
                         ))}
                     </div>
-                    <small className="text-white-50 d-block mt-1" style={{ fontSize: '0.7rem' }}>
+                    <small className="text-white/50 block mt-1" style={{ fontSize: '0.7rem' }}>
                         {daysUsed} de {maxDays} días usados
                     </small>
                 </div>
             </div>
 
             {/* Usage rules */}
-            <div className="rounded-3 p-2 mb-3 text-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                <small className="text-white-50" style={{ fontSize: '0.6rem', lineHeight: '1.3' }}>
-                    <i className="bi bi-info-circle me-1"></i>
+            <div className="rounded-lg p-2 mb-3 text-center" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <small className="text-white/50" style={{ fontSize: '0.6rem', lineHeight: '1.3' }}>
+                    <i className="bi bi-info-circle mr-1"></i>
                     {maxDays} días/semana • {maxMinutesPerDay} min/día<br />
                     Los minutos se acumulan entre sesiones
                 </small>
             </div>
 
             {/* Spacer */}
-            <div className="flex-grow-1"></div>
+            <div className="flex-grow"></div>
 
             {/* Inspector Badge */}
-            <div className="mt-4 pt-3 border-top border-secondary border-opacity-25">
-                <div className="d-flex align-items-center gap-3 px-2">
-                    <div className="rounded-circle d-flex align-items-center justify-content-center fw-bold text-dark"
+            <div className="mt-4 pt-3 border-t border-slate-500 border-opacity-25">
+                <div className="flex items-center gap-3 px-2">
+                    <div className="rounded-full flex items-center justify-center font-bold text-navy"
                         style={{ width: 40, height: 40, fontSize: '0.75rem', background: '#F59E0B' }}>
                         INS
                     </div>
-                    <div className="overflow-hidden flex-grow-1">
-                        <div className="fw-bold text-white text-truncate" style={{ maxWidth: '130px' }}>
+                    <div className="overflow-hidden flex-grow">
+                        <div className="font-bold text-white truncate" style={{ maxWidth: '130px' }}>
                             {profile?.nombre_completo || 'Inspector'}
                         </div>
-                        <small className="text-warning d-block" style={{ fontSize: '0.7rem' }}>
+                        <small className="text-amber-500 block" style={{ fontSize: '0.7rem' }}>
                             Acceso Inspector
                         </small>
                     </div>
-                    <button onClick={signOut} className="btn btn-link text-white-50 p-0" title="Cerrar sesión">
-                        <i className="bi bi-box-arrow-right fs-5"></i>
+                    <button onClick={signOut} className="bg-transparent border-none cursor-pointer text-white/50 p-0" title="Cerrar sesión">
+                        <i className="bi bi-box-arrow-right text-lg"></i>
                     </button>
                 </div>
             </div>

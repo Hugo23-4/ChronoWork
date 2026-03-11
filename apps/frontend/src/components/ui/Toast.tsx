@@ -26,32 +26,32 @@ export default function Toast({ message, type = 'info', onClose, duration = 3500
     }, [onClose, duration]);
 
     const config = {
-        success: { bg: 'bg-success', icon: 'bi-check-circle-fill' },
-        error: { bg: 'bg-danger', icon: 'bi-x-circle-fill' },
-        warning: { bg: 'bg-warning text-dark', icon: 'bi-exclamation-triangle-fill' },
-        info: { bg: 'bg-dark', icon: 'bi-info-circle-fill' },
+        success: { bg: 'bg-emerald-500', icon: 'bi-check-circle-fill' },
+        error: { bg: 'bg-red-500', icon: 'bi-x-circle-fill' },
+        warning: { bg: 'bg-amber-500 text-navy', icon: 'bi-exclamation-triangle-fill' },
+        info: { bg: 'bg-navy', icon: 'bi-info-circle-fill' },
     };
 
     const { bg, icon } = config[type];
 
     return (
         <div
-            className="position-fixed bottom-0 end-0 p-3"
+            className="fixed bottom-0 right-0 p-3"
             style={{ zIndex: 9999 }}
             role="alert"
             aria-live="polite"
         >
             <div
-                className={`toast show d-flex align-items-center text-white border-0 rounded-4 shadow-lg ${bg}`}
+                className={`toast show flex items-center text-white border-0 rounded-2xl shadow-lg ${bg}`}
                 style={{ minWidth: '280px' }}
             >
-                <div className="toast-body d-flex align-items-center gap-2 fw-bold">
-                    <i className={`bi ${icon} flex-shrink-0`} aria-hidden="true"></i>
+                <div className="toast-body flex items-center gap-2 font-bold">
+                    <i className={`bi ${icon} shrink-0`} aria-hidden="true"></i>
                     <span>{message}</span>
                 </div>
                 <button
                     type="button"
-                    className="btn-close btn-close-white me-2 ms-auto flex-shrink-0"
+                    className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-none text-xl btn-close-white mr-2 ml-auto shrink-0"
                     onClick={onClose}
                     aria-label="Cerrar notificación"
                 ></button>

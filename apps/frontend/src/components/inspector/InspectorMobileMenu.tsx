@@ -15,10 +15,10 @@ export default function InspectorMobileMenu() {
     ];
 
     return (
-        <div className="fixed-bottom bg-white border-top shadow-lg"
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg"
             style={{ zIndex: 1040, paddingBottom: 'env(safe-area-inset-bottom)' }}>
 
-            <div className="d-flex justify-content-around align-items-end pt-2 pb-1">
+            <div className="flex justify-around items-end pt-2 pb-1">
                 {items.map((item) => {
                     const isActive = pathname === item.href || (item.href !== '/inspector' && pathname.startsWith(item.href));
 
@@ -26,13 +26,13 @@ export default function InspectorMobileMenu() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className="text-decoration-none d-flex flex-column align-items-center justify-content-center"
+                            className="no-underline flex flex-col items-center justify-center"
                             style={{ width: '60px', height: '55px' }}
                         >
                             <div
                                 className={`
-                                    d-flex align-items-center justify-content-center rounded-pill mb-1
-                                    ${isActive ? 'shadow' : 'bg-transparent'}
+                                    flex items-center justify-center rounded-full mb-1
+                                    ${isActive ? 'shadow-md' : 'bg-transparent'}
                                 `}
                                 style={{
                                     width: isActive ? '42px' : '24px',
@@ -42,13 +42,13 @@ export default function InspectorMobileMenu() {
                                 }}
                             >
                                 <i
-                                    className={`bi ${item.icon} ${isActive ? 'text-white' : 'text-secondary opacity-75'}`}
+                                    className={`bi ${item.icon} ${isActive ? 'text-white' : 'text-slate-500 opacity-75'}`}
                                     style={{ fontSize: isActive ? '1.1rem' : '1rem' }}
                                 ></i>
                             </div>
 
                             <span
-                                className="small fw-bold"
+                                className="text-sm font-bold"
                                 style={{
                                     fontSize: '9px',
                                     color: isActive ? '#F59E0B' : '#888',

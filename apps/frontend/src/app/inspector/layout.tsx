@@ -176,31 +176,31 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
 
     if (loading) {
         return (
-            <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center" style={{ background: '#0F172A' }}>
-                <div className="spinner-border text-warning mb-3"></div>
-                <p className="text-white-50">Verificando acceso de inspector...</p>
+            <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#0F172A' }}>
+                <div className="animate-spin text-amber-500 mb-3"></div>
+                <p className="text-white/50">Verificando acceso de inspector...</p>
             </div>
         );
     }
 
     if (sessionError) {
         return (
-            <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center p-4" style={{ background: '#0F172A' }}>
+            <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: '#0F172A' }}>
                 <div className="text-center">
-                    <i className="bi bi-lock-fill text-warning" style={{ fontSize: '4rem' }}></i>
-                    <h3 className="text-white fw-bold mt-3">Acceso Limitado</h3>
-                    <p className="text-white-50 mb-4">{sessionError}</p>
-                    <div className="d-flex gap-3 justify-content-center">
-                        <div className="bg-dark rounded-4 p-3 text-center border border-secondary">
-                            <div className="display-6 fw-bold text-warning">{sessionsUsedThisWeek}</div>
-                            <small className="text-white-50">de {MAX_SESSIONS_PER_WEEK} sesiones usadas</small>
+                    <i className="bi bi-lock-fill text-amber-500" style={{ fontSize: '4rem' }}></i>
+                    <h3 className="text-white font-bold mt-3">Acceso Limitado</h3>
+                    <p className="text-white/50 mb-4">{sessionError}</p>
+                    <div className="flex gap-3 justify-center">
+                        <div className="bg-navy rounded-2xl p-3 text-center border border-slate-500">
+                            <div className="text-4xl font-bold text-amber-500">{sessionsUsedThisWeek}</div>
+                            <small className="text-white/50">de {MAX_SESSIONS_PER_WEEK} sesiones usadas</small>
                         </div>
                     </div>
                     <button
                         onClick={() => router.push('/login')}
-                        className="btn btn-outline-light rounded-pill px-4 mt-4"
+                        className="bg-transparent text-white border border-white/30 px-4 py-2.5 rounded-xl font-semibold hover:bg-white/10 transition-colors cursor-pointer rounded-full px-4 mt-4"
                     >
-                        <i className="bi bi-box-arrow-left me-2"></i>
+                        <i className="bi bi-box-arrow-left mr-2"></i>
                         Cerrar Sesión
                     </button>
                 </div>
@@ -211,9 +211,9 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     if (!isInspector) return null;
 
     return (
-        <div className="d-flex vh-100 overflow-hidden">
+        <div className="flex h-screen overflow-hidden">
             {/* Sidebar Desktop */}
-            <div className="d-none d-lg-block">
+            <div className="hidden lg:block">
                 <InspectorSidebar
                     remainingTime={formatTime(remainingSeconds)}
                     daysUsed={sessionsUsedThisWeek}
@@ -224,40 +224,40 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Main Content */}
-            <main className="flex-grow-1 overflow-auto position-relative" style={{ background: '#FAFBFC' }}>
+            <main className="flex-grow overflow-auto relative" style={{ background: '#FAFBFC' }}>
                 {/* Timer Bar - Always visible */}
                 <div
-                    className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom"
+                    className="flex items-center justify-between px-3 py-2 border-b"
                     style={{
                         background: remainingSeconds < 300 ? '#FEF2F2' : '#FFFBEB',
                         borderColor: remainingSeconds < 300 ? '#FCA5A5' : '#FDE68A',
                     }}
                 >
-                    <div className="d-flex align-items-center gap-2">
-                        <i className={`bi bi-shield-lock-fill ${remainingSeconds < 300 ? 'text-danger' : 'text-warning'}`}></i>
-                        <small className="fw-bold" style={{ color: remainingSeconds < 300 ? '#DC2626' : '#92400E' }}>
+                    <div className="flex items-center gap-2">
+                        <i className={`bi bi-shield-lock-fill ${remainingSeconds < 300 ? 'text-red-500' : 'text-amber-500'}`}></i>
+                        <small className="font-bold" style={{ color: remainingSeconds < 300 ? '#DC2626' : '#92400E' }}>
                             MODO LECTURA: NO EDITABLE
                         </small>
                     </div>
-                    <div className="d-flex align-items-center gap-2">
-                        <i className={`bi bi-clock ${remainingSeconds < 300 ? 'text-danger' : 'text-warning'}`}></i>
-                        <span className="fw-bold font-monospace" style={{
+                    <div className="flex items-center gap-2">
+                        <i className={`bi bi-clock ${remainingSeconds < 300 ? 'text-red-500' : 'text-amber-500'}`}></i>
+                        <span className="font-bold font-mono" style={{
                             color: remainingSeconds < 300 ? '#DC2626' : '#92400E',
                             fontSize: '0.9rem'
                         }}>
                             {formatTime(remainingSeconds)}
                         </span>
-                        <small className="d-none d-md-inline text-secondary">restante</small>
+                        <small className="hidden md:inline text-slate-500">restante</small>
                     </div>
                 </div>
 
-                <div className="p-3 p-md-4 pb-5 mb-5">
+                <div className="p-3 md:p-4 pb-6 mb-6">
                     {children}
                 </div>
             </main>
 
             {/* Mobile Menu */}
-            <div className="d-lg-none">
+            <div className="lg:hidden">
                 <InspectorMobileMenu />
             </div>
         </div>

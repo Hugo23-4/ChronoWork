@@ -3,77 +3,70 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { Home, Clock, FileText, UserCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface MenuItem {
   name: string;
   href: string;
-  icon: string;
-  activeIconColor?: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
+
+const employeeItems: MenuItem[] = [
+  { name: 'Inicio', href: '/dashboard', icon: Home },
+  { name: 'Fichajes', href: '/dashboard/fichajes', icon: Clock },
+  { name: 'Solicitudes', href: '/dashboard/solicitudes', icon: FileText },
+  { name: 'Perfil', href: '/dashboard/perfil', icon: UserCircle },
+];
 
 export default function MobileMenu() {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  // IMPORTANTE: Solo mostrar menú de empleado
-  // Si estamos en /dashboard, mostrar SIEMPRE menú de empleado
-  // El admin tiene su propio portal en /admin con su propia navegación
-
-  const employeeItems: MenuItem[] = [
-    { name: 'Inicio', href: '/dashboard', icon: 'bi-house-door-fill', activeIconColor: 'text-dark' },
-    { name: 'Fichajes', href: '/dashboard/fichajes', icon: 'bi-clock-history', activeIconColor: 'text-dark' },
-    { name: 'Solicitudes', href: '/dashboard/solicitudes', icon: 'bi-file-earmark-text', activeIconColor: 'text-dark' },
-    { name: 'Perfil', href: '/dashboard/perfil', icon: 'bi-person-circle', activeIconColor: 'text-dark' },
-  ];
-
   return (
-    <div className="d-lg-none fixed-bottom bg-light border-top border-secondary-subtle shadow-lg"
-      style={{ zIndex: 1040, paddingBottom: 'env(safe-area-inset-bottom)' }}>
-
-      <div className="d-flex justify-content-around align-items-end pt-2 pb-1">
-
+    <div
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-gray-50 border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] z-[1040]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="flex justify-around items-end pt-2 pb-1">
         {employeeItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+          const Icon = item.icon;
 
           return (
             <Link
               key={item.name}
               href={item.href}
-              className="text-decoration-none d-flex flex-column align-items-center justify-content-center"
-              style={{ width: '75px', height: '60px' }}
+              className="no-underline flex flex-col items-center justify-center w-[75px] h-[60px]"
             >
               {/* PASTILLA ACTIVA */}
               <div
-                className={`
-                  d-flex align-items-center justify-content-center rounded-pill mb-1 transition-all
-                  ${isActive ? 'bg-black shadow' : 'bg-transparent'} 
-                `}
-                style={{
-                  width: isActive ? '42px' : '24px',
-                  height: '32px',
-                  transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)'
-                }}
+                className={cn(
+                  'flex items-center justify-center rounded-full mb-1 transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)]',
+                  isActive ? 'bg-black shadow-md w-[42px]' : 'bg-transparent w-6'
+                )}
+                style={{ height: '32px' }}
               >
-                <i
-                  className={`bi ${item.icon} fs-5 ${isActive ? (item.activeIconColor || 'text-white') : 'text-secondary opacity-75'}`}
-                ></i>
+                <Icon
+                  className={cn(
+                    'w-5 h-5 transition-colors',
+                    isActive ? 'text-white' : 'text-gray-400'
+                  )}
+                />
               </div>
 
               {/* TEXTO */}
               <span
-                className="small fw-bold tracking-tight"
-                style={{
-                  fontSize: '10px',
-                  color: isActive ? '#000' : '#888',
-                  marginTop: '2px'
-                }}
+                className={cn(
+                  'text-[10px] font-bold tracking-tight mt-0.5',
+                  isActive ? 'text-black' : 'text-gray-400'
+                )}
               >
                 {item.name}
               </span>
             </Link>
           );
         })}
-
       </div>
     </div>
   );

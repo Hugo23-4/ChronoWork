@@ -102,7 +102,7 @@ export default function BiometricButton({ onSuccess, userId, className }: Biomet
                 type="button"
                 onClick={handleLogin}
                 disabled={loading}
-                className="btn w-100 d-flex align-items-center justify-content-center gap-2 fw-bold py-3 rounded-3"
+                className="btn w-full flex items-center justify-center gap-2 font-bold py-3 rounded-lg"
                 style={{
                     background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
                     color: 'white',
@@ -116,7 +116,7 @@ export default function BiometricButton({ onSuccess, userId, className }: Biomet
             >
                 {loading ? (
                     <>
-                        <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" />
+                        <span className="animate-spin animate-spin w-4 h-4" role="status" aria-hidden="true" />
                         Verificando...
                     </>
                 ) : (
@@ -145,8 +145,8 @@ export default function BiometricButton({ onSuccess, userId, className }: Biomet
             </button>
 
             {error && (
-                <div className="alert alert-warning d-flex align-items-center gap-2 small py-2 mt-2 rounded-3 mb-0">
-                    <i className="bi bi-exclamation-triangle-fill flex-shrink-0" aria-hidden="true"></i>
+                <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-3 text-sm flex items-center gap-2 text-sm py-2 mt-2 rounded-lg mb-0">
+                    <i className="bi bi-exclamation-triangle-fill shrink-0" aria-hidden="true"></i>
                     {error}
                 </div>
             )}

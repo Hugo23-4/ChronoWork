@@ -156,16 +156,16 @@ export default function InspectorMonitorPage() {
         <div className="fade-in-up">
 
             {/* Header */}
-            <div className="d-flex flex-wrap justify-content-between align-items-start mb-4">
+            <div className="flex flex-wrap justify-between items-start mb-4">
                 <div>
-                    <h6 className="text-warning fw-bold text-uppercase small mb-1" style={{ letterSpacing: '0.05em' }}>
+                    <h6 className="text-amber-500 font-bold uppercase text-sm mb-1" style={{ letterSpacing: '0.05em' }}>
                         MINISTERIO DE TRABAJO
                     </h6>
-                    <h2 className="fw-bold text-dark mb-0">Monitor en Tiempo Real</h2>
-                    <p className="text-muted small mb-0">Vista de todos los fichajes del sistema • Solo lectura</p>
+                    <h2 className="font-bold text-navy mb-0">Monitor en Tiempo Real</h2>
+                    <p className="text-slate-400 text-sm mb-0">Vista de todos los fichajes del sistema • Solo lectura</p>
                 </div>
                 {isLive && (
-                    <div className="d-flex align-items-center gap-2 mt-2 mt-md-0">
+                    <div className="flex items-center gap-2 mt-2 mt-md-0">
                         <div style={{
                             width: 10, height: 10,
                             borderRadius: '50%',
@@ -173,39 +173,39 @@ export default function InspectorMonitorPage() {
                             boxShadow: '0 0 0 3px rgba(16, 185, 129, 0.3)',
                             animation: 'pulse 2s infinite'
                         }}></div>
-                        <span className="small fw-bold" style={{ color: '#10B981' }}>EN VIVO</span>
+                        <span className="text-sm font-bold" style={{ color: '#10B981' }}>EN VIVO</span>
                         <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
                     </div>
                 )}
             </div>
 
             {/* Stats Cards */}
-            <div className="row g-3 mb-4">
+            <div className="row gap-3 mb-4">
                 <div className="col-4">
-                    <div className="card border-0 shadow-sm rounded-4 p-3 text-center">
-                        <div className="display-6 fw-bold" style={{ color: '#0F172A' }}>{items.length}</div>
-                        <small className="text-muted fw-bold">TOTAL</small>
+                    <div className="card border-0 shadow-sm rounded-2xl p-3 text-center">
+                        <div className="text-4xl font-bold" style={{ color: '#0F172A' }}>{items.length}</div>
+                        <small className="text-slate-400 font-bold">TOTAL</small>
                     </div>
                 </div>
                 <div className="col-4">
-                    <div className="card border-0 shadow-sm rounded-4 p-3 text-center" style={{ borderLeft: '3px solid #10B981' }}>
-                        <div className="display-6 fw-bold" style={{ color: '#10B981' }}>{activeCount}</div>
-                        <small className="text-muted fw-bold">ACTIVOS</small>
+                    <div className="card border-0 shadow-sm rounded-2xl p-3 text-center" style={{ borderLeft: '3px solid #10B981' }}>
+                        <div className="text-4xl font-bold" style={{ color: '#10B981' }}>{activeCount}</div>
+                        <small className="text-slate-400 font-bold">ACTIVOS</small>
                     </div>
                 </div>
                 <div className="col-4">
-                    <div className="card border-0 shadow-sm rounded-4 p-3 text-center" style={{ borderLeft: '3px solid #6B7280' }}>
-                        <div className="display-6 fw-bold text-secondary">{completedCount}</div>
-                        <small className="text-muted fw-bold">COMPLETADOS</small>
+                    <div className="card border-0 shadow-sm rounded-2xl p-3 text-center" style={{ borderLeft: '3px solid #6B7280' }}>
+                        <div className="text-4xl font-bold text-slate-500">{completedCount}</div>
+                        <small className="text-slate-400 font-bold">COMPLETADOS</small>
                     </div>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="d-flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
                 <input
                     type="date"
-                    className="form-control form-control-sm rounded-pill border-0 shadow-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-sm rounded-full border-0 shadow-sm"
                     style={{ maxWidth: '180px', background: '#fff' }}
                     value={filterDate}
                     onChange={(e) => setFilterDate(e.target.value)}
@@ -214,7 +214,7 @@ export default function InspectorMonitorPage() {
                     {(['todos', 'activos', 'completados'] as const).map(status => (
                         <button
                             key={status}
-                            className={`btn btn-sm rounded-pill ${filterStatus === status ? 'btn-dark' : 'btn-outline-secondary'}`}
+                            className={`text-sm py-1.5 px-3 rounded-full ${filterStatus === status ? 'btn-dark' : 'btn-outline-secondary'}`}
                             onClick={() => setFilterStatus(status)}
                         >
                             {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -222,54 +222,54 @@ export default function InspectorMonitorPage() {
                     ))}
                 </div>
                 <button
-                    className="btn btn-sm btn-outline-warning rounded-pill ms-auto"
+                    className="text-sm py-1.5 px-3 btn-outline-warning rounded-full ml-auto"
                     onClick={() => mutate()}
                     disabled={isValidating}
                 >
-                    <i className={`bi bi-arrow-clockwise me-1 ${isValidating ? 'spin' : ''}`}></i>
+                    <i className={`bi bi-arrow-clockwise mr-1 ${isValidating ? 'spin' : ''}`}></i>
                     Actualizar
                 </button>
                 <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
             </div>
 
             {/* Last Update */}
-            <div className="d-flex align-items-center gap-1 mb-3">
-                <i className="bi bi-clock text-muted" style={{ fontSize: '0.7rem' }}></i>
-                <span className="text-muted" style={{ fontSize: '0.7rem' }}>
+            <div className="flex items-center gap-1 mb-3">
+                <i className="bi bi-clock text-slate-400" style={{ fontSize: '0.7rem' }}></i>
+                <span className="text-slate-400" style={{ fontSize: '0.7rem' }}>
                     Última actualización: {lastUpdateRef.current.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
-                {isValidating && !loading && <span className="text-warning small ms-2">(Actualizando...)</span>}
+                {isValidating && !loading && <span className="text-amber-500 text-sm ml-2">(Actualizando...)</span>}
             </div>
 
             {/* Desktop Table */}
-            <div className="d-none d-md-block">
-                <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div className="hidden md:block">
+                <div className="card border-0 shadow-sm rounded-2xl overflow-hidden">
                     <div className="table-responsive">
-                        <table className="table table-hover mb-0 align-middle">
+                        <table className="w-full table-hover mb-0 align-middle">
                             <thead style={{ background: '#0F172A' }}>
                                 <tr>
-                                    <th className="text-white-50 small fw-bold py-3 ps-4">EMPLEADO</th>
-                                    <th className="text-white-50 small fw-bold py-3">SEDE</th>
-                                    <th className="text-white-50 small fw-bold py-3">ENTRADA</th>
-                                    <th className="text-white-50 small fw-bold py-3">SALIDA</th>
-                                    <th className="text-white-50 small fw-bold py-3">STATUS</th>
-                                    <th className="text-white-50 small fw-bold py-3">GPS</th>
-                                    <th className="text-white-50 small fw-bold py-3 pe-4">HASH</th>
+                                    <th className="text-white/50 text-sm font-bold py-3 ps-4">EMPLEADO</th>
+                                    <th className="text-white/50 text-sm font-bold py-3">SEDE</th>
+                                    <th className="text-white/50 text-sm font-bold py-3">ENTRADA</th>
+                                    <th className="text-white/50 text-sm font-bold py-3">SALIDA</th>
+                                    <th className="text-white/50 text-sm font-bold py-3">STATUS</th>
+                                    <th className="text-white/50 text-sm font-bold py-3">GPS</th>
+                                    <th className="text-white/50 text-sm font-bold py-3 pe-4">HASH</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={7} className="text-center py-5">
-                                            <div className="spinner-border spinner-border-sm text-warning"></div>
-                                            <p className="text-muted small mt-2 mb-0">Cargando registros...</p>
+                                        <td colSpan={7} className="text-center py-6">
+                                            <div className="animate-spin animate-spin w-4 h-4 text-amber-500"></div>
+                                            <p className="text-slate-400 text-sm mt-2 mb-0">Cargando registros...</p>
                                         </td>
                                     </tr>
                                 ) : items.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="text-center py-5">
-                                            <i className="bi bi-journal-x text-muted" style={{ fontSize: '2rem' }}></i>
-                                            <p className="text-muted small mt-2 mb-0">No hay registros para esta fecha</p>
+                                        <td colSpan={7} className="text-center py-6">
+                                            <i className="bi bi-journal-x text-slate-400" style={{ fontSize: '2rem' }}></i>
+                                            <p className="text-slate-400 text-sm mt-2 mb-0">No hay registros para esta fecha</p>
                                         </td>
                                     </tr>
                                 ) : items.map((f: any) => {
@@ -277,7 +277,7 @@ export default function InspectorMonitorPage() {
                                     return (
                                         <tr key={f.id} style={!f.hora_salida ? { background: '#F0FDF4' } : {}}>
                                             <td className="ps-4">
-                                                <div className="d-flex align-items-center gap-2">
+                                                <div className="flex items-center gap-2">
                                                     {!f.hora_salida && (
                                                         <div style={{
                                                             width: 8, height: 8, borderRadius: '50%',
@@ -285,29 +285,29 @@ export default function InspectorMonitorPage() {
                                                             boxShadow: '0 0 0 2px rgba(16,185,129,0.3)'
                                                         }}></div>
                                                     )}
-                                                    <span className="fw-bold text-dark">{f.nombre_completo}</span>
+                                                    <span className="font-bold text-navy">{f.nombre_completo}</span>
                                                 </div>
                                             </td>
                                             <td>
-                                                <span className="text-muted small">
-                                                    <i className="bi bi-geo-alt me-1"></i>{f.sede_nombre}
+                                                <span className="text-slate-400 text-sm">
+                                                    <i className="bi bi-geo-alt mr-1"></i>{f.sede_nombre}
                                                 </span>
                                             </td>
-                                            <td className="font-monospace fw-bold">{formatTime(f.hora_entrada)}</td>
-                                            <td className="font-monospace fw-bold">{formatTime(f.hora_salida)}</td>
+                                            <td className="font-mono font-bold">{formatTime(f.hora_entrada)}</td>
+                                            <td className="font-mono font-bold">{formatTime(f.hora_salida)}</td>
                                             <td>
-                                                <span className="badge rounded-pill px-3 py-1 fw-bold"
+                                                <span className="badge rounded-full px-3 py-1 font-bold"
                                                     style={{ color: status.color, background: status.bg, fontSize: '0.7rem' }}>
                                                     {status.label}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className="fw-bold small" style={{ color: f.has_gps ? '#10B981' : '#EF4444' }}>
+                                                <span className="font-bold text-sm" style={{ color: f.has_gps ? '#10B981' : '#EF4444' }}>
                                                     {f.has_gps ? '✓ GPS OK' : '✗ SIN GPS'}
                                                 </span>
                                             </td>
                                             <td className="pe-4">
-                                                <code className="text-warning small" style={{ fontSize: '0.7rem' }}>
+                                                <code className="text-amber-500 text-sm" style={{ fontSize: '0.7rem' }}>
                                                     {f.hash}
                                                 </code>
                                             </td>
@@ -321,27 +321,27 @@ export default function InspectorMonitorPage() {
             </div>
 
             {/* Mobile Cards */}
-            <div className="d-md-none d-flex flex-column gap-3">
+            <div className="d-md-none flex flex-col gap-3">
                 {loading ? (
-                    <div className="text-center py-5">
-                        <div className="spinner-border text-warning"></div>
+                    <div className="text-center py-6">
+                        <div className="animate-spin text-amber-500"></div>
                     </div>
                 ) : items.length === 0 ? (
-                    <div className="card border-0 shadow-sm rounded-4 p-4 text-center">
-                        <i className="bi bi-journal-x text-muted mb-2" style={{ fontSize: '2rem' }}></i>
-                        <p className="text-muted small mb-0">No hay registros para esta fecha</p>
+                    <div className="card border-0 shadow-sm rounded-2xl p-4 text-center">
+                        <i className="bi bi-journal-x text-slate-400 mb-2" style={{ fontSize: '2rem' }}></i>
+                        <p className="text-slate-400 text-sm mb-0">No hay registros para esta fecha</p>
                     </div>
                 ) : items.map((f: any) => {
                     const status = getStatus(f);
                     const isActive = !f.hora_salida;
 
                     return (
-                        <div key={f.id} className="card border-0 shadow-sm rounded-4 overflow-hidden"
+                        <div key={f.id} className="card border-0 shadow-sm rounded-2xl overflow-hidden"
                             style={isActive ? { background: '#F0FDF4' } : {}}>
                             <div style={{ borderLeft: `4px solid ${isActive ? '#10B981' : '#E5E7EB'}` }}>
                                 <div className="p-3">
-                                    <div className="d-flex justify-content-between align-items-start mb-2">
-                                        <div className="d-flex align-items-center gap-2">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="flex items-center gap-2">
                                             {isActive && (
                                                 <div style={{
                                                     width: 8, height: 8, borderRadius: '50%',
@@ -349,22 +349,22 @@ export default function InspectorMonitorPage() {
                                                     animation: 'pulse 2s infinite'
                                                 }}></div>
                                             )}
-                                            <span className="fw-bold small" style={{
+                                            <span className="font-bold text-sm" style={{
                                                 color: isActive ? '#10B981' : '#6B7280',
                                                 fontSize: '0.7rem', letterSpacing: '0.05em'
                                             }}>
                                                 {isActive ? 'EN TURNO ACTIVO' : 'COMPLETADO'}
                                             </span>
                                         </div>
-                                        <span className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                        <span className="text-slate-400" style={{ fontSize: '0.75rem' }}>
                                             {formatTime(f.hora_entrada)}
                                         </span>
                                     </div>
 
-                                    <h6 className="fw-bold text-dark mb-1">{f.nombre_completo}</h6>
-                                    <div className="d-flex align-items-center gap-2 mb-2">
-                                        <span className="text-muted small">📍 {f.sede_nombre}</span>
-                                        <span className="small fw-bold" style={{
+                                    <h6 className="font-bold text-navy mb-1">{f.nombre_completo}</h6>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-slate-400 text-sm">📍 {f.sede_nombre}</span>
+                                        <span className="text-sm font-bold" style={{
                                             color: f.has_gps ? '#10B981' : '#EF4444',
                                             fontSize: '0.7rem'
                                         }}>
@@ -372,11 +372,11 @@ export default function InspectorMonitorPage() {
                                         </span>
                                     </div>
 
-                                    <div className="d-flex justify-content-between align-items-center pt-2 border-top">
-                                        <span className="text-muted small">
+                                    <div className="flex justify-between items-center pt-2 border-t">
+                                        <span className="text-slate-400 text-sm">
                                             {formatTime(f.hora_entrada)} → {formatTime(f.hora_salida)}
                                         </span>
-                                        <code className="text-warning" style={{ fontSize: '0.65rem' }}>
+                                        <code className="text-amber-500" style={{ fontSize: '0.65rem' }}>
                                             {f.hash}
                                         </code>
                                     </div>

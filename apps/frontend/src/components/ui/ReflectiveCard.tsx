@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ReflectiveCardProps {
   children: React.ReactNode;
@@ -28,12 +29,12 @@ export default function ReflectiveCard({
   return (
     <div
       ref={cardRef}
-      className={`cw-reflective-wrapper ${className}`}
+      className={cn('cw-reflective-wrapper', className)}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setGlarePos({ x: 50, y: 50 }); }}
     >
-      <div className="cw-reflective-inner position-relative">
+      <div className="cw-reflective-inner relative">
         {/* Glare sutil — sin rotación */}
         <div
           className="cw-reflective-glare"
@@ -42,7 +43,7 @@ export default function ReflectiveCard({
             opacity: hovered ? 0.6 : 0,
           }}
         />
-        <div className="cw-reflective-content position-relative">
+        <div className="cw-reflective-content relative">
           {children}
         </div>
       </div>

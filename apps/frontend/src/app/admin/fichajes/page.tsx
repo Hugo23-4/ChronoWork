@@ -36,14 +36,32 @@ export default function AdminFichajesPage() {
     try {
       const { data, error } = await supabase
         .from('fichajes')
-        .select('*, empleados_info(nombre_completo)')
+        .select('*')
         .gte('fecha', dateFrom)
         .lte('fecha', dateTo)
         .order('created_at', { ascending: false })
         .limit(200);
 
       if (error) throw error;
-      if (data) setFichajes(processFichajes(data));
+
+      // Batch fetch employee names (empleados_info is a view, can't FK embed)
+      const empIds = [...new Set((data || []).map((f: any) => f.empleado_id).filter(Boolean))];
+      const empMap: Record<string, string> = {};
+      if (empIds.length > 0) {
+        const { data: emps } = await supabase
+          .from('empleados_info')
+          .select('id, nombre_completo')
+          .in('id', empIds);
+        (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; });
+      }
+
+      // Enrich data with employee names
+      const enriched = (data || []).map((f: any) => ({
+        ...f,
+        empleados_info: { nombre_completo: empMap[f.empleado_id] || 'Sin nombre' },
+      }));
+
+      if (enriched) setFichajes(processFichajes(enriched));
     } catch (err) {
       console.error('Error cargando fichajes:', err);
     } finally {
@@ -151,10 +169,10 @@ export default function AdminFichajesPage() {
   };
 
   return (
-    <div className="anim-fade-up pb-5">
+    <div className="anim-fade-up pb-6">
 
       {/* HEADER */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+      <div className="flex flex-col flex-md-row justify-between align-items-md-center mb-4 gap-3">
         <div>
           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Admin</p>
           <h2 style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif', fontSize: '1.75rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em', marginBottom: 0 }}>
@@ -162,24 +180,24 @@ export default function AdminFichajesPage() {
           </h2>
         </div>
         {/* Filtro de fechas */}
-        <div className="d-flex gap-2 align-items-center flex-wrap">
+        <div className="flex gap-2 items-center flex-wrap">
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-            className="form-control form-control-sm" style={{ maxWidth: 140, fontSize: '0.85rem' }} />
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-sm" style={{ maxWidth: 140, fontSize: '0.85rem' }} />
           <span style={{ color: '#94A3B8', fontSize: '0.875rem' }}>–</span>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-            className="form-control form-control-sm" style={{ maxWidth: 140, fontSize: '0.85rem' }} />
+            className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-sm" style={{ maxWidth: 140, fontSize: '0.85rem' }} />
         </div>
       </div>
 
       {/* STAT CARDS */}
-      <div className="row g-3 mb-4">
+      <div className="row gap-3 mb-4">
         {[
           { label: 'Total fichajes', value: stats.total, icon: 'bi-clock-history', color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
           { label: 'Válidos', value: stats.valid, icon: 'bi-check-circle-fill', color: '#10B981', bg: 'rgba(16,185,129,0.08)' },
           { label: 'En curso', value: stats.progress, icon: 'bi-play-circle-fill', color: '#2563EB', bg: 'rgba(37,99,235,0.08)' },
           { label: 'Incidencias', value: stats.incident, icon: 'bi-exclamation-circle-fill', color: '#EF4444', bg: 'rgba(239,68,68,0.08)' },
         ].map((s, i) => (
-          <div key={i} className="col-6 col-lg-3">
+          <div key={i} className="col-span-6 lg:col-span-3">
             <div style={{
               background: 'white', borderRadius: 16, padding: '16px 20px',
               border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(15,23,42,0.05)',
@@ -205,11 +223,11 @@ export default function AdminFichajesPage() {
           <i className="bi bi-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
           <input
             type="text" placeholder="Buscar empleado..." value={search}
-            onChange={e => setSearch(e.target.value)} className="form-control"
+            onChange={e => setSearch(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
             style={{ paddingLeft: 36, background: '#F8FAFC' }}
           />
         </div>
-        <div className="d-flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           {(['all', 'valid', 'progress', 'incident'] as const).map((s) => (
             <button
               key={s}
@@ -230,8 +248,8 @@ export default function AdminFichajesPage() {
 
       {/* TABLA */}
       {loading ? (
-        <div className="d-flex justify-content-center py-5">
-          <div className="spinner-border" style={{ color: '#2563EB', width: 36, height: 36, borderWidth: 3 }} />
+        <div className="flex justify-center py-6">
+          <div className="animate-spin" style={{ color: '#2563EB', width: 36, height: 36, borderWidth: 3 }} />
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ background: 'white', borderRadius: 20, padding: '4rem 2rem', textAlign: 'center', border: '1.5px dashed #E2E8F0' }}>
@@ -242,7 +260,7 @@ export default function AdminFichajesPage() {
       ) : (
         <>
           {/* Desktop */}
-          <div className="d-none d-md-block" style={{ background: 'white', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(15,23,42,0.08)', border: '1px solid #E2E8F0' }}>
+          <div className="hidden md:block" style={{ background: 'white', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 24px rgba(15,23,42,0.08)', border: '1px solid #E2E8F0' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
@@ -298,7 +316,7 @@ export default function AdminFichajesPage() {
           </div>
 
           {/* Mobile Cards */}
-          <div className="d-md-none d-grid gap-3">
+          <div className="d-md-none grid gap-3">
             {filtered.map((f) => {
               const sc = statusConfig[f.status];
               return (

@@ -181,37 +181,37 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                 />
             )}
             <div className="modal-backdrop fade show" onClick={onClose}></div>
-            <div className="modal fade show d-block" tabIndex={-1} style={{ zIndex: 1055 }}>
-                <div className="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-                    <div className="modal-content rounded-4 border-0 shadow-lg">
+            <div className="modal fade show block" tabIndex={-1} style={{ zIndex: 1055 }}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-dialog-centered modal-lg modal-dialog-scrollable">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto rounded-2xl border-0 shadow-lg">
 
                         {/* HEADER */}
-                        <div className="modal-header bg-dark text-white border-0 rounded-top-4">
-                            <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-navy text-white border-0 rounded-top-4">
+                            <h5 className="font-bold text-lg text-navy font-bold flex items-center gap-2">
                                 <i className={`bi ${employeeId ? 'bi-pencil-square' : 'bi-person-plus-fill'}`}></i>
                                 {employeeId ? 'Editar Empleado' : 'Nuevo Empleado'}
                             </h5>
-                            <button type="button" className="btn-close btn-close-white" onClick={onClose} aria-label="Cerrar modal"></button>
+                            <button type="button" className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-none text-xl btn-close-white" onClick={onClose} aria-label="Cerrar modal"></button>
                         </div>
 
                         {/* BODY */}
                         <form onSubmit={handleSubmit}>
-                            <div className="modal-body p-4">
+                            <div className="p-6 p-4">
                                 {loading ? (
-                                    <div className="text-center py-5">
-                                        <div className="spinner-border text-primary" role="status">
-                                            <span className="visually-hidden">Cargando...</span>
+                                    <div className="text-center py-6">
+                                        <div className="animate-spin text-chrono-blue" role="status">
+                                            <span className="sr-only">Cargando...</span>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="row g-3">
+                                    <div className="row gap-3">
 
                                         {/* Nombre Completo */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">NOMBRE COMPLETO *</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">NOMBRE COMPLETO *</label>
                                             <input
                                                 type="text"
-                                                className="form-control bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 placeholder="Ej: Juan Pérez García"
                                                 value={formData.nombre_completo}
                                                 onChange={(e) => handleChange('nombre_completo', e.target.value)}
@@ -220,11 +220,11 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                         </div>
 
                                         {/* DNI */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">DNI / NIE</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">DNI / NIE</label>
                                             <input
                                                 type="text"
-                                                className="form-control bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 placeholder="12345678X"
                                                 value={formData.dni}
                                                 onChange={(e) => handleChange('dni', e.target.value)}
@@ -232,11 +232,11 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                         </div>
 
                                         {/* Email */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">EMAIL CORPORATIVO *</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">EMAIL CORPORATIVO *</label>
                                             <input
                                                 type="email"
-                                                className="form-control bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 placeholder="empleado@loom.es"
                                                 value={formData.email}
                                                 onChange={(e) => handleChange('email', e.target.value)}
@@ -245,11 +245,11 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                         </div>
 
                                         {/* Teléfono */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">TELÉFONO</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">TELÉFONO</label>
                                             <input
                                                 type="tel"
-                                                className="form-control bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 placeholder="+34 600 000 000"
                                                 value={formData.telefono}
                                                 onChange={(e) => handleChange('telefono', e.target.value)}
@@ -257,11 +257,11 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                         </div>
 
                                         {/* Puesto */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">PUESTO</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">PUESTO</label>
                                             <input
                                                 type="text"
-                                                className="form-control bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 placeholder="Ej: Desarrollador"
                                                 value={formData.puesto}
                                                 onChange={(e) => handleChange('puesto', e.target.value)}
@@ -269,10 +269,10 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                         </div>
 
                                         {/* Departamento */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">DEPARTAMENTO</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">DEPARTAMENTO</label>
                                             <select
-                                                className="form-select bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 value={formData.departamento}
                                                 onChange={(e) => handleChange('departamento', e.target.value)}
                                             >
@@ -286,10 +286,10 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                         </div>
 
                                         {/* Sede Asignada */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">SEDE / OBRA ASIGNADA</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">SEDE / OBRA ASIGNADA</label>
                                             <select
-                                                className="form-select bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 value={formData.sede_id || ''}
                                                 onChange={(e) => handleChange('sede_id', e.target.value || undefined)}
                                             >
@@ -298,14 +298,14 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                                     <option key={sede.id} value={sede.id}>{sede.nombre}</option>
                                                 ))}
                                             </select>
-                                            <small className="form-text text-muted">Aparecerá en el mapa de esa sede</small>
+                                            <small className="form-text text-slate-400">Aparecerá en el mapa de esa sede</small>
                                         </div>
 
                                         {/* Rol */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-secondary">ROL DE USUARIO</label>
+                                        <div className="md:col-span-6">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">ROL DE USUARIO</label>
                                             <select
-                                                className="form-select bg-light border-0"
+                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 outline-none transition-colors text-sm bg-gray-50 border-0"
                                                 value={formData.rol}
                                                 onChange={(e) => handleChange('rol', e.target.value)}
                                             >
@@ -313,25 +313,25 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                                 <option value="admin">Administrador</option>
                                             </select>
                                             {formData.rol === 'admin' && (
-                                                <small className="form-text text-danger">⚠️ Tendrá acceso total al panel admin</small>
+                                                <small className="form-text text-red-500">⚠️ Tendrá acceso total al panel admin</small>
                                             )}
                                         </div>
 
                                         {/* Estado */}
-                                        <div className="col-12">
+                                        <div className="col-span-12">
                                             <div className="form-check form-switch">
                                                 <input
-                                                    className="form-check-input"
+                                                    className="accent-chrono-blue"
                                                     type="checkbox"
                                                     checked={formData.activo}
                                                     onChange={(e) => handleChange('activo', e.target.checked)}
                                                 />
-                                                <label className="form-check-label fw-bold">
+                                                <label className="form-check-label font-bold">
                                                     Empleado {formData.activo ? 'ACTIVO' : 'DE BAJA'}
                                                 </label>
                                             </div>
                                             {!formData.activo && (
-                                                <small className="text-muted">Este empleado no aparecerá en listados activos</small>
+                                                <small className="text-slate-400">Este empleado no aparecerá en listados activos</small>
                                             )}
                                         </div>
 
@@ -340,10 +340,10 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                             </div>
 
                             {/* FOOTER */}
-                            <div className="modal-footer border-0 bg-light rounded-bottom-4 p-3">
+                            <div className="flex justify-end gap-2 p-6 border-t border-gray-100 border-0 bg-gray-50 rounded-b-2xl p-3">
                                 <button
                                     type="button"
-                                    className="btn btn-light rounded-pill px-4"
+                                    className="bg-white text-navy px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 rounded-full px-4"
                                     onClick={onClose}
                                     disabled={saving}
                                 >
@@ -351,12 +351,12 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                 </button>
                                 <button
                                     type="submit"
-                                    className="btn btn-dark rounded-pill px-4 d-flex align-items-center gap-2"
+                                    className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4 flex items-center gap-2"
                                     disabled={saving || loading}
                                 >
                                     {saving ? (
                                         <>
-                                            <span className="spinner-border spinner-border-sm"></span>
+                                            <span className="animate-spin animate-spin w-4 h-4"></span>
                                             Guardando...
                                         </>
                                     ) : (

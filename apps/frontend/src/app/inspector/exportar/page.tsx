@@ -403,63 +403,63 @@ export default function InspectorExportarPage() {
         <div className="fade-in-up">
 
             {/* DESKTOP VIEW */}
-            <div className="d-none d-md-block">
+            <div className="hidden md:block">
                 <div className="mb-4">
-                    <h2 className="fw-bold text-dark mb-1">Generación de Informes</h2>
-                    <p className="text-muted small">Exportar datos oficiales del sistema de fichaje</p>
+                    <h2 className="font-bold text-navy mb-1">Generación de Informes</h2>
+                    <p className="text-slate-400 text-sm">Exportar datos oficiales del sistema de fichaje</p>
                 </div>
 
-                <div className="row g-4">
+                <div className="row gap-4">
 
                     {/* LEFT: Configure Parameters */}
                     <div className="col-lg-5">
-                        <h6 className="fw-bold text-dark mb-3">1. Configurar Parámetros</h6>
-                        <div className="card border-0 shadow-sm rounded-4 p-4">
+                        <h6 className="font-bold text-navy mb-3">1. Configurar Parámetros</h6>
+                        <div className="card border-0 shadow-sm rounded-2xl p-4">
 
                             {/* Period */}
-                            <h6 className="text-warning fw-bold text-uppercase small mb-3" style={{ letterSpacing: '0.08em' }}>
+                            <h6 className="text-amber-500 font-bold uppercase text-sm mb-3" style={{ letterSpacing: '0.08em' }}>
                                 PERIODO A AUDITAR
                             </h6>
-                            <div className="d-flex gap-2 mb-4">
-                                <div className="flex-grow-1">
-                                    <label className="form-label small text-muted">Desde</label>
-                                    <input type="date" className="form-control rounded-3 border-light bg-light"
+                            <div className="flex gap-2 mb-4">
+                                <div className="flex-grow">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm text-slate-400">Desde</label>
+                                    <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm rounded-lg border-light bg-gray-50"
                                         value={periodo.inicio}
                                         onChange={(e) => setPeriodo(p => ({ ...p, inicio: e.target.value }))} />
                                 </div>
-                                <div className="flex-grow-1">
-                                    <label className="form-label small text-muted">Hasta</label>
-                                    <input type="date" className="form-control rounded-3 border-light bg-light"
+                                <div className="flex-grow">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm text-slate-400">Hasta</label>
+                                    <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm rounded-lg border-light bg-gray-50"
                                         value={periodo.fin}
                                         onChange={(e) => setPeriodo(p => ({ ...p, fin: e.target.value }))} />
                                 </div>
                             </div>
 
                             {/* Report Type */}
-                            <h6 className="text-warning fw-bold text-uppercase small mb-3" style={{ letterSpacing: '0.08em' }}>
+                            <h6 className="text-amber-500 font-bold uppercase text-sm mb-3" style={{ letterSpacing: '0.08em' }}>
                                 TIPO DE REPORTE
                             </h6>
-                            <div className="d-flex flex-column gap-2 mb-4">
+                            <div className="flex flex-col gap-2 mb-4">
                                 {([
                                     { value: 'completo', title: 'Informe Legal Completo', desc: 'Incluye hash de integridad y firmas.' },
                                     { value: 'resumen', title: 'Resumen Ejecutivo', desc: 'Solo totales de horas por empleado.' },
                                 ] as const).map(opt => (
                                     <div key={opt.value}
-                                        className={`p-3 rounded-3 border ${tipoReporte === opt.value ? 'border-warning' : 'border-light'}`}
+                                        className={`p-3 rounded-lg border ${tipoReporte === opt.value ? 'border-warning' : 'border-light'}`}
                                         style={{ background: tipoReporte === opt.value ? '#FFFBEB' : '#fff', cursor: 'pointer' }}
                                         onClick={() => setTipoReporte(opt.value)}>
-                                        <div className="d-flex align-items-center gap-2">
-                                            <div className="rounded-circle d-flex align-items-center justify-content-center"
+                                        <div className="flex items-center gap-2">
+                                            <div className="rounded-full flex items-center justify-center"
                                                 style={{
                                                     width: 20, height: 20,
                                                     border: `2px solid ${tipoReporte === opt.value ? '#F59E0B' : '#D1D5DB'}`,
                                                     background: tipoReporte === opt.value ? '#F59E0B' : 'transparent'
                                                 }}>
-                                                {tipoReporte === opt.value && <div className="rounded-circle bg-white" style={{ width: 6, height: 6 }}></div>}
+                                                {tipoReporte === opt.value && <div className="rounded-full bg-white" style={{ width: 6, height: 6 }}></div>}
                                             </div>
                                             <div>
-                                                <div className="fw-bold text-dark small">{opt.title}</div>
-                                                <small className="text-muted" style={{ fontSize: '0.75rem' }}>{opt.desc}</small>
+                                                <div className="font-bold text-navy text-sm">{opt.title}</div>
+                                                <small className="text-slate-400" style={{ fontSize: '0.75rem' }}>{opt.desc}</small>
                                             </div>
                                         </div>
                                     </div>
@@ -467,37 +467,37 @@ export default function InspectorExportarPage() {
                             </div>
 
                             {/* Format - PDF / Excel */}
-                            <h6 className="text-warning fw-bold text-uppercase small mb-3" style={{ letterSpacing: '0.08em' }}>
+                            <h6 className="text-amber-500 font-bold uppercase text-sm mb-3" style={{ letterSpacing: '0.08em' }}>
                                 FORMATO DE SALIDA
                             </h6>
-                            <div className="d-flex gap-2 mb-4">
+                            <div className="flex gap-2 mb-4">
                                 <button
-                                    className={`btn rounded-pill px-4 py-2 fw-bold ${formato === 'pdf' ? 'text-white' : 'btn-outline-secondary'}`}
+                                    className={`btn rounded-full px-4 py-2 font-bold ${formato === 'pdf' ? 'text-white' : 'btn-outline-secondary'}`}
                                     style={formato === 'pdf' ? { background: '#0F172A' } : {}}
                                     onClick={() => setFormato('pdf')}
                                 >
-                                    <i className="bi bi-file-earmark-pdf me-1"></i> PDF
+                                    <i className="bi bi-file-earmark-pdf mr-1"></i> PDF
                                 </button>
                                 <button
-                                    className={`btn rounded-pill px-4 py-2 fw-bold ${formato === 'excel' ? 'text-white' : 'btn-outline-secondary'}`}
+                                    className={`btn rounded-full px-4 py-2 font-bold ${formato === 'excel' ? 'text-white' : 'btn-outline-secondary'}`}
                                     style={formato === 'excel' ? { background: '#0F172A' } : {}}
                                     onClick={() => setFormato('excel')}
                                 >
-                                    <i className="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+                                    <i className="bi bi-file-earmark-spreadsheet mr-1"></i> Excel
                                 </button>
                             </div>
 
                             {/* Generate Button */}
                             <button
-                                className="btn w-100 py-3 rounded-pill fw-bold text-white"
+                                className="btn w-full py-3 rounded-full font-bold text-white"
                                 style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}
                                 onClick={generatePreview}
                                 disabled={loading}
                             >
                                 {loading ? (
-                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    <span className="animate-spin animate-spin w-4 h-4 mr-2"></span>
                                 ) : (
-                                    <i className="bi bi-file-earmark-bar-graph me-2"></i>
+                                    <i className="bi bi-file-earmark-bar-graph mr-2"></i>
                                 )}
                                 Generar Informe Oficial
                             </button>
@@ -506,67 +506,67 @@ export default function InspectorExportarPage() {
 
                     {/* RIGHT: Preview */}
                     <div className="col-lg-7">
-                        <h6 className="fw-bold text-dark mb-3">2. Vista Previa del Documento</h6>
+                        <h6 className="font-bold text-navy mb-3">2. Vista Previa del Documento</h6>
 
-                        <div className="card border-0 shadow-sm rounded-4 p-4" style={{ minHeight: '450px', background: '#fff' }}>
+                        <div className="card border-0 shadow-sm rounded-2xl p-4" style={{ minHeight: '450px', background: '#fff' }}>
                             {!generated ? (
-                                <div className="h-100 d-flex flex-column align-items-center justify-content-center text-center py-5">
-                                    <i className="bi bi-file-earmark-text text-muted mb-3" style={{ fontSize: '3rem', opacity: 0.2 }}></i>
-                                    <p className="text-muted small">Configura los parámetros y genera el informe</p>
+                                <div className="h-full flex flex-col items-center justify-center text-center py-6">
+                                    <i className="bi bi-file-earmark-text text-slate-400 mb-3" style={{ fontSize: '3rem', opacity: 0.2 }}></i>
+                                    <p className="text-slate-400 text-sm">Configura los parámetros y genera el informe</p>
                                 </div>
                             ) : preview.length === 0 ? (
-                                <div className="h-100 d-flex flex-column align-items-center justify-content-center text-center py-5">
-                                    <i className="bi bi-inbox text-muted mb-3" style={{ fontSize: '3rem', opacity: 0.2 }}></i>
-                                    <p className="text-muted">No hay datos para el periodo seleccionado</p>
+                                <div className="h-full flex flex-col items-center justify-center text-center py-6">
+                                    <i className="bi bi-inbox text-slate-400 mb-3" style={{ fontSize: '3rem', opacity: 0.2 }}></i>
+                                    <p className="text-slate-400">No hay datos para el periodo seleccionado</p>
                                 </div>
                             ) : (
                                 <>
                                     {/* Document Header */}
-                                    <div className="border-bottom pb-3 mb-3">
-                                        <div className="d-flex justify-content-between align-items-start">
+                                    <div className="border-b pb-3 mb-3">
+                                        <div className="flex justify-between items-start">
                                             <div>
                                                 <div style={{ width: '120px', height: '3px', background: '#0F172A', marginBottom: '8px' }}></div>
-                                                <h5 className="fw-bold text-dark mb-0">CERTIFICADO DE REGISTRO</h5>
-                                                <small className="text-muted d-block">Generado por ChronoWork System v1.0</small>
+                                                <h5 className="font-bold text-navy mb-0">CERTIFICADO DE REGISTRO</h5>
+                                                <small className="text-slate-400 block">Generado por ChronoWork System v1.0</small>
                                             </div>
-                                            <small className="text-muted">Ref: {refIdRef.current}</small>
+                                            <small className="text-slate-400">Ref: {refIdRef.current}</small>
                                         </div>
-                                        <small className="text-muted d-block mt-2">Periodo: {formatPeriodoLabel()}</small>
+                                        <small className="text-slate-400 block mt-2">Periodo: {formatPeriodoLabel()}</small>
                                     </div>
 
                                     {/* Summary */}
-                                    <div className="row g-3 mb-3">
+                                    <div className="row gap-3 mb-3">
                                         <div className="col-4">
-                                            <div className="rounded-3 p-2 text-center" style={{ background: '#F8FAFC' }}>
-                                                <div className="fw-bold text-dark">{preview.length}</div>
-                                                <small className="text-muted" style={{ fontSize: '0.65rem' }}>Empleados</small>
+                                            <div className="rounded-lg p-2 text-center" style={{ background: '#F8FAFC' }}>
+                                                <div className="font-bold text-navy">{preview.length}</div>
+                                                <small className="text-slate-400" style={{ fontSize: '0.65rem' }}>Empleados</small>
                                             </div>
                                         </div>
                                         <div className="col-4">
-                                            <div className="rounded-3 p-2 text-center" style={{ background: '#FFFBEB' }}>
-                                                <div className="fw-bold" style={{ color: '#D97706' }}>{totalHoras}</div>
-                                                <small className="text-muted" style={{ fontSize: '0.65rem' }}>Total Horas</small>
+                                            <div className="rounded-lg p-2 text-center" style={{ background: '#FFFBEB' }}>
+                                                <div className="font-bold" style={{ color: '#D97706' }}>{totalHoras}</div>
+                                                <small className="text-slate-400" style={{ fontSize: '0.65rem' }}>Total Horas</small>
                                             </div>
                                         </div>
                                         <div className="col-4">
-                                            <div className="rounded-3 p-2 text-center" style={{ background: '#F0FDF4' }}>
-                                                <div className="fw-bold" style={{ color: '#10B981' }}>{formato === 'pdf' ? 'PDF' : 'XLS'}</div>
-                                                <small className="text-muted" style={{ fontSize: '0.65rem' }}>Formato</small>
+                                            <div className="rounded-lg p-2 text-center" style={{ background: '#F0FDF4' }}>
+                                                <div className="font-bold" style={{ color: '#10B981' }}>{formato === 'pdf' ? 'PDF' : 'XLS'}</div>
+                                                <small className="text-slate-400" style={{ fontSize: '0.65rem' }}>Formato</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Data Table */}
                                     <div className="table-responsive">
-                                        <table className="table table-sm mb-0">
+                                        <table className="w-full table-sm mb-0">
                                             <thead>
                                                 <tr>
-                                                    <th className="small fw-bold text-dark border-0 pb-2">EMPLEADO</th>
-                                                    <th className="small fw-bold text-dark border-0 pb-2 text-end">HORAS TOTALES</th>
+                                                    <th className="text-sm font-bold text-navy border-0 pb-2">EMPLEADO</th>
+                                                    <th className="text-sm font-bold text-navy border-0 pb-2 text-right">HORAS TOTALES</th>
                                                     {tipoReporte === 'completo' && (
                                                         <>
-                                                            <th className="small fw-bold text-dark border-0 pb-2 text-end">DÍAS</th>
-                                                            <th className="small fw-bold text-dark border-0 pb-2 text-end">FICHAJES</th>
+                                                            <th className="text-sm font-bold text-navy border-0 pb-2 text-right">DÍAS</th>
+                                                            <th className="text-sm font-bold text-navy border-0 pb-2 text-right">FICHAJES</th>
                                                         </>
                                                     )}
                                                 </tr>
@@ -574,12 +574,12 @@ export default function InspectorExportarPage() {
                                             <tbody>
                                                 {preview.map((row, i) => (
                                                     <tr key={i}>
-                                                        <td className="small text-dark">{row.empleado}</td>
-                                                        <td className="small text-dark text-end font-monospace fw-bold">{row.horas_totales}</td>
+                                                        <td className="text-sm text-navy">{row.empleado}</td>
+                                                        <td className="text-sm text-navy text-right font-mono font-bold">{row.horas_totales}</td>
                                                         {tipoReporte === 'completo' && (
                                                             <>
-                                                                <td className="small text-dark text-end">{row.dias_trabajados}</td>
-                                                                <td className="small text-dark text-end">{row.fichajes_count}</td>
+                                                                <td className="text-sm text-navy text-right">{row.dias_trabajados}</td>
+                                                                <td className="text-sm text-navy text-right">{row.fichajes_count}</td>
                                                             </>
                                                         )}
                                                     </tr>
@@ -589,16 +589,16 @@ export default function InspectorExportarPage() {
                                     </div>
 
                                     {/* Digital Signature */}
-                                    <div className="mt-auto pt-4 border-top mt-4">
-                                        <div className="d-flex justify-content-between align-items-end">
+                                    <div className="mt-auto pt-4 border-t mt-4">
+                                        <div className="flex justify-between items-end">
                                             <div>
                                                 <div style={{ width: '100px', height: '1px', background: '#000', marginBottom: '4px' }}></div>
-                                                <small className="text-muted" style={{ fontSize: '0.7rem' }}>Firma autorizada</small>
+                                                <small className="text-slate-400" style={{ fontSize: '0.7rem' }}>Firma autorizada</small>
                                             </div>
-                                            <div className="text-center rounded-3 px-3 py-2" style={{ border: '2px solid #F59E0B' }}>
-                                                <div className="fw-bold text-warning small">FIRMADO</div>
-                                                <div className="fw-bold text-warning small">DIGITALMENTE</div>
-                                                <code className="text-warning" style={{ fontSize: '0.6rem' }}>
+                                            <div className="text-center rounded-lg px-3 py-2" style={{ border: '2px solid #F59E0B' }}>
+                                                <div className="font-bold text-amber-500 text-sm">FIRMADO</div>
+                                                <div className="font-bold text-amber-500 text-sm">DIGITALMENTE</div>
+                                                <code className="text-amber-500" style={{ fontSize: '0.6rem' }}>
                                                     Hash: {refIdRef.current.toLowerCase()}
                                                 </code>
                                             </div>
@@ -608,14 +608,14 @@ export default function InspectorExportarPage() {
                                     {/* Download */}
                                     <div className="mt-4">
                                         <button
-                                            className="btn btn-dark rounded-pill px-4 py-2 fw-bold"
+                                            className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4 py-2 font-bold"
                                             onClick={handleDownload}
                                             disabled={downloading}
                                         >
                                             {downloading ? (
-                                                <span className="spinner-border spinner-border-sm me-2"></span>
+                                                <span className="animate-spin animate-spin w-4 h-4 mr-2"></span>
                                             ) : (
-                                                <i className={`bi ${formato === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-spreadsheet'} me-2`}></i>
+                                                <i className={`bi ${formato === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-spreadsheet'} mr-2`}></i>
                                             )}
                                             Descargar {formato === 'pdf' ? 'PDF' : 'Excel'}
                                         </button>
@@ -630,110 +630,110 @@ export default function InspectorExportarPage() {
             {/* MOBILE VIEW */}
             <div className="d-md-none">
                 <div className="mb-4">
-                    <h2 className="fw-bold text-dark mb-1">Exportar Datos</h2>
+                    <h2 className="font-bold text-navy mb-1">Exportar Datos</h2>
                 </div>
 
                 {/* Config Card */}
-                <h6 className="text-warning fw-bold text-uppercase small mb-3" style={{ letterSpacing: '0.08em' }}>
+                <h6 className="text-amber-500 font-bold uppercase text-sm mb-3" style={{ letterSpacing: '0.08em' }}>
                     CONFIGURACIÓN
                 </h6>
-                <div className="card border-0 shadow-sm rounded-4 p-3 mb-4">
-                    <div className="d-flex justify-content-between align-items-center py-3 border-bottom">
-                        <span className="fw-bold text-dark">Periodo</span>
-                        <span className="text-warning fw-bold">
+                <div className="card border-0 shadow-sm rounded-2xl p-3 mb-4">
+                    <div className="flex justify-between items-center py-3 border-b">
+                        <span className="font-bold text-navy">Periodo</span>
+                        <span className="text-amber-500 font-bold">
                             {new Date(periodo.inicio + 'T00:00:00').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
                         </span>
                     </div>
-                    <div className="d-flex justify-content-between align-items-center py-3 border-bottom">
-                        <span className="fw-bold text-dark">Formato</span>
-                        <span className="badge rounded-pill bg-dark text-white px-3 py-2">
+                    <div className="flex justify-between items-center py-3 border-b">
+                        <span className="font-bold text-navy">Formato</span>
+                        <span className="badge rounded-full bg-navy text-white px-3 py-2">
                             {formato === 'pdf' ? 'PDF Oficial' : 'Excel'}
                         </span>
                     </div>
-                    <div className="d-flex justify-content-between align-items-center py-3">
-                        <span className="fw-bold text-dark">Detalle</span>
-                        <span className="text-muted">
+                    <div className="flex justify-between items-center py-3">
+                        <span className="font-bold text-navy">Detalle</span>
+                        <span className="text-slate-400">
                             {tipoReporte === 'completo' ? 'Completo (con Hash)' : 'Resumen Ejecutivo'}
                         </span>
                     </div>
                 </div>
 
                 {/* Date inputs */}
-                <div className="d-flex gap-2 mb-3">
-                    <input type="date" className="form-control form-control-sm rounded-pill border-light bg-light"
+                <div className="flex gap-2 mb-3">
+                    <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-sm rounded-full border-light bg-gray-50"
                         value={periodo.inicio}
                         onChange={(e) => setPeriodo(p => ({ ...p, inicio: e.target.value }))} />
-                    <input type="date" className="form-control form-control-sm rounded-pill border-light bg-light"
+                    <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-sm rounded-full border-light bg-gray-50"
                         value={periodo.fin}
                         onChange={(e) => setPeriodo(p => ({ ...p, fin: e.target.value }))} />
                 </div>
 
                 {/* Format switcher */}
-                <div className="d-flex gap-2 mb-3">
-                    <button className={`btn btn-sm rounded-pill px-3 flex-grow-1 ${formato === 'pdf' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                <div className="flex gap-2 mb-3">
+                    <button className={`text-sm py-1.5 px-3 rounded-full px-3 flex-grow ${formato === 'pdf' ? 'btn-dark' : 'btn-outline-secondary'}`}
                         onClick={() => setFormato('pdf')}>
-                        <i className="bi bi-file-earmark-pdf me-1"></i> PDF
+                        <i className="bi bi-file-earmark-pdf mr-1"></i> PDF
                     </button>
-                    <button className={`btn btn-sm rounded-pill px-3 flex-grow-1 ${formato === 'excel' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    <button className={`text-sm py-1.5 px-3 rounded-full px-3 flex-grow ${formato === 'excel' ? 'btn-dark' : 'btn-outline-secondary'}`}
                         onClick={() => setFormato('excel')}>
-                        <i className="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+                        <i className="bi bi-file-earmark-spreadsheet mr-1"></i> Excel
                     </button>
                 </div>
 
                 {/* Type switcher */}
-                <div className="d-flex gap-2 mb-4">
-                    <button className={`btn btn-sm rounded-pill px-3 flex-grow-1 ${tipoReporte === 'completo' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                <div className="flex gap-2 mb-4">
+                    <button className={`text-sm py-1.5 px-3 rounded-full px-3 flex-grow ${tipoReporte === 'completo' ? 'btn-dark' : 'btn-outline-secondary'}`}
                         onClick={() => setTipoReporte('completo')}>Completo</button>
-                    <button className={`btn btn-sm rounded-pill px-3 flex-grow-1 ${tipoReporte === 'resumen' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                    <button className={`text-sm py-1.5 px-3 rounded-full px-3 flex-grow ${tipoReporte === 'resumen' ? 'btn-dark' : 'btn-outline-secondary'}`}
                         onClick={() => setTipoReporte('resumen')}>Resumen</button>
                 </div>
 
                 {/* Preview */}
-                <h6 className="text-warning fw-bold text-uppercase small mb-3" style={{ letterSpacing: '0.08em' }}>
+                <h6 className="text-amber-500 font-bold uppercase text-sm mb-3" style={{ letterSpacing: '0.08em' }}>
                     VISTA PREVIA
                 </h6>
-                <div className="card border-0 shadow-sm rounded-4 p-4 mb-4" style={{ minHeight: '200px' }}>
+                <div className="card border-0 shadow-sm rounded-2xl p-4 mb-4" style={{ minHeight: '200px' }}>
                     {!generated ? (
-                        <div className="d-flex flex-column align-items-center justify-content-center text-center py-4">
+                        <div className="flex flex-col items-center justify-center text-center py-4">
                             <div style={{ width: '60%', height: '4px', background: '#0F172A', borderRadius: '2px', marginBottom: '12px' }}></div>
                             <div style={{ width: '60%', height: '2px', background: '#E5E7EB', borderRadius: '2px', marginBottom: '16px' }}></div>
                             <div style={{ width: '80%', height: '8px', background: '#FDE68A', borderRadius: '2px', marginBottom: '8px' }}></div>
                             <div style={{ width: '70%', height: '2px', background: '#E5E7EB', borderRadius: '2px', marginBottom: '8px' }}></div>
                             <div style={{ width: '60%', height: '2px', background: '#E5E7EB', borderRadius: '2px', marginBottom: '24px' }}></div>
-                            <div className="mt-auto rounded-circle d-flex align-items-center justify-content-center"
+                            <div className="mt-auto rounded-full flex items-center justify-center"
                                 style={{ width: 50, height: 50, border: '2px solid #F59E0B' }}>
-                                <span className="text-warning small fw-bold" style={{ fontSize: '0.55rem' }}>FIRMA DIGITAL</span>
+                                <span className="text-amber-500 text-sm font-bold" style={{ fontSize: '0.55rem' }}>FIRMA DIGITAL</span>
                             </div>
                         </div>
                     ) : preview.length === 0 ? (
                         <div className="text-center py-4">
-                            <i className="bi bi-inbox text-muted" style={{ fontSize: '2rem' }}></i>
-                            <p className="text-muted small mt-2">Sin datos para este periodo</p>
+                            <i className="bi bi-inbox text-slate-400" style={{ fontSize: '2rem' }}></i>
+                            <p className="text-slate-400 text-sm mt-2">Sin datos para este periodo</p>
                         </div>
                     ) : (
                         <div>
                             <div style={{ width: '80px', height: '3px', background: '#0F172A', marginBottom: '8px' }}></div>
-                            <h6 className="fw-bold text-dark small mb-2">CERTIFICADO DE REGISTRO</h6>
-                            <table className="table table-sm mb-0">
+                            <h6 className="font-bold text-navy text-sm mb-2">CERTIFICADO DE REGISTRO</h6>
+                            <table className="w-full table-sm mb-0">
                                 <thead>
                                     <tr>
-                                        <th className="small fw-bold text-dark border-0 pb-1" style={{ fontSize: '0.7rem' }}>EMPLEADO</th>
-                                        <th className="small fw-bold text-dark border-0 pb-1 text-end" style={{ fontSize: '0.7rem' }}>HORAS</th>
+                                        <th className="text-sm font-bold text-navy border-0 pb-1" style={{ fontSize: '0.7rem' }}>EMPLEADO</th>
+                                        <th className="text-sm font-bold text-navy border-0 pb-1 text-right" style={{ fontSize: '0.7rem' }}>HORAS</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {preview.map((row, i) => (
                                         <tr key={i}>
-                                            <td className="small text-dark" style={{ fontSize: '0.8rem' }}>{row.empleado}</td>
-                                            <td className="small text-dark text-end font-monospace" style={{ fontSize: '0.8rem' }}>{row.horas_totales}</td>
+                                            <td className="text-sm text-navy" style={{ fontSize: '0.8rem' }}>{row.empleado}</td>
+                                            <td className="text-sm text-navy text-right font-mono" style={{ fontSize: '0.8rem' }}>{row.horas_totales}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                             <div className="text-center mt-3">
-                                <div className="rounded-circle d-inline-flex align-items-center justify-content-center"
+                                <div className="rounded-full inline-flex items-center justify-center"
                                     style={{ width: 50, height: 50, border: '2px solid #F59E0B' }}>
-                                    <span className="text-warning fw-bold" style={{ fontSize: '0.5rem' }}>FIRMA DIGITAL</span>
+                                    <span className="text-amber-500 font-bold" style={{ fontSize: '0.5rem' }}>FIRMA DIGITAL</span>
                                 </div>
                             </div>
                         </div>
@@ -742,20 +742,20 @@ export default function InspectorExportarPage() {
 
                 {/* Download Button */}
                 <button
-                    className="btn w-100 py-3 rounded-pill fw-bold text-white mb-5"
+                    className="btn w-full py-3 rounded-full font-bold text-white mb-6"
                     style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', fontSize: '1.1rem' }}
                     onClick={generated ? handleDownload : generatePreview}
                     disabled={loading || downloading}
                 >
                     {loading || downloading ? (
-                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        <span className="animate-spin animate-spin w-4 h-4 mr-2"></span>
                     ) : generated ? (
                         <>
-                            <i className={`bi ${formato === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-spreadsheet'} me-2`}></i>
+                            <i className={`bi ${formato === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-spreadsheet'} mr-2`}></i>
                             Descargar Informe
                         </>
                     ) : (
-                        <><i className="bi bi-file-earmark-bar-graph me-2"></i>Generar Informe Oficial</>
+                        <><i className="bi bi-file-earmark-bar-graph mr-2"></i>Generar Informe Oficial</>
                     )}
                 </button>
             </div>

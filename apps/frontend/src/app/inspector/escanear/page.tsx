@@ -205,30 +205,30 @@ export default function InspectorEscanearPage() {
 
             {/* Header */}
             <div className="text-center mb-4 pt-3">
-                <h6 className="text-danger fw-bold text-uppercase small mb-1" style={{ letterSpacing: '0.08em' }}>
+                <h6 className="text-red-500 font-bold uppercase text-sm mb-1" style={{ letterSpacing: '0.08em' }}>
                     MINISTERIO DE TRABAJO
                 </h6>
-                <h2 className="fw-bold text-white mb-1">Verificador de Campo</h2>
-                <p className="text-white-50 small mb-0">Escanea un QR o introduce nombre/DNI</p>
+                <h2 className="font-bold text-white mb-1">Verificador de Campo</h2>
+                <p className="text-white/50 text-sm mb-0">Escanea un QR o introduce nombre/DNI</p>
             </div>
 
             {/* Mode Switcher */}
-            <div className="row justify-content-center mb-4">
-                <div className="col-12 col-md-8 col-lg-6">
-                    <div className="d-flex gap-2 mb-3">
+            <div className="row justify-center mb-4">
+                <div className="col-span-12 md:col-span-8 lg:col-span-6">
+                    <div className="flex gap-2 mb-3">
                         <button
-                            className={`btn rounded-pill flex-grow-1 fw-bold py-2 ${mode === 'manual' ? 'text-white' : 'btn-outline-secondary text-white-50'}`}
+                            className={`btn rounded-full flex-grow font-bold py-2 ${mode === 'manual' ? 'text-white' : 'btn-outline-secondary text-white/50'}`}
                             style={mode === 'manual' ? { background: '#F59E0B' } : { borderColor: '#475569' }}
                             onClick={() => { setMode('manual'); stopCamera(); }}
                         >
-                            <i className="bi bi-search me-2"></i>Buscar Manual
+                            <i className="bi bi-search mr-2"></i>Buscar Manual
                         </button>
                         <button
-                            className={`btn rounded-pill flex-grow-1 fw-bold py-2 ${mode === 'camera' ? 'text-white' : 'btn-outline-secondary text-white-50'}`}
+                            className={`btn rounded-full flex-grow font-bold py-2 ${mode === 'camera' ? 'text-white' : 'btn-outline-secondary text-white/50'}`}
                             style={mode === 'camera' ? { background: '#F59E0B' } : { borderColor: '#475569' }}
                             onClick={() => { setMode('camera'); startCamera(); }}
                         >
-                            <i className="bi bi-qr-code-scan me-2"></i>Escanear QR
+                            <i className="bi bi-qr-code-scan mr-2"></i>Escanear QR
                         </button>
                     </div>
                 </div>
@@ -236,27 +236,27 @@ export default function InspectorEscanearPage() {
 
             {/* Manual Search */}
             {mode === 'manual' && (
-                <div className="row justify-content-center mb-4">
-                    <div className="col-12 col-md-8 col-lg-6">
-                        <div className="input-group shadow-sm rounded-pill overflow-hidden">
+                <div className="row justify-center mb-4">
+                    <div className="col-span-12 md:col-span-8 lg:col-span-6">
+                        <div className="relative shadow-sm rounded-full overflow-hidden">
                             <input
                                 type="text"
-                                className="form-control form-control-lg border-0 py-3 ps-4"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-lg border-0 py-3 ps-4"
                                 placeholder="Nombre, DNI o código QR..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             />
                             <button
-                                className="btn px-4 fw-bold text-white"
+                                className="btn px-4 font-bold text-white"
                                 style={{ background: '#F59E0B' }}
                                 onClick={handleSearch}
                                 disabled={loading || !searchQuery.trim()}
                             >
                                 {loading ? (
-                                    <span className="spinner-border spinner-border-sm"></span>
+                                    <span className="animate-spin animate-spin w-4 h-4"></span>
                                 ) : (
-                                    <i className="bi bi-search fs-5"></i>
+                                    <i className="bi bi-search text-lg"></i>
                                 )}
                             </button>
                         </div>
@@ -266,9 +266,9 @@ export default function InspectorEscanearPage() {
 
             {/* Camera View */}
             {mode === 'camera' && (
-                <div className="row justify-content-center mb-4">
-                    <div className="col-12 col-md-8 col-lg-6">
-                        <div className="rounded-4 overflow-hidden position-relative" style={{ background: '#1E293B', aspectRatio: '4/3' }}>
+                <div className="row justify-center mb-4">
+                    <div className="col-span-12 md:col-span-8 lg:col-span-6">
+                        <div className="rounded-2xl overflow-hidden relative" style={{ background: '#1E293B', aspectRatio: '4/3' }}>
                             {/* Video feed */}
                             <video
                                 ref={videoRef}
@@ -280,7 +280,7 @@ export default function InspectorEscanearPage() {
 
                             {/* Scanning overlay */}
                             {cameraActive && !cameraError && (
-                                <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
                                     <div style={{
                                         width: '60%', height: '60%',
                                         border: '3px solid #F59E0B',
@@ -289,7 +289,7 @@ export default function InspectorEscanearPage() {
                                         animation: 'pulse 2s infinite'
                                     }}>
                                         <div className="text-center mt-2">
-                                            <small className="text-warning fw-bold bg-dark bg-opacity-75 px-3 py-1 rounded-pill" style={{ fontSize: '0.7rem' }}>
+                                            <small className="text-amber-500 font-bold bg-navy bg-opacity-75 px-3 py-1 rounded-full" style={{ fontSize: '0.7rem' }}>
                                                 Apunta al código QR
                                             </small>
                                         </div>
@@ -300,19 +300,19 @@ export default function InspectorEscanearPage() {
 
                             {/* Loading state */}
                             {!cameraActive && !cameraError && (
-                                <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
-                                    <div className="spinner-border text-warning mb-2"></div>
-                                    <small className="text-white-50">Iniciando cámara...</small>
+                                <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
+                                    <div className="animate-spin text-amber-500 mb-2"></div>
+                                    <small className="text-white/50">Iniciando cámara...</small>
                                 </div>
                             )}
 
                             {/* Error state */}
                             {cameraError && (
-                                <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center p-4 text-center">
-                                    <i className="bi bi-camera-video-off text-danger mb-2" style={{ fontSize: '2rem' }}></i>
-                                    <small className="text-white-50">{cameraError}</small>
+                                <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center p-4 text-center">
+                                    <i className="bi bi-camera-video-off text-red-500 mb-2" style={{ fontSize: '2rem' }}></i>
+                                    <small className="text-white/50">{cameraError}</small>
                                     <button
-                                        className="btn btn-sm btn-outline-warning rounded-pill mt-3"
+                                        className="text-sm py-1.5 px-3 btn-outline-warning rounded-full mt-3"
                                         onClick={() => { setMode('manual'); stopCamera(); }}
                                     >
                                         Usar Búsqueda Manual
@@ -324,11 +324,11 @@ export default function InspectorEscanearPage() {
                         {/* Manual entry fallback when camera is active */}
                         {cameraActive && (
                             <div className="mt-3">
-                                <small className="text-white-50 d-block mb-2 text-center">O introduce el código manualmente:</small>
-                                <div className="input-group rounded-pill overflow-hidden">
+                                <small className="text-white/50 block mb-2 text-center">O introduce el código manualmente:</small>
+                                <div className="relative rounded-full overflow-hidden">
                                     <input
                                         type="text"
-                                        className="form-control border-0 py-2 ps-3"
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm border-0 py-2 pl-3"
                                         placeholder="Pegar código QR..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -351,14 +351,14 @@ export default function InspectorEscanearPage() {
 
             {/* Result */}
             {searched && result && (
-                <div className="row justify-content-center">
-                    <div className="col-12 col-md-8 col-lg-6">
+                <div className="row justify-center">
+                    <div className="col-span-12 md:col-span-8 lg:col-span-6">
 
                         {result.found ? (
-                            <div className="card border-0 shadow rounded-4 overflow-hidden">
+                            <div className="card border-0 shadow-md rounded-2xl overflow-hidden">
                                 {/* Status Banner */}
-                                <div className="text-center py-5 px-3" style={{ background: '#fff' }}>
-                                    <div className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                                <div className="text-center py-6 px-3" style={{ background: '#fff' }}>
+                                    <div className="rounded-full mx-auto flex items-center justify-center mb-3"
                                         style={{
                                             width: 90, height: 90,
                                             background: result.fichaje_activo ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'
@@ -369,10 +369,10 @@ export default function InspectorEscanearPage() {
                                                 color: result.fichaje_activo ? '#10B981' : '#EF4444'
                                             }}></i>
                                     </div>
-                                    <h3 className="fw-bold mb-1" style={{ color: result.fichaje_activo ? '#10B981' : '#F97316' }}>
+                                    <h3 className="font-bold mb-1" style={{ color: result.fichaje_activo ? '#10B981' : '#F97316' }}>
                                         {result.fichaje_activo ? 'EMPLEADO VÁLIDO' : 'SIN TURNO ACTIVO'}
                                     </h3>
-                                    <p className="text-muted small mb-0">
+                                    <p className="text-slate-400 text-sm mb-0">
                                         {result.fichaje_activo ? 'Fichaje activo detectado' : 'No tiene fichaje activo hoy'}
                                     </p>
                                 </div>
@@ -385,24 +385,24 @@ export default function InspectorEscanearPage() {
 
                                     {/* Identity */}
                                     <div className="mb-3">
-                                        <small className="text-warning fw-bold text-uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.1em' }}>
+                                        <small className="text-amber-500 font-bold uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.1em' }}>
                                             IDENTIDAD
                                         </small>
-                                        <h5 className="fw-bold text-dark mb-0">{result.nombre}</h5>
-                                        <small className="text-muted">NIF: {result.dni}</small>
+                                        <h5 className="font-bold text-navy mb-0">{result.nombre}</h5>
+                                        <small className="text-slate-400">NIF: {result.dni}</small>
                                     </div>
 
                                     {/* Today's record */}
                                     <div className="mb-3">
-                                        <small className="text-warning fw-bold text-uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.1em' }}>
+                                        <small className="text-amber-500 font-bold uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.1em' }}>
                                             REGISTRO DE HOY
                                         </small>
-                                        <div className="d-flex align-items-center gap-3 mt-1">
-                                            <span className="fw-bold font-monospace" style={{ fontSize: '1.8rem' }}>
+                                        <div className="flex items-center gap-3 mt-1">
+                                            <span className="font-bold font-mono" style={{ fontSize: '1.8rem' }}>
                                                 {result.hora_entrada}
                                             </span>
                                             {result.fichaje_activo && (
-                                                <span className="badge rounded-pill px-3 py-2 fw-bold"
+                                                <span className="badge rounded-full px-3 py-2 font-bold"
                                                     style={{
                                                         color: result.gps_ok ? '#10B981' : '#EF4444',
                                                         background: result.gps_ok ? '#ECFDF5' : '#FEF2F2',
@@ -412,26 +412,26 @@ export default function InspectorEscanearPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <small className="text-muted">📍 {result.sede}</small>
+                                        <small className="text-slate-400">📍 {result.sede}</small>
                                     </div>
 
                                     {/* Hash */}
-                                    <div className="rounded-3 p-3 text-center" style={{ background: '#F8FAFC', border: '1px dashed #E2E8F0' }}>
-                                        <code className="text-muted" style={{ fontSize: '0.8rem' }}>
+                                    <div className="rounded-lg p-3 text-center" style={{ background: '#F8FAFC', border: '1px dashed #E2E8F0' }}>
+                                        <code className="text-slate-400" style={{ fontSize: '0.8rem' }}>
                                             Hash: {result.hash} (Inmutable)
                                         </code>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="card border-0 shadow rounded-4 overflow-hidden">
-                                <div className="text-center py-5 px-3" style={{ background: '#1E293B' }}>
-                                    <div className="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                            <div className="card border-0 shadow-md rounded-2xl overflow-hidden">
+                                <div className="text-center py-6 px-3" style={{ background: '#1E293B' }}>
+                                    <div className="rounded-full mx-auto flex items-center justify-center mb-3"
                                         style={{ width: 80, height: 80, background: 'rgba(239, 68, 68, 0.15)' }}>
                                         <i className="bi bi-x-lg" style={{ fontSize: '2.5rem', color: '#EF4444' }}></i>
                                     </div>
-                                    <h4 className="fw-bold text-danger mb-1">NO ENCONTRADO</h4>
-                                    <p className="text-white-50 small">No se encontró ningún empleado con &quot;{searchQuery}&quot;</p>
+                                    <h4 className="font-bold text-red-500 mb-1">NO ENCONTRADO</h4>
+                                    <p className="text-white/50 text-sm">No se encontró ningún empleado con &quot;{searchQuery}&quot;</p>
                                 </div>
                             </div>
                         )}
@@ -439,10 +439,10 @@ export default function InspectorEscanearPage() {
                         {/* Reset button */}
                         <button
                             onClick={handleReset}
-                            className="btn w-100 py-3 rounded-pill fw-bold text-white mt-4 d-flex align-items-center justify-content-center gap-2"
+                            className="btn w-full py-3 rounded-full font-bold text-white mt-4 flex items-center justify-center gap-2"
                             style={{ background: '#3B82F6', fontSize: '1.1rem' }}
                         >
-                            <i className="bi bi-qr-code-scan fs-5"></i>
+                            <i className="bi bi-qr-code-scan text-lg"></i>
                             Escanear Siguiente QR
                         </button>
 
@@ -452,11 +452,11 @@ export default function InspectorEscanearPage() {
 
             {/* Empty State */}
             {!searched && mode === 'manual' && (
-                <div className="row justify-content-center">
-                    <div className="col-12 col-md-8 col-lg-6 text-center py-5">
-                        <i className="bi bi-qr-code-scan text-white-50 mb-3" style={{ fontSize: '4rem', opacity: 0.3 }}></i>
-                        <p className="text-white-50 mb-1">Introduce un nombre, DNI o código QR</p>
-                        <p className="text-white-50 small">O cambia al modo cámara para escanear directamente</p>
+                <div className="row justify-center">
+                    <div className="col-span-12 md:col-span-8 lg:col-span-6 text-center py-6">
+                        <i className="bi bi-qr-code-scan text-white/50 mb-3" style={{ fontSize: '4rem', opacity: 0.3 }}></i>
+                        <p className="text-white/50 mb-1">Introduce un nombre, DNI o código QR</p>
+                        <p className="text-white/50 text-sm">O cambia al modo cámara para escanear directamente</p>
                     </div>
                 </div>
             )}

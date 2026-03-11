@@ -12,26 +12,26 @@ export default function Sidebar() {
 
   // Clases para enlaces (Estado activo vs inactivo)
   const linkClass = (path: string) => `
-    d-flex align-items-center gap-3 px-3 py-3 rounded-3 text-decoration-none transition-all
+    flex items-center gap-3 px-3 py-3 rounded-lg no-underline transition-all
     ${isActive(path) 
-      ? 'bg-primary bg-opacity-50 text-white fw-bold border-start border-4 border-info' 
-      : 'text-secondary hover-text-white'}
+      ? 'bg-chrono-blue bg-opacity-50 text-white font-bold border-start border-4 border-info' 
+      : 'text-slate-500 hover-text-white'}
   `;
 
-  // NOTA: Usamos 'd-none d-md-flex' según tu instrucción del PASO 2
+  // NOTA: Usamos 'hidden md:flex' según tu instrucción del PASO 2
   return (
-    <div className="d-none d-md-flex flex-column vh-100 position-fixed top-0 start-0 p-3" 
+    <div className="hidden md:flex flex-col h-screen fixed top-0 left-0 p-3" 
          style={{ width: '280px', backgroundColor: '#0F172A', zIndex: 1040 }}>
       
       {/* Brand */}
-      <div className="mb-5 px-2">
-        <h4 className="text-white fw-bold mb-0">ChronoWork</h4>
-        <div className="bg-primary mt-2" style={{ height: '4px', width: '40px' }}></div>
+      <div className="mb-6 px-2">
+        <h4 className="text-white font-bold mb-0">ChronoWork</h4>
+        <div className="bg-chrono-blue mt-2" style={{ height: '4px', width: '40px' }}></div>
       </div>
 
       {/* Navegación */}
-      <div className="flex-grow-1 d-flex flex-column gap-2">
-        <small className="text-uppercase text-secondary fw-bold px-3 mb-2" style={{ fontSize: '0.75rem' }}>Menú Principal</small>
+      <div className="flex-grow flex flex-col gap-2">
+        <small className="uppercase text-slate-500 font-bold px-3 mb-2" style={{ fontSize: '0.75rem' }}>Menú Principal</small>
         
         <Link href="/dashboard" className={linkClass('/dashboard')}>
           <i className="bi bi-grid-fill"></i> Panel de Control
@@ -45,7 +45,7 @@ export default function Sidebar() {
 
         <div className="my-3"></div>
 
-        <small className="text-uppercase text-secondary fw-bold px-3 mb-2" style={{ fontSize: '0.75rem' }}>Configuración</small>
+        <small className="uppercase text-slate-500 font-bold px-3 mb-2" style={{ fontSize: '0.75rem' }}>Configuración</small>
         <Link href="/dashboard/perfil" className={linkClass('/dashboard/perfil')}>
           <i className="bi bi-person-badge"></i> Perfil y Contrato
         </Link>
@@ -55,22 +55,22 @@ export default function Sidebar() {
       </div>
 
       {/* Footer Usuario */}
-      <div className="mt-auto pt-3 border-top border-secondary border-opacity-25">
-        <div className="d-flex align-items-center gap-3 px-2">
-          <div className="bg-primary rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" 
+      <div className="mt-auto pt-3 border-t border-slate-500 border-opacity-25">
+        <div className="flex items-center gap-3 px-2">
+          <div className="bg-chrono-blue rounded-full flex items-center justify-center text-white font-bold" 
                style={{ width: '40px', height: '40px' }}>
             {profile?.nombre_completo?.charAt(0) || 'U'}
           </div>
-          <div className="flex-grow-1 overflow-hidden">
-            <p className="text-white mb-0 text-truncate fw-medium small">
+          <div className="flex-grow overflow-hidden">
+            <p className="text-white mb-0 truncate fw-medium text-sm">
               {profile?.nombre_completo || 'Cargando...'}
             </p>
-            <p className="text-secondary mb-0 small text-truncate" style={{ fontSize: '0.75rem' }}>
+            <p className="text-slate-500 mb-0 text-sm truncate" style={{ fontSize: '0.75rem' }}>
               {profile?.roles?.nombre || 'Empleado'}
             </p>
           </div>
-          <button onClick={signOut} className="btn btn-link text-secondary p-0">
-            <i className="bi bi-box-arrow-right fs-5"></i>
+          <button onClick={signOut} className="bg-transparent border-none cursor-pointer text-slate-500 p-0">
+            <i className="bi bi-box-arrow-right text-lg"></i>
           </button>
         </div>
       </div>

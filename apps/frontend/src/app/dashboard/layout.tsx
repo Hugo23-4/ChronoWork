@@ -1,30 +1,27 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/dashboard/Sidebar';
 import MobileMenu from '@/components/dashboard/MobileMenu';
 import AdminModeSwitcher from '@/components/dashboard/AdminModeSwitcher';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
   return (
-    <div className="d-flex vh-100 overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
 
       {/* Sidebar Desktop */}
-      <div className="d-none d-lg-block">
+      <div className="hidden lg:block">
         <Sidebar />
       </div>
 
       {/* Contenido Principal */}
-      <main className="flex-grow-1 overflow-auto bg-light position-relative">
-        <div className="p-3 p-md-4">
+      <main className="flex-grow overflow-auto bg-bg-body relative">
+        <div className="p-3 md:p-4">
           {children}
         </div>
       </main>
 
       {/* Menu Móvil */}
-      <div className="d-lg-none">
+      <div className="lg:hidden">
         <MobileMenu />
       </div>
 
