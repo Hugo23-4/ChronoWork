@@ -2,17 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Search, QrCode, Camera, CameraOff, Check, Minus, X, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-interface VerificationResult {
-    found: boolean;
-    nombre: string;
-    dni: string;
-    fichaje_activo: boolean;
-    hora_entrada: string;
-    sede: string;
-    gps_ok: boolean;
-    hash: string;
-}
+interface VerificationResult { found: boolean; nombre: string; dni: string; fichaje_activo: boolean; hora_entrada: string; sede: string; gps_ok: boolean; hash: string; }
 
 export default function InspectorEscanearPage() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -26,209 +19,78 @@ export default function InspectorEscanearPage() {
     const streamRef = useRef<MediaStream | null>(null);
     const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Stop camera
     const stopCamera = useCallback(() => {
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(t => t.stop());
-            streamRef.current = null;
-        }
-        if (scanIntervalRef.current) {
-            clearInterval(scanIntervalRef.current);
-            scanIntervalRef.current = null;
-        }
+        if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+        if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); scanIntervalRef.current = null; }
         setCameraActive(false);
     }, []);
 
-    // Start camera for QR scanning
     const startCamera = async () => {
         setCameraError(null);
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } });
             streamRef.current = stream;
-
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-                await videoRef.current.play();
-            }
-
+            if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
             setCameraActive(true);
-
-            // Try BarcodeDetector API (Chrome/Edge)
             if ('BarcodeDetector' in window) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
                 scanIntervalRef.current = setInterval(async () => {
                     if (!videoRef.current || videoRef.current.readyState < 2) return;
-                    try {
-                        const barcodes = await detector.detect(videoRef.current);
-                        if (barcodes.length > 0) {
-                            const qrData = barcodes[0].rawValue;
-                            stopCamera();
-                            setSearchQuery(qrData);
-                            handleSearchWithQuery(qrData);
-                        }
-                    } catch (e) {
-                        // Scan error, continue
-                    }
+                    try { const barcodes = await detector.detect(videoRef.current); if (barcodes.length > 0) { stopCamera(); setSearchQuery(barcodes[0].rawValue); handleSearchWithQuery(barcodes[0].rawValue); } } catch { /* scan error */ }
                 }, 500);
-            } else {
-                // BarcodeDetector not available, show manual entry fallback
-                setCameraError('Tu navegador no soporta escaneo QR nativo. Introduce el código manualmente.');
-            }
-        } catch (err: any) {
-            console.error('Camera error:', err);
-            setCameraError('No se pudo acceder a la cámara. Verifica los permisos o introduce el código manualmente.');
-        }
+            } else { setCameraError('Tu navegador no soporta escaneo QR nativo. Introduce el código manualmente.'); }
+        } catch { setCameraError('No se pudo acceder a la cámara. Verifica los permisos o introduce el código manualmente.'); }
     };
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            stopCamera();
-        };
-    }, [stopCamera]);
+    useEffect(() => { return () => { stopCamera(); }; }, [stopCamera]);
 
     const handleSearchWithQuery = async (query: string) => {
         if (!query.trim()) return;
-        setLoading(true);
-        setSearched(true);
-
-        // Search employees by name, DNI, or direct ID
-        let empleados: any = null;
-        let error: any = null;
-
-        // Try UUID match first (from QR code)
+        setLoading(true); setSearched(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let empleados: any = null; let error: any = null;
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(query.trim());
-        if (isUUID) {
-            const res = await supabase
-                .from('empleados_info')
-                .select('id, nombre_completo, dni')
-                .eq('id', query.trim())
-                .single();
-            empleados = res.data;
-            error = res.error;
-        } else {
-            const res = await supabase
-                .from('empleados_info')
-                .select('id, nombre_completo, dni')
-                .or(`nombre_completo.ilike.%${query}%,dni.ilike.%${query}%`)
-                .limit(1)
-                .single();
-            empleados = res.data;
-            error = res.error;
-        }
-
-        if (error || !empleados) {
-            setResult({
-                found: false,
-                nombre: query,
-                dni: '',
-                fichaje_activo: false,
-                hora_entrada: '',
-                sede: '',
-                gps_ok: false,
-                hash: '',
-            });
-            setLoading(false);
-            return;
-        }
-
-        // Check active fichaje today
+        if (isUUID) { const res = await supabase.from('empleados_info').select('id, nombre_completo, dni').eq('id', query.trim()).single(); empleados = res.data; error = res.error; }
+        else { const res = await supabase.from('empleados_info').select('id, nombre_completo, dni').or(`nombre_completo.ilike.%${query}%,dni.ilike.%${query}%`).limit(1).single(); empleados = res.data; error = res.error; }
+        if (error || !empleados) { setResult({ found: false, nombre: query, dni: '', fichaje_activo: false, hora_entrada: '', sede: '', gps_ok: false, hash: '' }); setLoading(false); return; }
         const today = new Date().toISOString().split('T')[0];
-        const { data: fichaje } = await supabase
-            .from('fichajes')
-            .select('*, sedes(nombre)')
-            .eq('empleado_id', empleados.id)
-            .eq('fecha', today)
-            .is('hora_salida', null)
-            .order('hora_entrada', { ascending: false })
-            .limit(1)
-            .single();
-
-        // If no active fichaje, get last one today
+        const { data: fichaje } = await supabase.from('fichajes').select('*, sedes(nombre)').eq('empleado_id', empleados.id).eq('fecha', today).is('hora_salida', null).order('hora_entrada', { ascending: false }).limit(1).single();
         let lastFichaje = fichaje;
-        if (!fichaje) {
-            const { data: lastF } = await supabase
-                .from('fichajes')
-                .select('*, sedes(nombre)')
-                .eq('empleado_id', empleados.id)
-                .eq('fecha', today)
-                .order('hora_entrada', { ascending: false })
-                .limit(1)
-                .single();
-            lastFichaje = lastF;
-        }
-
+        if (!fichaje) { const { data: lastF } = await supabase.from('fichajes').select('*, sedes(nombre)').eq('empleado_id', empleados.id).eq('fecha', today).order('hora_entrada', { ascending: false }).limit(1).single(); lastFichaje = lastF; }
         const activeFichaje = fichaje || lastFichaje;
-
-        const formatTime = (t: string) => {
-            if (!t) return '--:--:--';
-            if (t.includes('T')) return new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            return t.substring(0, 8);
-        };
-
-        // Generate simulated hash
-        const chars = '0123456789abcdef';
-        let hash = '0x';
-        const seed = empleados.id;
-        for (let i = 0; i < 8; i++) hash += chars[Math.abs(seed.charCodeAt(i % seed.length) * (i + 3)) % 16];
-        hash += '...' + seed.substring(0, 4);
-
-        setResult({
-            found: true,
-            nombre: empleados.nombre_completo,
-            dni: empleados.dni || 'No registrado',
-            fichaje_activo: !!fichaje,
-            hora_entrada: activeFichaje ? formatTime(activeFichaje.hora_entrada) : 'Sin fichaje hoy',
-            sede: activeFichaje?.sedes?.nombre || 'Sin sede asignada',
-            gps_ok: !!(activeFichaje?.latitud_entrada && activeFichaje?.longitud_entrada),
-            hash: hash,
-        });
-
+        const formatTime = (t: string) => { if (!t) return '--:--:--'; if (t.includes('T')) return new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); return t.substring(0, 8); };
+        const chars = '0123456789abcdef'; let hash = '0x'; const seed = empleados.id; for (let i = 0; i < 8; i++) hash += chars[Math.abs(seed.charCodeAt(i % seed.length) * (i + 3)) % 16]; hash += '...' + seed.substring(0, 4);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setResult({ found: true, nombre: empleados.nombre_completo, dni: empleados.dni || 'No registrado', fichaje_activo: !!fichaje, hora_entrada: activeFichaje ? formatTime(activeFichaje.hora_entrada) : 'Sin fichaje hoy', sede: (activeFichaje as any)?.sedes?.nombre || 'Sin sede asignada', gps_ok: !!(activeFichaje?.latitud_entrada && activeFichaje?.longitud_entrada), hash });
         setLoading(false);
     };
 
-    const handleSearch = async () => {
-        await handleSearchWithQuery(searchQuery);
-    };
-
-    const handleReset = () => {
-        setSearchQuery('');
-        setResult(null);
-        setSearched(false);
-        stopCamera();
-    };
+    const handleSearch = () => handleSearchWithQuery(searchQuery);
+    const handleReset = () => { setSearchQuery(''); setResult(null); setSearched(false); stopCamera(); };
 
     return (
-        <div className="fade-in-up" style={{ background: '#0F172A', minHeight: '100vh', margin: '-1rem -1rem 0', padding: '1.5rem' }}>
-
+        <div className="animate-fade-up bg-navy min-h-screen -mx-3 md:-mx-4 -mt-3 md:-mt-4 px-4 py-6">
             {/* Header */}
-            <div className="text-center mb-4 pt-3">
-                <h6 className="text-red-500 font-bold uppercase text-sm mb-1" style={{ letterSpacing: '0.08em' }}>
-                    MINISTERIO DE TRABAJO
-                </h6>
-                <h2 className="font-bold text-white mb-1">Verificador de Campo</h2>
-                <p className="text-white/50 text-sm mb-0">Escanea un QR o introduce nombre/DNI</p>
+            <div className="text-center mb-5 pt-3">
+                <h6 className="text-red-500 font-bold uppercase text-xs mb-1 tracking-[0.08em]">MINISTERIO DE TRABAJO</h6>
+                <h2 className="font-bold text-white text-2xl mb-1 font-[family-name:var(--font-jakarta)]">Verificador de Campo</h2>
+                <p className="text-white/50 text-sm">Escanea un QR o introduce nombre/DNI</p>
             </div>
 
             {/* Mode Switcher */}
-            <div className="row justify-center mb-4">
-                <div className="col-span-12 md:col-span-8 lg:col-span-6">
+            <div className="flex justify-center mb-5">
+                <div className="w-full max-w-md">
                     <div className="flex gap-2 mb-3">
-                        <button
-                            className={`btn rounded-full flex-grow font-bold py-2 ${mode === 'manual' ? 'text-white' : 'btn-outline-secondary text-white/50'}`}
-                            style={mode === 'manual' ? { background: '#F59E0B' } : { borderColor: '#475569' }}
-                            onClick={() => { setMode('manual'); stopCamera(); }}
-                        >
-                            <i className="bi bi-search mr-2"></i>Buscar Manual
+                        <button onClick={() => { setMode('manual'); stopCamera(); }}
+                            className={cn('flex-1 py-2.5 rounded-full font-bold text-sm border-none cursor-pointer transition-all flex items-center justify-center gap-2',
+                                mode === 'manual' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25' : 'bg-transparent border-2 border-slate-600 text-white/50')}>
+                            <Search className="w-4 h-4" /> Buscar Manual
                         </button>
-                        <button
-                            className={`btn rounded-full flex-grow font-bold py-2 ${mode === 'camera' ? 'text-white' : 'btn-outline-secondary text-white/50'}`}
-                            style={mode === 'camera' ? { background: '#F59E0B' } : { borderColor: '#475569' }}
-                            onClick={() => { setMode('camera'); startCamera(); }}
-                        >
-                            <i className="bi bi-qr-code-scan mr-2"></i>Escanear QR
+                        <button onClick={() => { setMode('camera'); startCamera(); }}
+                            className={cn('flex-1 py-2.5 rounded-full font-bold text-sm border-none cursor-pointer transition-all flex items-center justify-center gap-2',
+                                mode === 'camera' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25' : 'bg-transparent border-2 border-slate-600 text-white/50')}>
+                            <QrCode className="w-4 h-4" /> Escanear QR
                         </button>
                     </div>
                 </div>
@@ -236,28 +98,15 @@ export default function InspectorEscanearPage() {
 
             {/* Manual Search */}
             {mode === 'manual' && (
-                <div className="row justify-center mb-4">
-                    <div className="col-span-12 md:col-span-8 lg:col-span-6">
-                        <div className="relative shadow-sm rounded-full overflow-hidden">
-                            <input
-                                type="text"
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-lg border-0 py-3 ps-4"
-                                placeholder="Nombre, DNI o código QR..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            />
-                            <button
-                                className="btn px-4 font-bold text-white"
-                                style={{ background: '#F59E0B' }}
-                                onClick={handleSearch}
-                                disabled={loading || !searchQuery.trim()}
-                            >
-                                {loading ? (
-                                    <span className="animate-spin animate-spin w-4 h-4"></span>
-                                ) : (
-                                    <i className="bi bi-search text-lg"></i>
-                                )}
+                <div className="flex justify-center mb-5">
+                    <div className="w-full max-w-md">
+                        <div className="relative rounded-full overflow-hidden shadow-lg">
+                            <input type="text" className="w-full py-3.5 pl-5 pr-16 border-none outline-none text-sm bg-white"
+                                placeholder="Nombre, DNI o código QR..." value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} />
+                            <button onClick={handleSearch} disabled={loading || !searchQuery.trim()}
+                                className="absolute right-1 top-1 bottom-1 px-4 bg-amber-500 text-white rounded-full border-none cursor-pointer font-bold disabled:opacity-50 flex items-center justify-center">
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
                             </button>
                         </div>
                     </div>
@@ -266,81 +115,43 @@ export default function InspectorEscanearPage() {
 
             {/* Camera View */}
             {mode === 'camera' && (
-                <div className="row justify-center mb-4">
-                    <div className="col-span-12 md:col-span-8 lg:col-span-6">
-                        <div className="rounded-2xl overflow-hidden relative" style={{ background: '#1E293B', aspectRatio: '4/3' }}>
-                            {/* Video feed */}
-                            <video
-                                ref={videoRef}
-                                autoPlay
-                                playsInline
-                                muted
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-
-                            {/* Scanning overlay */}
+                <div className="flex justify-center mb-5">
+                    <div className="w-full max-w-md">
+                        <div className="rounded-2xl overflow-hidden relative bg-slate-800" style={{ aspectRatio: '4/3' }}>
+                            <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
                             {cameraActive && !cameraError && (
-                                <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                                    <div style={{
-                                        width: '60%', height: '60%',
-                                        border: '3px solid #F59E0B',
-                                        borderRadius: '16px',
-                                        boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)',
-                                        animation: 'pulse 2s infinite'
-                                    }}>
-                                        <div className="text-center mt-2">
-                                            <small className="text-amber-500 font-bold bg-navy bg-opacity-75 px-3 py-1 rounded-full" style={{ fontSize: '0.7rem' }}>
-                                                Apunta al código QR
-                                            </small>
-                                        </div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-[60%] h-[60%] border-[3px] border-amber-500 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.4)] animate-pulse">
+                                        <div className="text-center mt-2"><small className="text-amber-500 font-bold bg-navy/75 px-3 py-1 rounded-full text-[0.7rem]">Apunta al código QR</small></div>
                                     </div>
-                                    <style>{`@keyframes pulse { 0%, 100% { border-color: #F59E0B; } 50% { border-color: #FBBF24; } }`}</style>
                                 </div>
                             )}
-
-                            {/* Loading state */}
                             {!cameraActive && !cameraError && (
-                                <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
-                                    <div className="animate-spin text-amber-500 mb-2"></div>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <Camera className="w-8 h-8 text-amber-500 mb-2 animate-pulse" />
                                     <small className="text-white/50">Iniciando cámara...</small>
                                 </div>
                             )}
-
-                            {/* Error state */}
                             {cameraError && (
-                                <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center p-4 text-center">
-                                    <i className="bi bi-camera-video-off text-red-500 mb-2" style={{ fontSize: '2rem' }}></i>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+                                    <CameraOff className="w-8 h-8 text-red-500 mb-2" />
                                     <small className="text-white/50">{cameraError}</small>
-                                    <button
-                                        className="text-sm py-1.5 px-3 btn-outline-warning rounded-full mt-3"
-                                        onClick={() => { setMode('manual'); stopCamera(); }}
-                                    >
+                                    <button onClick={() => { setMode('manual'); stopCamera(); }}
+                                        className="mt-3 px-3.5 py-1.5 rounded-full text-xs font-bold border-[1.5px] border-amber-400 text-amber-400 bg-transparent cursor-pointer hover:bg-amber-500/10 transition-colors">
                                         Usar Búsqueda Manual
                                     </button>
                                 </div>
                             )}
                         </div>
-
-                        {/* Manual entry fallback when camera is active */}
                         {cameraActive && (
                             <div className="mt-3">
                                 <small className="text-white/50 block mb-2 text-center">O introduce el código manualmente:</small>
                                 <div className="relative rounded-full overflow-hidden">
-                                    <input
-                                        type="text"
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm border-0 py-2 pl-3"
-                                        placeholder="Pegar código QR..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                    />
-                                    <button
-                                        className="btn px-3 text-white"
-                                        style={{ background: '#F59E0B' }}
-                                        onClick={handleSearch}
-                                        disabled={!searchQuery.trim()}
-                                    >
-                                        <i className="bi bi-search"></i>
+                                    <input type="text" className="w-full py-2.5 pl-4 pr-12 border-none outline-none text-sm bg-slate-800 text-white"
+                                        placeholder="Pegar código QR..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} />
+                                    <button onClick={handleSearch} disabled={!searchQuery.trim()}
+                                        className="absolute right-1 top-1 bottom-1 px-3 bg-amber-500 text-white rounded-full border-none cursor-pointer">
+                                        <Search className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
@@ -351,84 +162,48 @@ export default function InspectorEscanearPage() {
 
             {/* Result */}
             {searched && result && (
-                <div className="row justify-center">
-                    <div className="col-span-12 md:col-span-8 lg:col-span-6">
-
+                <div className="flex justify-center">
+                    <div className="w-full max-w-md">
                         {result.found ? (
-                            <div className="card border-0 shadow-md rounded-2xl overflow-hidden">
-                                {/* Status Banner */}
-                                <div className="text-center py-6 px-3" style={{ background: '#fff' }}>
-                                    <div className="rounded-full mx-auto flex items-center justify-center mb-3"
-                                        style={{
-                                            width: 90, height: 90,
-                                            background: result.fichaje_activo ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)'
-                                        }}>
-                                        <i className={`bi ${result.fichaje_activo ? 'bi-check-lg' : 'bi-dash-lg'}`}
-                                            style={{
-                                                fontSize: '3rem',
-                                                color: result.fichaje_activo ? '#10B981' : '#EF4444'
-                                            }}></i>
+                            <div className="bg-white rounded-2xl overflow-hidden shadow-xl">
+                                <div className="text-center py-6 px-4">
+                                    <div className={cn('w-[90px] h-[90px] rounded-full mx-auto flex items-center justify-center mb-3', result.fichaje_activo ? 'bg-emerald-100' : 'bg-red-100')}>
+                                        {result.fichaje_activo ? <Check className="w-12 h-12 text-emerald-500" /> : <Minus className="w-12 h-12 text-red-500" />}
                                     </div>
-                                    <h3 className="font-bold mb-1" style={{ color: result.fichaje_activo ? '#10B981' : '#F97316' }}>
+                                    <h3 className={cn('font-bold mb-1 text-xl', result.fichaje_activo ? 'text-emerald-500' : 'text-orange-500')}>
                                         {result.fichaje_activo ? 'EMPLEADO VÁLIDO' : 'SIN TURNO ACTIVO'}
                                     </h3>
-                                    <p className="text-slate-400 text-sm mb-0">
-                                        {result.fichaje_activo ? 'Fichaje activo detectado' : 'No tiene fichaje activo hoy'}
-                                    </p>
+                                    <p className="text-slate-400 text-sm">{result.fichaje_activo ? 'Fichaje activo detectado' : 'No tiene fichaje activo hoy'}</p>
                                 </div>
-
-                                {/* Details */}
-                                <div className="p-4" style={{ background: '#fff' }}>
-                                    <div className="text-center mb-3" style={{ letterSpacing: '4px', color: '#CBD5E1' }}>
-                                        {'- '.repeat(20)}
-                                    </div>
-
-                                    {/* Identity */}
+                                <div className="p-4 bg-white">
+                                    <div className="text-center mb-3 text-slate-200 tracking-[4px] text-xs">{'- '.repeat(20)}</div>
                                     <div className="mb-3">
-                                        <small className="text-amber-500 font-bold uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.1em' }}>
-                                            IDENTIDAD
-                                        </small>
-                                        <h5 className="font-bold text-navy mb-0">{result.nombre}</h5>
+                                        <small className="text-amber-500 font-bold uppercase text-[0.65rem] tracking-[0.1em]">IDENTIDAD</small>
+                                        <h5 className="font-bold text-navy">{result.nombre}</h5>
                                         <small className="text-slate-400">NIF: {result.dni}</small>
                                     </div>
-
-                                    {/* Today's record */}
                                     <div className="mb-3">
-                                        <small className="text-amber-500 font-bold uppercase" style={{ fontSize: '0.65rem', letterSpacing: '0.1em' }}>
-                                            REGISTRO DE HOY
-                                        </small>
+                                        <small className="text-amber-500 font-bold uppercase text-[0.65rem] tracking-[0.1em]">REGISTRO DE HOY</small>
                                         <div className="flex items-center gap-3 mt-1">
-                                            <span className="font-bold font-mono" style={{ fontSize: '1.8rem' }}>
-                                                {result.hora_entrada}
-                                            </span>
+                                            <span className="font-bold font-mono text-3xl">{result.hora_entrada}</span>
                                             {result.fichaje_activo && (
-                                                <span className="badge rounded-full px-3 py-2 font-bold"
-                                                    style={{
-                                                        color: result.gps_ok ? '#10B981' : '#EF4444',
-                                                        background: result.gps_ok ? '#ECFDF5' : '#FEF2F2',
-                                                        fontSize: '0.7rem'
-                                                    }}>
+                                                <span className={cn('inline-flex items-center px-3 py-1.5 rounded-full text-[0.7rem] font-bold', result.gps_ok ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600')}>
                                                     {result.gps_ok ? 'GPS OK' : 'SIN GPS'}
                                                 </span>
                                             )}
                                         </div>
                                         <small className="text-slate-400">📍 {result.sede}</small>
                                     </div>
-
-                                    {/* Hash */}
-                                    <div className="rounded-lg p-3 text-center" style={{ background: '#F8FAFC', border: '1px dashed #E2E8F0' }}>
-                                        <code className="text-slate-400" style={{ fontSize: '0.8rem' }}>
-                                            Hash: {result.hash} (Inmutable)
-                                        </code>
+                                    <div className="rounded-lg p-3 text-center bg-slate-50 border border-dashed border-slate-200">
+                                        <code className="text-slate-400 text-sm">Hash: {result.hash} (Inmutable)</code>
                                     </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="card border-0 shadow-md rounded-2xl overflow-hidden">
-                                <div className="text-center py-6 px-3" style={{ background: '#1E293B' }}>
-                                    <div className="rounded-full mx-auto flex items-center justify-center mb-3"
-                                        style={{ width: 80, height: 80, background: 'rgba(239, 68, 68, 0.15)' }}>
-                                        <i className="bi bi-x-lg" style={{ fontSize: '2.5rem', color: '#EF4444' }}></i>
+                            <div className="bg-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                                <div className="text-center py-8 px-4">
+                                    <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-3 bg-red-500/15">
+                                        <X className="w-10 h-10 text-red-500" />
                                     </div>
                                     <h4 className="font-bold text-red-500 mb-1">NO ENCONTRADO</h4>
                                     <p className="text-white/50 text-sm">No se encontró ningún empleado con &quot;{searchQuery}&quot;</p>
@@ -436,31 +211,24 @@ export default function InspectorEscanearPage() {
                             </div>
                         )}
 
-                        {/* Reset button */}
-                        <button
-                            onClick={handleReset}
-                            className="btn w-full py-3 rounded-full font-bold text-white mt-4 flex items-center justify-center gap-2"
-                            style={{ background: '#3B82F6', fontSize: '1.1rem' }}
-                        >
-                            <i className="bi bi-qr-code-scan text-lg"></i>
-                            Escanear Siguiente QR
+                        <button onClick={handleReset}
+                            className="w-full py-3.5 rounded-full font-bold text-white mt-4 flex items-center justify-center gap-2 bg-blue-500 border-none cursor-pointer text-lg hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/25">
+                            <QrCode className="w-5 h-5" /> Escanear Siguiente QR
                         </button>
-
                     </div>
                 </div>
             )}
 
             {/* Empty State */}
             {!searched && mode === 'manual' && (
-                <div className="row justify-center">
-                    <div className="col-span-12 md:col-span-8 lg:col-span-6 text-center py-6">
-                        <i className="bi bi-qr-code-scan text-white/50 mb-3" style={{ fontSize: '4rem', opacity: 0.3 }}></i>
+                <div className="flex justify-center">
+                    <div className="w-full max-w-md text-center py-10">
+                        <QrCode className="w-16 h-16 text-white/10 mx-auto mb-3" />
                         <p className="text-white/50 mb-1">Introduce un nombre, DNI o código QR</p>
-                        <p className="text-white/50 text-sm">O cambia al modo cámara para escanear directamente</p>
+                        <p className="text-white/30 text-sm">O cambia al modo cámara para escanear directamente</p>
                     </div>
                 </div>
             )}
-
         </div>
     );
 }

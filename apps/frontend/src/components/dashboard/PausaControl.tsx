@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Coffee, MapPinOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PausaControlProps {
   userId: string;
@@ -43,7 +45,6 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
     }
   }, [isWorking, userId]);
 
-  // Timer
   useEffect(() => {
     if (!pausaActiva) return;
     const start = new Date(pausaActiva.hora_inicio).getTime();
@@ -53,19 +54,16 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
     return () => clearInterval(interval);
   }, [pausaActiva]);
 
-  // Notificaciones
   useEffect(() => {
     if (!pausaActiva) return;
     const elapsedMin = elapsed / 60000;
     const remaining = pausaActiva.duracion_minutos - elapsedMin;
 
-    // Notificar X min antes de acabar
     if (pausaActiva.notificar_antes_min > 0 && remaining <= pausaActiva.notificar_antes_min && remaining > 0 && !notifiedRef.current.has('antes')) {
       notifiedRef.current.add('antes');
       sendNotification(`⏰ Quedan ${Math.ceil(remaining)} min de tu pausa de ${pausaActiva.nombre}`);
     }
 
-    // Notificar fin
     if (pausaActiva.notificar_fin && remaining <= 0 && !notifiedRef.current.has('fin')) {
       notifiedRef.current.add('fin');
       sendNotification(`✅ Tu pausa de ${pausaActiva.nombre} ha terminado. ¡Vuelve al puesto!`);
@@ -94,14 +92,14 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
       .maybeSingle();
 
     if (data) {
-      const config = (data as any).configuracion_pausas;
+      const config = (data as Record<string, unknown>).configuracion_pausas as Record<string, unknown> | null;
       setPausaActiva({
         id: data.id,
-        nombre: config?.nombre || 'Pausa',
-        duracion_minutos: config?.duracion_minutos || 15,
+        nombre: (config?.nombre as string) || 'Pausa',
+        duracion_minutos: (config?.duracion_minutos as number) || 15,
         hora_inicio: data.hora_inicio,
-        notificar_fin: config?.notificar_fin ?? true,
-        notificar_antes_min: config?.notificar_antes_min ?? 3,
+        notificar_fin: (config?.notificar_fin as boolean) ?? true,
+        notificar_antes_min: (config?.notificar_antes_min as number) ?? 3,
       });
     }
   };
@@ -110,7 +108,6 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
     setLoading(true);
     setShowMenu(false);
 
-    // Pedir permiso de notificaciones
     if ('Notification' in window && Notification.permission === 'default') {
       await Notification.requestPermission();
     }
@@ -172,98 +169,87 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
   const isOvertime = pausaActiva && elapsedMin > pausaActiva.duracion_minutos;
 
   return (
-    <div style={{ marginTop: '1rem' }}>
+    <div className="mt-4">
 
       {pausaActiva ? (
-        /* PAUSA EN CURSO */
-        <div className="anim-scale-in" style={{
-          background: isOvertime ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)',
-          border: `1.5px solid ${isOvertime ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`,
-          borderRadius: 16, padding: '1rem 1.25rem', textAlign: 'center',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{
-              fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-              color: isOvertime ? '#B91C1C' : '#92400E',
-            }}>
+        <div className={cn(
+          'rounded-2xl p-4 text-center animate-scale-in border-[1.5px]',
+          isOvertime ? 'bg-red-500/[0.05] border-red-500/20' : 'bg-amber-500/[0.05] border-amber-500/20'
+        )}>
+          <div className="flex justify-between items-center mb-2">
+            <span className={cn(
+              'text-[0.75rem] font-bold uppercase tracking-widest',
+              isOvertime ? 'text-red-700' : 'text-amber-800'
+            )}>
               ☕ {pausaActiva.nombre} {isOvertime ? '· EXCEDIDA' : '· en curso'}
             </span>
-            <span style={{
-              padding: '2px 8px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 600,
-              background: 'rgba(37,99,235,0.1)', color: '#1E3A8A',
-            }}>
-              📍 GPS pausado
+            <span className="px-2 py-0.5 rounded-full text-[0.7rem] font-semibold bg-chrono-blue/10 text-blue-800 flex items-center gap-1">
+              <MapPinOff className="w-3 h-3" />
+              GPS pausado
             </span>
           </div>
 
-          <div style={{
-            fontSize: '2rem', fontWeight: 800, fontFamily: 'monospace',
-            color: isOvertime ? '#DC2626' : '#0F172A', margin: '8px 0',
-          }}>
+          <div className={cn(
+            'text-3xl font-extrabold font-mono my-2',
+            isOvertime ? 'text-red-600' : 'text-navy'
+          )}>
             {formatTimer(elapsed)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: 10 }}>
+          <div className="text-xs text-slate-500 mb-3">
             de {pausaActiva.duracion_minutos} min permitidos
           </div>
 
-          {/* Barra progreso */}
-          <div style={{ background: '#E2E8F0', borderRadius: 999, height: 6, marginBottom: 12, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 999, transition: 'width 0.5s',
-              width: `${progress}%`,
-              background: isOvertime
-                ? 'linear-gradient(90deg, #F59E0B, #EF4444)'
-                : 'linear-gradient(90deg, #F59E0B, #10B981)',
-            }} />
+          {/* Progress bar */}
+          <div className="bg-gray-200 rounded-full h-1.5 mb-3 overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-500',
+                isOvertime
+                  ? 'bg-gradient-to-r from-amber-500 to-red-500'
+                  : 'bg-gradient-to-r from-amber-500 to-emerald-500'
+              )}
+              style={{ width: `${progress}%` }}
+            />
           </div>
 
-          <button onClick={finalizarPausa} disabled={loading} style={{
-            width: '100%', padding: '10px', borderRadius: 10, border: 'none',
-            background: isOvertime ? '#DC2626' : '#0F172A', color: 'white',
-            fontWeight: 700, fontSize: '0.875rem', cursor: loading ? 'wait' : 'pointer',
-          }}>
+          <button
+            onClick={finalizarPausa}
+            disabled={loading}
+            className={cn(
+              'w-full py-2.5 rounded-xl font-bold text-sm border-none cursor-pointer transition-colors text-white',
+              isOvertime ? 'bg-red-600 hover:bg-red-700' : 'bg-navy hover:bg-slate-dark',
+              loading && 'opacity-60 cursor-wait'
+            )}
+          >
             {loading ? 'Finalizando...' : isOvertime ? '⚠️ Finalizar pausa (excedida)' : 'Finalizar pausa'}
           </button>
         </div>
       ) : (
-        /* BOTÓN INICIAR PAUSA */
-        <div style={{ position: 'relative' }}>
-          <button onClick={() => setShowMenu(!showMenu)} style={{
-            width: '100%', padding: '10px 16px', borderRadius: 12,
-            border: '1.5px solid #E2E8F0', background: 'white',
-            color: '#475569', fontWeight: 600, fontSize: '0.875rem',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            transition: 'all 0.15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#F59E0B'; e.currentTarget.style.background = 'rgba(245,158,11,0.04)'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = 'white'; }}
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-full py-2.5 px-4 rounded-xl border-[1.5px] border-gray-200 bg-white text-slate-600 font-semibold text-sm cursor-pointer flex items-center justify-center gap-2 transition-all hover:border-amber-500 hover:bg-amber-500/[0.03]"
           >
-            <i className="bi bi-cup-hot" style={{ color: '#F59E0B' }} />
+            <Coffee className="w-4 h-4 text-amber-500" />
             Tomar pausa
           </button>
 
           {showMenu && (
-            <div className="anim-scale-in" style={{
-              position: 'absolute', bottom: '100%', left: 0, right: 0, marginBottom: 6,
-              background: 'white', borderRadius: 14, boxShadow: '0 8px 30px rgba(15,23,42,0.15)',
-              border: '1px solid #E2E8F0', overflow: 'hidden', zIndex: 10,
-            }}>
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid #F1F5F9' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div className="absolute bottom-full left-0 right-0 mb-1.5 bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden z-10 animate-scale-in">
+              <div className="px-3 py-2 border-b border-gray-100">
+                <span className="text-[0.7rem] font-bold text-slate-400 uppercase tracking-widest">
                   Selecciona tipo de pausa
                 </span>
               </div>
               {pausasConfig.map((pc) => (
-                <button key={pc.id} onClick={() => iniciarPausa(pc)} disabled={loading} style={{
-                  width: '100%', padding: '10px 12px', border: 'none', background: 'transparent',
-                  cursor: 'pointer', textAlign: 'left', display: 'flex', justifyContent: 'space-between',
-                  alignItems: 'center', fontSize: '0.875rem', borderBottom: '1px solid #F8FAFC',
-                  transition: 'background 0.1s',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{pc.nombre}</span>
-                  <span style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 500 }}>{pc.duracion_minutos} min</span>
+                <button
+                  key={pc.id}
+                  onClick={() => iniciarPausa(pc)}
+                  disabled={loading}
+                  className="w-full px-3 py-2.5 border-none bg-transparent cursor-pointer text-left flex justify-between items-center text-sm hover:bg-gray-50 transition-colors"
+                >
+                  <span className="font-semibold text-navy">{pc.nombre}</span>
+                  <span className="text-xs text-slate-400 font-medium">{pc.duracion_minutos} min</span>
                 </button>
               ))}
             </div>

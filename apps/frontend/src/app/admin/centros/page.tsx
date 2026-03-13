@@ -3,38 +3,32 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
+import { ChevronLeft, Plus, MapPin, Building2, Trash2, CheckCircle, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// Importamos el mapa dinámicamente
 const LocationPicker = dynamic(() => import('@/components/admin/LocationPicker'), {
   ssr: false,
   loading: () => (
     <div className="flex flex-col items-center justify-center h-full bg-gray-50 text-slate-400 rounded-2xl">
-      <div className="animate-spin text-chrono-blue mb-2" role="status"></div>
+      <Loader2 className="w-6 h-6 text-chrono-blue animate-spin mb-2" />
       <small>Cargando Mapa...</small>
     </div>
   )
 });
 
 export default function CentrosTrabajoPage() {
-  // --- ESTADOS ---
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [sedes, setSedes] = useState<any[]>([]);
   const [showMobileMap, setShowMobileMap] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
   const [formData, setFormData] = useState({
-    id: null,
-    nombre: '',
-    direccion: '',
-    lat: 40.4168,
-    lng: -3.7038,
-    radio: 100
+    id: null as string | null, nombre: '', direccion: '', lat: 40.4168, lng: -3.7038, radio: 100
   });
 
-  useEffect(() => {
-    fetchSedes();
-  }, []);
+  useEffect(() => { fetchSedes(); }, []);
 
   const fetchSedes = async () => {
     const { data } = await supabase.from('sedes').select('*').order('created_at', { ascending: false });
@@ -42,59 +36,27 @@ export default function CentrosTrabajoPage() {
     setLoading(false);
   };
 
-  const handleNew = () => {
-    setFormData({ id: null, nombre: '', direccion: '', lat: 40.4168, lng: -3.7038, radio: 100 });
-    setSuccessMsg('');
-    setShowMobileMap(true);
-  };
-
+  const handleNew = () => { setFormData({ id: null, nombre: '', direccion: '', lat: 40.4168, lng: -3.7038, radio: 100 }); setSuccessMsg(''); setShowMobileMap(true); };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (centro: any) => {
-    setFormData({
-      id: centro.id,
-      nombre: centro.nombre,
-      direccion: centro.direccion || '',
-      lat: centro.latitud,
-      lng: centro.longitud,
-      radio: centro.radio_metros
-    });
-    setSuccessMsg('');
-    setShowMobileMap(true);
+    setFormData({ id: centro.id, nombre: centro.nombre, direccion: centro.direccion || '', lat: centro.latitud, lng: centro.longitud, radio: centro.radio_metros });
+    setSuccessMsg(''); setShowMobileMap(true);
   };
 
   const handleSave = async () => {
     if (!formData.nombre) return alert("Por favor, ponle un nombre al centro.");
-
     setSaving(true);
-    const payload = {
-      nombre: formData.nombre,
-      direccion: formData.direccion,
-      latitud: formData.lat,
-      longitud: formData.lng,
-      radio_metros: formData.radio
-    };
-
-    let error;
-    if (formData.id) {
-      const { error: updateError } = await supabase.from('sedes').update(payload).eq('id', formData.id);
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase.from('sedes').insert(payload);
-      error = insertError;
-    }
-
+    const payload = { nombre: formData.nombre, direccion: formData.direccion, latitud: formData.lat, longitud: formData.lng, radio_metros: formData.radio };
+    const error = formData.id
+      ? (await supabase.from('sedes').update(payload).eq('id', formData.id)).error
+      : (await supabase.from('sedes').insert(payload)).error;
     setSaving(false);
-
-    if (error) {
-      alert('Error: ' + error.message);
-    } else {
+    if (error) { alert('Error: ' + error.message); }
+    else {
       setSuccessMsg(formData.id ? 'Cambios guardados correctamente' : 'Sede creada con éxito');
       fetchSedes();
-
-      if (window.innerWidth < 992) {
-        setTimeout(() => setShowMobileMap(false), 1500);
-      } else if (!formData.id) {
-        setFormData({ ...formData, nombre: '', direccion: '' });
-      }
+      if (window.innerWidth < 992) setTimeout(() => setShowMobileMap(false), 1500);
+      else if (!formData.id) setFormData({ ...formData, nombre: '', direccion: '' });
     }
   };
 
@@ -107,115 +69,73 @@ export default function CentrosTrabajoPage() {
   };
 
   return (
-    <div className="pb-6" style={{ marginLeft: '-1rem', marginRight: '-1rem', marginTop: '-1rem', minHeight: 'calc(100vh - 100px)' }}>
-
-      {/* HEADER */}
-      <div className="bg-white p-3 md:p-4 border-b sticky-top" style={{ zIndex: 100 }}>
+    <div className="animate-fade-up pb-20 lg:pb-6 -mx-4 -mt-4 min-h-[calc(100vh-100px)]">
+      {/* Header */}
+      <div className="bg-white px-4 md:px-5 py-4 border-b border-gray-100 sticky top-0 z-40">
         <div className="flex justify-between items-center">
           <div>
             {showMobileMap && (
-              <button
-                onClick={() => setShowMobileMap(false)}
-                className="bg-transparent border-none cursor-pointer text-navy p-0 no-underline lg:hidden mb-2 font-bold"
-              >
-                <i className="bi bi-chevron-left mr-1"></i> Volver
+              <button onClick={() => setShowMobileMap(false)} className="bg-transparent border-none cursor-pointer text-navy p-0 font-bold lg:hidden mb-2 flex items-center gap-1 text-sm">
+                <ChevronLeft className="w-4 h-4" /> Volver
               </button>
             )}
-
-            <h6 className="text-chrono-blue font-bold uppercase text-sm mb-1 tracking-wide">
-              Administración
-            </h6>
-            <h2 className="font-bold text-navy mb-0">
+            <p className="text-chrono-blue font-bold uppercase text-xs mb-1 tracking-widest">Administración</p>
+            <h2 className="font-bold text-navy text-xl md:text-2xl font-[family-name:var(--font-jakarta)]">
               {showMobileMap ? (formData.id ? 'Editar Ubicación' : 'Nueva Ubicación') : 'Centros de Trabajo'}
             </h2>
-
-            {!showMobileMap && (
-              <p className="text-slate-500 mb-0 hidden lg:block mt-1 text-sm">
-                Configura las zonas GPS permitidas para el fichaje.
-              </p>
-            )}
+            {!showMobileMap && <p className="text-slate-400 text-sm mt-1 hidden lg:block">Configura las zonas GPS permitidas para el fichaje.</p>}
           </div>
-
-          <button
-            onClick={handleNew}
-            className="hidden lg:flex bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4 font-bold shadow-sm items-center gap-2"
-          >
-            <i className="bi bi-plus-lg"></i> Nuevo Centro
+          <button onClick={handleNew}
+            className="hidden lg:flex bg-navy text-white px-5 py-2.5 rounded-full font-bold text-sm border-none cursor-pointer hover:bg-slate-dark transition-colors items-center gap-2 shadow-sm">
+            <Plus className="w-4 h-4" /> Nuevo Centro
           </button>
         </div>
       </div>
 
-      <div className="row g-0 g-md-4 p-3 md:p-4" style={{ minHeight: '600px' }}>
-
-        {/* LISTA CENTROS */}
-        <div className={`lg:col-span-4 ${showMobileMap ? 'hidden lg:block' : 'block'}`}>
-
+      <div className="grid lg:grid-cols-12 gap-0 lg:gap-5 p-4 md:p-5 min-h-[600px]">
+        {/* List */}
+        <div className={cn('lg:col-span-4', showMobileMap ? 'hidden lg:block' : 'block')}>
           <div className="flex justify-between items-center mb-3">
-            <small className="text-slate-500 font-bold bg-white px-2 py-1 rounded border">
-              {sedes.length} ACTIVOS
-            </small>
+            <small className="text-slate-500 font-bold bg-gray-100 px-2.5 py-1 rounded-full text-xs border border-gray-200">{sedes.length} ACTIVOS</small>
           </div>
-
           <div className="grid gap-3 pb-6">
             {loading ? (
               [1, 2, 3].map(i => (
-                <div key={i} className="card border-0 shadow-sm p-3 rounded-2xl">
-                  <div className="flex gap-3">
-                    <div className="bg-gray-50 rounded-full" style={{ width: 40, height: 40 }}></div>
-                    <div className="flex-grow">
-                      <div className="bg-gray-50 rounded w-50 mb-2" style={{ height: 10 }}></div>
-                      <div className="bg-gray-50 rounded w-75" style={{ height: 10 }}></div>
-                    </div>
-                  </div>
+                <div key={i} className="bg-white shadow-sm p-4 rounded-2xl">
+                  <div className="flex gap-3"><div className="bg-gray-100 rounded-full w-10 h-10 animate-pulse" /><div className="flex-1"><div className="bg-gray-100 rounded w-1/2 h-2.5 mb-2 animate-pulse" /><div className="bg-gray-100 rounded w-3/4 h-2.5 animate-pulse" /></div></div>
                 </div>
               ))
             ) : sedes.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="mb-3 text-slate-400 opacity-50">
-                  <i className="bi bi-geo-alt text-4xl"></i>
-                </div>
-                <h6 className="font-bold">No hay centros creados</h6>
-                <p className="text-sm text-slate-500">Crea el primero para empezar.</p>
+              <div className="text-center py-10">
+                <MapPin className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                <h6 className="font-bold text-slate-500 mb-1">No hay centros creados</h6>
+                <p className="text-sm text-slate-400">Crea el primero para empezar.</p>
               </div>
             ) : (
-              sedes.map((centro) => (
-                <div
-                  key={centro.id}
-                  className={`
-                        card p-3 border-0 shadow-sm rounded-2xl cursor-pointer relative overflow-hidden
-                        ${formData.id === centro.id ? 'border border-2 border-primary bg-gray-50' : 'bg-white'}
-                    `}
-                  onClick={() => handleEdit(centro)}
-                >
-                  {formData.id === centro.id && (
-                    <div className="absolute left-0 top-0 bottom-0 bg-chrono-blue" style={{ width: '4px' }}></div>
-                  )}
-
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              sedes.map((centro: any) => (
+                <div key={centro.id} onClick={() => handleEdit(centro)}
+                  className={cn('bg-white p-4 rounded-2xl cursor-pointer relative overflow-hidden shadow-sm transition-all hover:shadow-md',
+                    formData.id === centro.id && 'ring-2 ring-chrono-blue bg-blue-50/30')}>
+                  {formData.id === centro.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-chrono-blue" />}
                   <div className="flex items-start gap-3">
-                    <div className={`
-                          rounded-full flex items-center justify-center shrink-0
-                          ${formData.id === centro.id ? 'bg-chrono-blue text-white' : 'bg-gray-50 text-chrono-blue'}
-                      `} style={{ width: '48px', height: '48px' }}>
-                      <i className="bi bi-building-fill text-lg"></i>
+                    <div className={cn('w-11 h-11 rounded-full flex items-center justify-center shrink-0',
+                      formData.id === centro.id ? 'bg-chrono-blue text-white' : 'bg-gray-100 text-chrono-blue')}>
+                      <Building2 className="w-5 h-5" />
                     </div>
-
-                    <div className="flex-grow min-w-0">
+                    <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                        <h6 className="font-bold mb-1 text-navy truncate pr-2">{centro.nombre}</h6>
-                        <button
-                          onClick={(e) => handleDelete(centro.id, e)}
-                          className="text-sm py-1.5 px-3 btn-light text-red-500 rounded-full p-0 flex items-center justify-center"
-                          style={{ width: 30, height: 30 }}
-                          title="Eliminar"
-                        >
-                          <i className="bi bi-trash"></i>
+                        <h6 className="font-bold text-navy text-sm truncate pr-2">{centro.nombre}</h6>
+                        <button onClick={(e) => handleDelete(centro.id, e)} title="Eliminar"
+                          className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center border-none cursor-pointer text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors shrink-0">
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <div className="flex items-center text-slate-500 text-sm mb-2">
-                        <i className="bi bi-pin-map mr-1"></i>
+                      <div className="flex items-center text-slate-400 text-xs mt-0.5 mb-2">
+                        <MapPin className="w-3 h-3 mr-1" />
                         <span className="truncate">{centro.direccion || 'Ubicación GPS'}</span>
                       </div>
-                      <span className="bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-navy border font-normal rounded-full px-3">
+                      <span className="bg-gray-100 text-slate-600 text-xs px-2.5 py-0.5 rounded-full font-medium border border-gray-200">
                         Radio: <strong>{centro.radio_metros}m</strong>
                       </span>
                     </div>
@@ -224,95 +144,52 @@ export default function CentrosTrabajoPage() {
               ))
             )}
           </div>
-
-          {/* FAB MÓVIL */}
-          <button
-            onClick={handleNew}
-            className="lg:hidden bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none fixed rounded-full shadow-lg flex items-center justify-center text-white"
-            style={{ width: '60px', height: '60px', zIndex: 1050, bottom: '80px', right: '16px' }}
-          >
-            <i className="bi bi-plus-lg text-3xl"></i>
+          {/* FAB Mobile */}
+          <button onClick={handleNew}
+            className="lg:hidden fixed bottom-[88px] right-4 w-14 h-14 bg-navy text-white rounded-full shadow-lg flex items-center justify-center border-none cursor-pointer z-40">
+            <Plus className="w-6 h-6" />
           </button>
         </div>
 
-        {/* MAPA Y FORMULARIO */}
-        <div className={`lg:col-span-8 ${!showMobileMap ? 'hidden lg:block' : 'block'}`}>
-          <div className="card border-0 shadow-sm rounded-2xl overflow-hidden" style={{ height: '600px' }}>
-
-            {/* MAPA */}
-            <div style={{ height: '400px', position: 'relative' }}>
-              <LocationPicker
-                lat={formData.lat}
-                lng={formData.lng}
-                radio={formData.radio}
-                onLocationSelect={(lat, lng) => setFormData({ ...formData, lat, lng })}
-              />
+        {/* Map + Form */}
+        <div className={cn('lg:col-span-8', !showMobileMap ? 'hidden lg:block' : 'block')}>
+          <div className="bg-white shadow-sm rounded-2xl overflow-hidden h-[600px] flex flex-col">
+            <div className="h-[400px] relative">
+              <LocationPicker lat={formData.lat} lng={formData.lng} radio={formData.radio}
+                onLocationSelect={(lat: number, lng: number) => setFormData({ ...formData, lat, lng })} />
             </div>
-
-            {/* FORMULARIO */}
-            <div className="p-4 bg-white">
-
+            <div className="p-5 bg-white flex-1">
               {successMsg && (
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-3 text-sm border-0 bg-emerald-500 bg-opacity-10 py-2 text-sm font-bold mb-3 flex items-center">
-                  <i className="bi bi-check-circle-fill mr-2"></i> {successMsg}
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-2.5 text-sm font-medium mb-3 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" /> {successMsg}
                 </div>
               )}
-
-              <div className="row gap-3">
-                <div className="md:col-span-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500 mb-1">NOMBRE DEL CENTRO</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0 font-bold"
-                    placeholder="Ej: Oficina Central"
-                    value={formData.nombre}
-                    onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                  />
+              <div className="grid md:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="text-[0.7rem] font-bold text-slate-400 mb-1 block uppercase tracking-wider">Nombre del Centro</label>
+                  <input type="text" className="w-full px-3 py-2.5 bg-gray-50 border-none rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-chrono-blue/20"
+                    placeholder="Ej: Oficina Central" value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} />
                 </div>
-
-                <div className="md:col-span-6">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500 mb-1">DIRECCIÓN (OPCIONAL)</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
-                    placeholder="Calle, número..."
-                    value={formData.direccion}
-                    onChange={e => setFormData({ ...formData, direccion: e.target.value })}
-                  />
-                </div>
-
-                <div className="col-span-12">
-                  <div className="flex justify-between mb-1">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">RADIO DE FICHAJE</label>
-                    <span className="bg-chrono-blue text-white text-xs px-2 py-0.5 rounded-full font-bold rounded-full">{formData.radio}m</span>
-                  </div>
-                  <input
-                    type="range" className="form-range"
-                    min="20" max="500" step="10"
-                    value={formData.radio}
-                    onChange={(e) => setFormData({ ...formData, radio: Number(e.target.value) })}
-                  />
-                </div>
-
-                <div className="col-span-12">
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none w-full font-bold rounded-full py-2"
-                  >
-                    {saving ? (
-                      <>
-                        <span className="animate-spin animate-spin w-4 h-4 mr-2"></span>
-                        Guardando...
-                      </>
-                    ) : (
-                      formData.id ? 'Actualizar Cambios' : 'Guardar Ubicación'
-                    )}
-                  </button>
+                <div>
+                  <label className="text-[0.7rem] font-bold text-slate-400 mb-1 block uppercase tracking-wider">Dirección (Opcional)</label>
+                  <input type="text" className="w-full px-3 py-2.5 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-chrono-blue/20"
+                    placeholder="Calle, número..." value={formData.direccion} onChange={e => setFormData({ ...formData, direccion: e.target.value })} />
                 </div>
               </div>
+              <div className="mb-3">
+                <div className="flex justify-between mb-1">
+                  <label className="text-[0.7rem] font-bold text-slate-400 uppercase tracking-wider">Radio de Fichaje</label>
+                  <span className="bg-chrono-blue text-white text-xs px-2.5 py-0.5 rounded-full font-bold">{formData.radio}m</span>
+                </div>
+                <input type="range" min="20" max="500" step="10" value={formData.radio}
+                  onChange={e => setFormData({ ...formData, radio: Number(e.target.value) })}
+                  className="w-full accent-chrono-blue" />
+              </div>
+              <button onClick={handleSave} disabled={saving}
+                className="w-full bg-navy text-white py-2.5 rounded-full font-bold text-sm border-none cursor-pointer hover:bg-slate-dark transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : formData.id ? 'Actualizar Cambios' : 'Guardar Ubicación'}
+              </button>
             </div>
-
           </div>
         </div>
       </div>
