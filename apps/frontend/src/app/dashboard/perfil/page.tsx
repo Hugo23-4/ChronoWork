@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import PasskeyManager from '@/components/ui/PasskeyManager';
+import { Camera, Loader2, Pencil, Check, X as XIcon, LogOut, KeyRound } from 'lucide-react';
 
 interface ProfileData {
   nombre_completo: string;
@@ -25,316 +26,199 @@ export default function PerfilPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<ProfileData>({
-    nombre_completo: 'Cargando...',
-    puesto: '...',
-    telefono: '...',
-    dni: '...',
-    seguridad_social: '...',
-    tipo_contrato: '...',
-    convenio: '...',
-    avatar_url: undefined
+    nombre_completo: 'Cargando...', puesto: '...', telefono: '...', dni: '...',
+    seguridad_social: '...', tipo_contrato: '...', convenio: '...', avatar_url: undefined
   });
 
   const [loading, setLoading] = useState(true);
   const [resetLoading, setResetLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTelefono, setEditedTelefono] = useState('');
 
-  useEffect(() => {
-    if (user) fetchProfile();
-  }, [user]);
+  useEffect(() => { if (user) fetchProfile(); }, [user]);
 
   const fetchProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('empleados_info')
-        .select('*')
-        .eq('id', user?.id)
-        .single();
-
+      const { data, error } = await supabase.from('empleados_info').select('*').eq('id', user?.id).single();
       if (error && error.code !== 'PGRST116') throw error;
-
       if (data) {
         setProfile({
-          nombre_completo: data.nombre_completo || 'Usuario',
-          puesto: data.puesto || 'Puesto no definido',
-          email: user?.email,
-          telefono: data.telefono || '+34 000 000 000',
-          dni: data.dni || 'No registrado',
-          seguridad_social: data.seguridad_social || 'Pendiente',
-          tipo_contrato: data.tipo_contrato || 'Indefinido',
-          convenio: data.convenio || 'General',
-          avatar_url: data.avatar_url,
-          departamento: data.departamento
+          nombre_completo: data.nombre_completo || 'Usuario', puesto: data.puesto || 'Puesto no definido',
+          email: user?.email, telefono: data.telefono || '+34 000 000 000', dni: data.dni || 'No registrado',
+          seguridad_social: data.seguridad_social || 'Pendiente', tipo_contrato: data.tipo_contrato || 'Indefinido',
+          convenio: data.convenio || 'General', avatar_url: data.avatar_url, departamento: data.departamento
         });
         setEditedTelefono(data.telefono || '');
       }
-    } catch (err) {
-      console.error('Error cargando perfil:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error('Error cargando perfil:', err); }
+    finally { setLoading(false); }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-  };
+  const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login'); };
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;
     setResetLoading(true);
-
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
         redirectTo: `${window.location.origin}/auth/update-password`,
       });
-
       if (error) throw error;
       alert(`✅ Correo enviado a ${user.email}. Revisa tu bandeja de entrada.`);
-    } catch (error: any) {
-      alert('Error al enviar correo: ' + error.message);
-    } finally {
-      setResetLoading(false);
-    }
+    } catch (error: unknown) {
+      alert('Error al enviar correo: ' + (error instanceof Error ? error.message : String(error)));
+    } finally { setResetLoading(false); }
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
-
-    // Validar tipo de archivo
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecciona una imagen válida');
-      return;
-    }
-
-    // Validar tamaño (máx 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('La imagen debe ser menor a 2MB');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { alert('Por favor, selecciona una imagen válida'); return; }
+    if (file.size > 2 * 1024 * 1024) { alert('La imagen debe ser menor a 2MB'); return; }
     setUploadingPhoto(true);
-
     try {
-      // 1. Subir imagen a Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
-
-      // 2. Obtener URL pública
-      const { data: urlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // 3. Actualizar en base de datos
-      const { error: updateError } = await supabase
-        .from('empleados_info')
-        .update({ avatar_url: urlData.publicUrl })
-        .eq('id', user.id);
-
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const { error: updateError } = await supabase.from('empleados_info').update({ avatar_url: urlData.publicUrl }).eq('id', user.id);
       if (updateError) throw updateError;
-
-      // 4. Actualizar estado local
       setProfile(prev => ({ ...prev, avatar_url: urlData.publicUrl }));
       alert('✅ Foto de perfil actualizada');
-    } catch (error: any) {
-      console.error('Error uploading photo:', error);
-      alert('Error al subir foto: ' + error.message);
-    } finally {
-      setUploadingPhoto(false);
-    }
+    } catch (error: unknown) {
+      alert('Error al subir foto: ' + (error instanceof Error ? error.message : String(error)));
+    } finally { setUploadingPhoto(false); }
   };
 
   const handleSaveTelefono = async () => {
     if (!user?.id) return;
-
     try {
-      const { error } = await supabase
-        .from('empleados_info')
-        .update({ telefono: editedTelefono })
-        .eq('id', user.id);
-
+      const { error } = await supabase.from('empleados_info').update({ telefono: editedTelefono }).eq('id', user.id);
       if (error) throw error;
-
       setProfile(prev => ({ ...prev, telefono: editedTelefono }));
       setIsEditing(false);
       alert('✅ Teléfono actualizado');
-    } catch (error: any) {
-      console.error('Error updating phone:', error);
-      alert('Error al actualizar: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error al actualizar: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
-  const getInitials = (nombre: string) => {
-    return nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-  };
+  const getInitials = (nombre: string) => nombre.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh] py-6">
-        <div className="animate-spin text-chrono-blue" role="status">
-          <span className="sr-only">Cargando...</span>
-        </div>
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <Loader2 className="w-8 h-8 text-chrono-blue animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="fade-in-up pb-6">
-
-      {/* HEADER DESKTOP */}
-      <div className="mb-4 hidden lg:block">
-        <h2 className="font-bold text-navy mb-1">Tu Perfil de Empleado</h2>
+    <div className="animate-fade-up pb-20 lg:pb-6">
+      <div className="mb-5 hidden lg:block">
+        <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)] mb-1">Tu Perfil de Empleado</h2>
       </div>
 
-      <div className="row gap-4">
-
-        {/* COLUMNA IZQUIERDA: TARJETA DE IDENTIFICACIÓN */}
+      <div className="grid lg:grid-cols-12 gap-5">
+        {/* LEFT: ID CARD */}
         <div className="lg:col-span-4">
-          <div className="card border-0 shadow-sm rounded-2xl overflow-hidden h-full bg-white">
-            {/* Fondo Header */}
-            <div className="hidden lg:block" style={{ height: '100px', backgroundColor: '#0F172A' }}></div>
-
-            <div className="p-4 text-center pt-0 pt-lg-0 p-4">
-
+          <div className="bg-white shadow-sm rounded-2xl overflow-hidden h-full">
+            <div className="hidden lg:block h-24 bg-gradient-to-br from-navy to-slate-dark" />
+            <div className="p-5 text-center lg:-mt-12">
               {/* Avatar */}
-              <div className="relative d-inline-block mt-lg-n5 mb-3 mt-4">
+              <div className="relative inline-block mb-3">
                 {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt="Foto de perfil"
-                    className="rounded-full border border-4 border-white shadow-sm object-fit-cover"
-                    style={{ width: '120px', height: '120px' }}
-                  />
+                  <img src={profile.avatar_url} alt="Foto de perfil"
+                    className="w-28 h-28 rounded-full border-4 border-white shadow-md object-cover" />
                 ) : (
-                  <div
-                    className="rounded-full bg-chrono-blue text-white flex items-center justify-center border border-4 border-white shadow-sm"
-                    style={{ width: '120px', height: '120px', fontSize: '2.5rem', fontWeight: '700' }}
-                  >
+                  <div className="w-28 h-28 rounded-full bg-chrono-blue text-white flex items-center justify-center border-4 border-white shadow-md text-4xl font-bold">
                     {getInitials(profile.nombre_completo)}
                   </div>
                 )}
-
-                {/* Botón cambiar foto */}
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingPhoto}
-                  className="absolute bottom-0 right-0 bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full shadow-sm flex items-center justify-center"
-                  style={{ width: '36px', height: '36px' }}
-                  title="Cambiar foto"
-                >
-                  {uploadingPhoto ? (
-                    <span className="animate-spin animate-spin w-4 h-4"></span>
-                  ) : (
-                    <i className="bi bi-camera-fill"></i>
-                  )}
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto}
+                  className="absolute bottom-1 right-1 w-9 h-9 bg-navy text-white rounded-full shadow-md flex items-center justify-center border-2 border-white cursor-pointer hover:bg-slate-dark transition-colors disabled:opacity-50">
+                  {uploadingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
               </div>
 
-              <h3 className="font-bold text-navy mb-1">{profile.nombre_completo}</h3>
-              <p className="text-slate-500 mb-3">{profile.puesto} • LOOM S.L.</p>
+              <h3 className="font-bold text-navy text-lg mb-0.5">{profile.nombre_completo}</h3>
+              <p className="text-slate-500 text-sm mb-3">{profile.puesto} • LOOM S.L.</p>
 
               {profile.departamento && (
-                <span className="bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-navy border px-3 py-2 rounded-full mb-3">
+                <span className="inline-block bg-gray-100 text-navy text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 mb-3">
                   {profile.departamento}
                 </span>
               )}
 
-              {/* Badge ID (Solo Desktop) */}
-              <div className="hidden d-lg-inline-block bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-navy border px-3 py-2 rounded-full mb-4 font-mono">
+              <div className="hidden lg:inline-block bg-gray-100 text-navy text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 font-mono mb-4">
                 ID: {user?.id.substring(0, 8).toUpperCase()}
               </div>
 
-              {/* QR Code Simulado (Solo Desktop) */}
-              <div className="hidden lg:block mt-4 border rounded-lg p-4 mx-auto bg-white" style={{ maxWidth: '200px' }}>
+              {/* QR Simulated */}
+              <div className="hidden lg:block mt-3 border border-gray-200 rounded-xl p-4 mx-auto bg-white max-w-[200px]">
                 <div className="flex flex-wrap gap-1 justify-center opacity-75">
                   {[...Array(49)].map((_, i) => (
-                    <div key={i} className="bg-navy" style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '2px',
-                      opacity: Math.random() > 0.5 ? 1 : 0.1
-                    }}></div>
+                    <div key={i} className="bg-navy" style={{ width: 16, height: 16, borderRadius: 2, opacity: Math.random() > 0.5 ? 1 : 0.1 }} />
                   ))}
                 </div>
-                <small className="block mt-3 text-slate-500 font-bold" style={{ fontSize: '0.75rem' }}>Escanear en Kiosco</small>
+                <small className="block mt-3 text-slate-500 font-bold text-xs">Escanear en Kiosco</small>
               </div>
-
             </div>
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: DATOS */}
-        <div className="lg:col-span-8">
-
-          {/* SECCIÓN 1: DATOS PERSONALES / CONTRATO */}
-          <h6 className="hidden lg:block font-bold mb-3 text-navy">Datos del Contrato</h6>
-          <h6 className="lg:hidden text-slate-500 font-bold text-sm mb-3 px-2 uppercase">Información Personal</h6>
-
-          <div className="card border-0 shadow-sm rounded-2xl p-4 mb-4 bg-white">
-
-            {/* Vista Desktop: Grid 2 Columnas */}
-            <div className="hidden d-lg-row row gap-4">
-              <div className="col-span-6">
-                <small className="text-slate-500 font-bold block mb-1 uppercase" style={{ fontSize: '0.75rem' }}>NIF / DNI</small>
-                <span className="font-bold text-navy text-lg">{profile.dni}</span>
-              </div>
-              <div className="col-span-6">
-                <small className="text-slate-500 font-bold block mb-1 uppercase" style={{ fontSize: '0.75rem' }}>Núm. Seguridad Social</small>
-                <span className="font-bold text-navy text-lg">{profile.seguridad_social}</span>
-              </div>
-              <div className="col-span-6">
-                <small className="text-slate-500 font-bold block mb-1 uppercase" style={{ fontSize: '0.75rem' }}>Tipo de Contrato</small>
-                <span className="font-bold text-navy">{profile.tipo_contrato}</span>
-              </div>
-              <div className="col-span-6">
-                <small className="text-slate-500 font-bold block mb-1 uppercase" style={{ fontSize: '0.75rem' }}>Convenio Aplicado</small>
-                <span className="font-bold text-navy">{profile.convenio}</span>
+        {/* RIGHT: DATA */}
+        <div className="lg:col-span-8 space-y-5">
+          {/* Contract Data (Desktop) */}
+          <div className="hidden lg:block">
+            <h6 className="font-bold text-navy mb-3">Datos del Contrato</h6>
+            <div className="bg-white shadow-sm rounded-2xl p-5">
+              <div className="grid grid-cols-2 gap-5">
+                {[
+                  { label: 'NIF / DNI', value: profile.dni },
+                  { label: 'Núm. Seguridad Social', value: profile.seguridad_social },
+                  { label: 'Tipo de Contrato', value: profile.tipo_contrato },
+                  { label: 'Convenio Aplicado', value: profile.convenio },
+                ].map(item => (
+                  <div key={item.label}>
+                    <small className="text-slate-400 font-bold block mb-1 uppercase text-[0.7rem] tracking-wider">{item.label}</small>
+                    <span className="font-bold text-navy">{item.value}</span>
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
 
-            {/* Vista Móvil */}
-            <div className="lg:hidden flex flex-col gap-4">
-              <div className="flex justify-between border-b pb-3">
-                <span className="fw-medium text-navy">Email</span>
-                <span className="text-slate-500 text-right text-break pl-3">{profile.email}</span>
+          {/* Personal Info (Mobile) */}
+          <div className="lg:hidden">
+            <h6 className="text-slate-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider">Información Personal</h6>
+            <div className="bg-white shadow-sm rounded-2xl p-4 space-y-3">
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="font-medium text-navy text-sm">Email</span>
+                <span className="text-slate-500 text-sm text-right break-all pl-3">{profile.email}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="fw-medium text-navy">Teléfono</span>
+                <span className="font-medium text-navy text-sm">Teléfono</span>
                 {isEditing ? (
                   <div className="flex gap-2 items-center">
-                    <input
-                      type="tel"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm form-control-sm"
-                      value={editedTelefono}
-                      onChange={(e) => setEditedTelefono(e.target.value)}
-                      style={{ maxWidth: '150px' }}
-                    />
-                    <button onClick={handleSaveTelefono} className="text-sm py-1.5 px-3 btn-success">✓</button>
-                    <button onClick={() => setIsEditing(false)} className="text-sm py-1.5 px-3 btn-secondary">✕</button>
+                    <input type="tel" className="w-36 px-3 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-sm outline-none focus:border-chrono-blue"
+                      value={editedTelefono} onChange={(e) => setEditedTelefono(e.target.value)} />
+                    <button onClick={handleSaveTelefono} className="w-7 h-7 bg-emerald-500 text-white rounded-lg flex items-center justify-center border-none cursor-pointer">
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setIsEditing(false)} className="w-7 h-7 bg-gray-200 text-gray-600 rounded-lg flex items-center justify-center border-none cursor-pointer">
+                      <XIcon className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ) : (
                   <div className="flex gap-2 items-center">
-                    <span className="text-slate-500">{profile.telefono}</span>
-                    <button onClick={() => setIsEditing(true)} className="text-sm py-1.5 px-3 btn-link p-0">
-                      <i className="bi bi-pencil"></i>
+                    <span className="text-slate-500 text-sm">{profile.telefono}</span>
+                    <button onClick={() => setIsEditing(true)} className="bg-transparent border-none p-0 cursor-pointer text-slate-400 hover:text-chrono-blue transition-colors">
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
@@ -342,59 +226,54 @@ export default function PerfilPage() {
             </div>
           </div>
 
-          {/* SECCIÓN 2: CONTRATO (Solo visible en Móvil separado) */}
-          <div className="lg:hidden mt-4">
-            <h6 className="text-slate-500 font-bold text-sm mb-3 px-2 uppercase">Contrato y Puesto</h6>
-            <div className="card border-0 shadow-sm rounded-2xl p-4 mb-4 flex flex-col gap-4 bg-white">
-              <div className="flex justify-between border-b pb-3">
-                <span className="fw-medium text-navy">Puesto</span>
-                <span className="text-slate-500">{profile.puesto}</span>
+          {/* Contract (Mobile) */}
+          <div className="lg:hidden">
+            <h6 className="text-slate-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider">Contrato y Puesto</h6>
+            <div className="bg-white shadow-sm rounded-2xl p-4 space-y-3">
+              <div className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="font-medium text-navy text-sm">Puesto</span>
+                <span className="text-slate-500 text-sm">{profile.puesto}</span>
               </div>
               <div className="flex justify-between">
-                <span className="fw-medium text-navy">Convenio</span>
-                <span className="text-slate-500 text-right" style={{ maxWidth: '60%' }}>{profile.convenio}</span>
+                <span className="font-medium text-navy text-sm">Convenio</span>
+                <span className="text-slate-500 text-sm text-right max-w-[60%]">{profile.convenio}</span>
               </div>
             </div>
           </div>
 
-          {/* SECCIÓN 3: SEGURIDAD DE LA CUENTA */}
-          <h6 className="hidden lg:block font-bold mb-3 text-navy">Seguridad de la Cuenta</h6>
-          <h6 className="lg:hidden text-slate-500 font-bold text-sm mb-3 px-2 uppercase">Seguridad</h6>
-
-          <div className="card border-0 shadow-sm rounded-2xl p-4 bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <span className="font-bold block text-navy">Contraseña</span>
-                <small className="text-slate-400 hidden lg:block">Se enviará un correo de verificación.</small>
+          {/* Security */}
+          <div>
+            <h6 className="font-bold text-navy mb-3 hidden lg:block">Seguridad de la Cuenta</h6>
+            <h6 className="text-slate-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider lg:hidden">Seguridad</h6>
+            <div className="bg-white shadow-sm rounded-2xl p-4 space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="font-bold text-navy text-sm flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-slate-400" />
+                    Contraseña
+                  </span>
+                  <small className="text-slate-400 hidden lg:block text-xs">Se enviará un correo de verificación.</small>
+                </div>
+                <button onClick={handlePasswordReset} disabled={resetLoading}
+                  className="bg-white text-navy border border-gray-200 px-4 py-2 rounded-full text-xs font-bold cursor-pointer hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                  {resetLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {resetLoading ? 'Enviando...' : 'Cambiar por Email'}
+                </button>
               </div>
-
-              <button
-                onClick={handlePasswordReset}
-                disabled={resetLoading}
-                className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer btn-sm rounded-full px-4 font-bold"
-              >
-                {resetLoading ? (
-                  <span><span className="animate-spin animate-spin w-4 h-4 mr-2"></span>Enviando...</span>
-                ) : 'Cambiar por Email'}
-              </button>
-            </div>
-
-            {/* PASSKEY MANAGER */}
-            <div className="flex justify-between items-start">
-              <PasskeyManager />
+              <div className="border-t border-gray-100 pt-4">
+                <PasskeyManager />
+              </div>
             </div>
           </div>
 
-          {/* BOTÓN CERRAR SESIÓN (Móvil) */}
-          <div className="lg:hidden mt-6 mb-3">
-            <button
-              onClick={handleLogout}
-              className="bg-transparent text-red-500 border border-red-500 px-4 py-2.5 rounded-xl font-semibold hover:bg-red-50 transition-colors cursor-pointer w-full py-3 rounded-full font-bold bg-white border-2"
-            >
+          {/* Logout (Mobile) */}
+          <div className="lg:hidden">
+            <button onClick={handleLogout}
+              className="w-full bg-white text-red-500 border-2 border-red-200 py-3 rounded-full font-bold cursor-pointer hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+              <LogOut className="w-4 h-4" />
               Cerrar Sesión
             </button>
           </div>
-
         </div>
       </div>
     </div>
