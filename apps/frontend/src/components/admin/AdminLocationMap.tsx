@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Circle, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { supabase } from '@/lib/supabase';
+import { Building2, MapPin } from 'lucide-react';
 
 // Iconos personalizados
 const greenIcon = L.icon({
@@ -235,13 +236,13 @@ export default function AdminLocationMap() {
                         <Popup maxWidth={300}>
                             <div className="p-2">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <i className="bi bi-building-fill text-chrono-blue text-lg"></i>
+                                    <Building2 className="w-5 h-5 text-chrono-blue inline" />
                                     <strong className="text-base">{sede.nombre}</strong>
                                 </div>
 
                                 {sede.direccion && (
-                                    <div className="text-slate-400 text-sm mb-2">
-                                        <i className="bi bi-geo-alt mr-1"></i>
+                                    <div className="text-slate-400 text-sm mb-2 flex items-center gap-1">
+                                        <MapPin className="w-3.5 h-3.5 shrink-0" />
                                         {sede.direccion}
                                     </div>
                                 )}

@@ -2,7 +2,7 @@
 
 import Sidebar from '@/components/dashboard/Sidebar';
 import MobileMenu from '@/components/dashboard/MobileMenu';
-import AdminModeSwitcher from '@/components/dashboard/AdminModeSwitcher';
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,20 +13,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar />
       </div>
 
-      {/* Contenido Principal */}
-      <main className="flex-grow overflow-auto bg-bg-body relative">
-        <div className="p-3 md:p-4">
+      {/* Main content */}
+      <main className="flex-grow overflow-auto bg-white dark:bg-black relative">
+        <div className="p-5 md:p-8 pt-20 lg:pt-8 pb-28 md:pb-8 lg:pb-8">
           {children}
         </div>
       </main>
 
-      {/* Menu Móvil */}
+      {/* Mobile nav */}
       <div className="lg:hidden">
         <MobileMenu />
       </div>
-
-      {/* Botón Admin (solo visible para admins) */}
-      <AdminModeSwitcher />
 
     </div>
   );

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import { supabase } from '@/lib/supabase';
+import { CheckCircle2, AlertTriangle, Trash2, ShieldOff, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RegisteredDevice {
     id: string;
@@ -141,10 +143,10 @@ export default function PasskeyManager() {
                     <button
                         onClick={handleRegister}
                         disabled={registering}
-                        className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none btn-sm rounded-full px-3 flex items-center gap-2"
+                        className="bg-navy text-white px-3 py-2 rounded-full text-sm font-semibold hover:bg-slate-800 transition-colors cursor-pointer border-none flex items-center gap-2 disabled:opacity-60"
                     >
                         {registering ? (
-                            <><span className="animate-spin animate-spin w-4 h-4" /> Registrando...</>
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Registrando...</>
                         ) : (
                             <>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -163,8 +165,8 @@ export default function PasskeyManager() {
             </div>
 
             {message && (
-                <div className={`alert py-2 text-sm flex items-center gap-2 rounded-lg mb-3 alert-${message.type === 'success' ? 'success' : message.type === 'warning' ? 'warning' : 'danger'}`}>
-                    <i className={`bi bi-${message.type === 'success' ? 'check-circle' : 'exclamation-triangle'}-fill`} aria-hidden="true"></i>
+                <div className={cn('py-2 px-3 text-sm flex items-center gap-2 rounded-lg mb-3 border', message.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : message.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-red-50 border-red-200 text-red-700')}>
+                    {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" /> : <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />}
                     {message.text}
                 </div>
             )}
@@ -196,18 +198,18 @@ export default function PasskeyManager() {
                             </div>
                             <button
                                 onClick={() => handleDelete(device.id)}
-                                className="bg-transparent border-none cursor-pointer text-red-500 p-0"
+                                className="bg-transparent border-none cursor-pointer text-red-500 p-0 hover:text-red-700 transition-colors"
                                 title="Eliminar dispositivo"
                                 aria-label={`Eliminar ${device.device_name}`}
                             >
-                                <i className="bi bi-trash3" aria-hidden="true"></i>
+                                <Trash2 className="w-4 h-4" aria-hidden="true" />
                             </button>
                         </div>
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-3 text-slate-400 text-sm">
-                    <i className="bi bi-shield-lock block mb-1 text-xl opacity-25" aria-hidden="true"></i>
+                    <ShieldOff className="w-7 h-7 mx-auto mb-1 opacity-25" aria-hidden="true" />
                     {supported
                         ? 'Pulsa "Añadir dispositivo" para registrar tu Face ID o huella'
                         : 'Tu dispositivo no soporta autenticación biométrica'}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { Shield, User, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function RoleSelectionPage() {
   const router = useRouter();
@@ -12,27 +13,14 @@ export default function RoleSelectionPage() {
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState<'admin' | 'personal' | null>(null);
 
-  useEffect(() => {
-    checkRole();
-  }, [user]);
+  useEffect(() => { checkRole(); }, [user]);
 
   const checkRole = async () => {
     if (!user) { router.push('/login'); return; }
-
-    const { data } = await supabase
-      .from('empleados_info')
-      .select('rol, rol_id, nombre_completo')
-      .eq('id', user.id)
-      .single();
-
+    const { data } = await supabase.from('empleados_info').select('rol, rol_id, nombre_completo').eq('id', user.id).single();
     setUserName(data?.nombre_completo?.split(' ')[0] || 'Admin');
-
-    if (data?.rol === 'admin' || data?.rol_id === 2) {
-      setLoading(false);
-    } else {
-      localStorage.setItem('chronowork_view_mode', 'personal');
-      router.push('/dashboard');
-    }
+    if (data?.rol === 'admin' || data?.rol_id === 2) { setLoading(false); }
+    else { localStorage.setItem('chronowork_view_mode', 'personal'); router.push('/dashboard'); }
   };
 
   const handleSelection = (mode: 'admin' | 'personal') => {
@@ -42,219 +30,82 @@ export default function RoleSelectionPage() {
     else router.push('/dashboard');
   };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="animate-spin" style={{ color: '#3B82F6', width: 40, height: 40, borderWidth: 3 }} />
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-navy flex items-center justify-center">
+      <Loader2 className="w-10 h-10 text-chrono-blue animate-spin" />
+    </div>
+  );
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0F172A',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Orbs decorativos */}
-      <div style={{
-        position: 'absolute', top: '-100px', right: '-100px',
-        width: 400, height: 400, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(37,99,235,0.2) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-80px', left: '-80px',
-        width: 300, height: 300, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
+    <div className="min-h-screen bg-navy flex flex-col items-center justify-center p-8 relative overflow-hidden">
+      {/* Orbs */}
+      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.2) 0%, transparent 70%)' }} />
+      <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />
       <div className="login-grid-lines" />
 
-      {/* Logo + saludo */}
-      <div className="text-center mb-6 anim-fade-up" style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-          boxShadow: '0 8px 24px rgba(37,99,235,0.4)',
-        }}>
+      {/* Logo */}
+      <div className="text-center mb-8 relative z-10 anim-fade-up">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-chrono-blue to-blue-700 flex items-center justify-center mx-auto mb-5" style={{ boxShadow: '0 8px 24px rgba(37,99,235,0.4)' }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
           </svg>
         </div>
-        <h1 style={{
-          fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
-          fontSize: 'clamp(1.5rem, 4vw, 2.25rem)',
-          fontWeight: 800, color: 'white',
-          letterSpacing: '-0.03em', marginBottom: 8,
-        }}>
+        <h1 className="text-white font-extrabold text-3xl md:text-4xl mb-2 font-[family-name:var(--font-jakarta)] tracking-tight">
           Bienvenido{userName ? `, ${userName}` : ''}
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1rem', margin: 0 }}>
-          ¿Con qué perfil quieres acceder hoy?
-        </p>
+        <p className="text-white/45">¿Con qué perfil quieres acceder hoy?</p>
       </div>
 
       {/* Cards */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '1.25rem', width: '100%', maxWidth: 680,
-        position: 'relative', zIndex: 1,
-      }}>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full max-w-[680px] relative z-10">
         {/* Admin */}
-        <button
-          onClick={() => handleSelection('admin')}
-          disabled={selecting !== null}
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1.5px solid rgba(255,255,255,0.1)',
-            borderRadius: 20, padding: '2rem',
-            textAlign: 'left', cursor: selecting ? 'wait' : 'pointer',
-            transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
-            backdropFilter: 'blur(16px)',
-            opacity: selecting === 'personal' ? 0.4 : 1,
-          }}
-          className="anim-fade-up anim-delay-1"
-          onMouseEnter={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.background = 'rgba(37,99,235,0.15)';
-              e.currentTarget.style.borderColor = 'rgba(37,99,235,0.5)';
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 16px 40px rgba(37,99,235,0.2)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 14,
-            background: 'linear-gradient(135deg, rgba(37,99,235,0.3), rgba(37,99,235,0.15))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '1.25rem',
-            border: '1px solid rgba(37,99,235,0.3)',
-          }}>
-            {selecting === 'admin'
-              ? <div className="animate-spin animate-spin w-4 h-4" style={{ color: '#3B82F6' }} />
-              : <i className="bi bi-shield-fill" style={{ fontSize: 22, color: '#60A5FA' }} />
-            }
+        <button onClick={() => handleSelection('admin')} disabled={selecting !== null}
+          className="p-8 rounded-2xl text-left cursor-pointer transition-all duration-200 anim-fade-up anim-delay-1 group"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(16px)', opacity: selecting === 'personal' ? 0.4 : 1 }}
+          onMouseEnter={e => { if (!selecting) { e.currentTarget.style.background = 'rgba(37,99,235,0.15)'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.5)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(37,99,235,0.2)'; } }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+          <div className="w-13 h-13 rounded-2xl flex items-center justify-center mb-5" style={{ width: 52, height: 52, background: 'linear-gradient(135deg, rgba(37,99,235,0.3), rgba(37,99,235,0.15))', border: '1px solid rgba(37,99,235,0.3)' }}>
+            {selecting === 'admin' ? <Loader2 className="w-5 h-5 text-blue-400 animate-spin" /> : <Shield className="w-6 h-6 text-blue-400" />}
           </div>
-          <h3 style={{
-            fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
-            fontSize: '1.125rem', fontWeight: 700, color: 'white',
-            marginBottom: 8, letterSpacing: '-0.02em',
-          }}>
-            Panel de Administración
-          </h3>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
-            Gestiona empleados, revisa fichajes de todo el equipo, aprueba solicitudes y configura el sistema.
-          </p>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {['Fichajes de todo el equipo', 'Aprobar solicitudes', 'Gestión de usuarios y centros'].map((item) => (
-              <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.5)', fontSize: '0.8125rem' }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#3B82F6', flexShrink: 0 }} />
-                {item}
+          <h3 className="text-white font-bold text-lg mb-2 font-[family-name:var(--font-jakarta)] tracking-tight">Panel de Administración</h3>
+          <p className="text-white/45 text-sm leading-relaxed mb-5">Gestiona empleados, revisa fichajes de todo el equipo, aprueba solicitudes y configura el sistema.</p>
+          <ul className="space-y-1.5 mb-6">
+            {['Fichajes de todo el equipo', 'Aprobar solicitudes', 'Gestión de usuarios y centros'].map(item => (
+              <li key={item} className="flex items-center gap-2 text-white/50 text-[0.8125rem]">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />{item}
               </li>
             ))}
           </ul>
-          <div style={{
-            marginTop: '1.5rem', padding: '10px 16px', borderRadius: 10,
-            background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(37,99,235,0.3)',
-            color: '#93C5FD', fontSize: '0.875rem', fontWeight: 600,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            Entrar como Admin
-            <i className="bi bi-arrow-right" />
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm text-blue-300" style={{ background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(37,99,235,0.3)' }}>
+            Entrar como Admin <ArrowRight className="w-4 h-4" />
           </div>
         </button>
 
         {/* Empleado */}
-        <button
-          onClick={() => handleSelection('personal')}
-          disabled={selecting !== null}
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '1.5px solid rgba(255,255,255,0.1)',
-            borderRadius: 20, padding: '2rem',
-            textAlign: 'left', cursor: selecting ? 'wait' : 'pointer',
-            transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
-            backdropFilter: 'blur(16px)',
-            opacity: selecting === 'admin' ? 0.4 : 1,
-          }}
-          className="anim-fade-up anim-delay-2"
-          onMouseEnter={(e) => {
-            if (!selecting) {
-              e.currentTarget.style.background = 'rgba(16,185,129,0.12)';
-              e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)';
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 16px 40px rgba(16,185,129,0.15)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 14,
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.12))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: '1.25rem',
-            border: '1px solid rgba(16,185,129,0.25)',
-          }}>
-            {selecting === 'personal'
-              ? <div className="animate-spin animate-spin w-4 h-4" style={{ color: '#10B981' }} />
-              : <i className="bi bi-person-fill" style={{ fontSize: 22, color: '#34D399' }} />
-            }
+        <button onClick={() => handleSelection('personal')} disabled={selecting !== null}
+          className="p-8 rounded-2xl text-left cursor-pointer transition-all duration-200 anim-fade-up anim-delay-2"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(16px)', opacity: selecting === 'admin' ? 0.4 : 1 }}
+          onMouseEnter={e => { if (!selecting) { e.currentTarget.style.background = 'rgba(16,185,129,0.12)'; e.currentTarget.style.borderColor = 'rgba(16,185,129,0.4)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(16,185,129,0.15)'; } }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+          <div className="flex items-center justify-center mb-5" style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg, rgba(16,185,129,0.25), rgba(16,185,129,0.12))', border: '1px solid rgba(16,185,129,0.25)' }}>
+            {selecting === 'personal' ? <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" /> : <User className="w-6 h-6 text-emerald-400" />}
           </div>
-          <h3 style={{
-            fontFamily: 'Plus Jakarta Sans, Inter, sans-serif',
-            fontSize: '1.125rem', fontWeight: 700, color: 'white',
-            marginBottom: 8, letterSpacing: '-0.02em',
-          }}>
-            Mi Espacio Personal
-          </h3>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
-            Ficha, consulta tu historial de horas, solicita vacaciones y revisa tu información personal.
-          </p>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {['Mis fichajes del día y semana', 'Solicitar vacaciones y bajas', 'Ver mi perfil y documentos'].map((item) => (
-              <li key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.5)', fontSize: '0.8125rem' }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
-                {item}
+          <h3 className="text-white font-bold text-lg mb-2 font-[family-name:var(--font-jakarta)] tracking-tight">Mi Espacio Personal</h3>
+          <p className="text-white/45 text-sm leading-relaxed mb-5">Ficha, consulta tu historial de horas, solicita vacaciones y revisa tu información personal.</p>
+          <ul className="space-y-1.5 mb-6">
+            {['Mis fichajes del día y semana', 'Solicitar vacaciones y bajas', 'Ver mi perfil y documentos'].map(item => (
+              <li key={item} className="flex items-center gap-2 text-white/50 text-[0.8125rem]">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />{item}
               </li>
             ))}
           </ul>
-          <div style={{
-            marginTop: '1.5rem', padding: '10px 16px', borderRadius: 10,
-            background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)',
-            color: '#6EE7B7', fontSize: '0.875rem', fontWeight: 600,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            Entrar como Empleado
-            <i className="bi bi-arrow-right" />
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm text-emerald-300" style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)' }}>
+            Entrar como Empleado <ArrowRight className="w-4 h-4" />
           </div>
         </button>
       </div>
 
-      <p className="anim-fade-up anim-delay-3" style={{
-        marginTop: '2rem', color: 'rgba(255,255,255,0.2)',
-        fontSize: '0.75rem', position: 'relative', zIndex: 1,
-      }}>
+      <p className="mt-8 text-white/20 text-xs relative z-10 anim-fade-up anim-delay-3">
         Puedes cambiar de modo en cualquier momento desde el menú
       </p>
     </div>

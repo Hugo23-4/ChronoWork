@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import Toast from '@/components/ui/Toast';
+import { PencilLine, UserPlus, Check, Loader2, X } from 'lucide-react';
+import { ResponsiveModal } from '@/components/ui/ResponsiveModal';
 
 interface EmployeeFormModalProps {
     employeeId?: string | null;
@@ -29,42 +31,33 @@ interface SedeOption {
     nombre: string;
 }
 
+const FIELD_CLASS = 'w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm';
+const LABEL_CLASS = 'block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5';
+
 export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave }: EmployeeFormModalProps) {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [sedes, setSedes] = useState<SedeOption[]>([]);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
-    const [formData, setFormData] = useState<FormData>({
-        nombre_completo: '',
-        email: '',
-        dni: '',
-        telefono: '',
-        puesto: '',
-        departamento: '',
-        rol: 'empleado',
-        rol_id: 1,
-        sede_id: undefined,
-        activo: true
-    });
+    const defaultForm: FormData = {
+        nombre_completo: '', email: '', dni: '', telefono: '',
+        puesto: '', departamento: '', rol: 'empleado', rol_id: 1,
+        sede_id: undefined, activo: true
+    };
+    const [formData, setFormData] = useState<FormData>(defaultForm);
 
     useEffect(() => {
         if (isOpen) {
             fetchSedes();
-            if (employeeId) {
-                fetchEmployeeData();
-            } else {
-                resetForm();
-            }
+            if (employeeId) fetchEmployeeData();
+            else setFormData(defaultForm);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, employeeId]);
 
     const fetchSedes = async () => {
-        const { data } = await supabase
-            .from('sedes')
-            .select('id, nombre')
-            .eq('activo', true)
-            .order('nombre');
+        const { data } = await supabase.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
         if (data) setSedes(data);
     };
 
@@ -72,12 +65,7 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
         if (!employeeId) return;
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('empleados_info')
-                .select('*')
-                .eq('id', employeeId)
-                .single();
-
+            const { data, error } = await supabase.from('empleados_info').select('*').eq('id', employeeId).single();
             if (error) throw error;
             if (data) {
                 setFormData({
@@ -100,53 +88,31 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
         }
     };
 
-    const resetForm = () => {
-        setFormData({
-            nombre_completo: '',
-            email: '',
-            dni: '',
-            telefono: '',
-            puesto: '',
-            departamento: '',
-            rol: 'empleado',
-            rol_id: 1,
-            sede_id: undefined,
-            activo: true
-        });
+    const handleChange = (field: keyof FormData, value: string | number | boolean | undefined) => {
+        if (field === 'rol') {
+            setFormData(prev => ({ ...prev, rol: value as string, rol_id: value === 'admin' ? 2 : 1 }));
+        } else {
+            setFormData(prev => ({ ...prev, [field]: value }));
+        }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
+    const handleSubmit = async () => {
         if (!formData.nombre_completo || !formData.email) {
             setToast({ message: 'Nombre y email son obligatorios.', type: 'warning' });
             return;
         }
-
         setSaving(true);
         try {
-            const payload = {
-                ...formData,
-                sede_id: formData.sede_id || null
-            };
-
+            const payload = { ...formData, sede_id: formData.sede_id || null };
             if (employeeId) {
-                const { error } = await supabase
-                    .from('empleados_info')
-                    .update(payload)
-                    .eq('id', employeeId);
-
+                const { error } = await supabase.from('empleados_info').update(payload).eq('id', employeeId);
                 if (error) throw error;
                 setToast({ message: 'Empleado actualizado correctamente.', type: 'success' });
             } else {
-                const { error } = await supabase
-                    .from('empleados_info')
-                    .insert(payload);
-
+                const { error } = await supabase.from('empleados_info').insert(payload);
                 if (error) throw error;
                 setToast({ message: 'Empleado creado correctamente.', type: 'success' });
             }
-
             onSave();
             onClose();
         } catch {
@@ -156,222 +122,130 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
         }
     };
 
-    const handleChange = (field: keyof FormData, value: string | number | boolean | undefined) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+    const footer = (
+        <>
+            <button type="button" onClick={onClose} disabled={saving}
+                className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-full font-semibold hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 text-sm">
+                Cancelar
+            </button>
+            <button type="button" onClick={handleSubmit} disabled={saving || loading}
+                className="bg-navy text-white px-4 py-2.5 rounded-full font-semibold hover:bg-slate-800 transition-colors cursor-pointer border-none flex items-center gap-2 disabled:opacity-50 text-sm">
+                {saving
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                    : <><Check className="w-4 h-4" /> {employeeId ? 'Actualizar' : 'Crear Empleado'}</>
+                }
+            </button>
+        </>
+    );
 
-        // Sincronizar rol y rol_id
-        if (field === 'rol') {
-            setFormData(prev => ({
-                ...prev,
-                rol: value as string,
-                rol_id: value === 'admin' ? 2 : 1
-            }));
-        }
-    };
-
-    if (!isOpen) return null;
+    const titleIcon = employeeId ? <PencilLine className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />;
+    const titleText = employeeId ? 'Editar Empleado' : 'Nuevo Empleado';
 
     return (
         <>
-            {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
-            )}
-            <div className="modal-backdrop fade show" onClick={onClose}></div>
-            <div className="modal fade show block" tabIndex={-1} style={{ zIndex: 1055 }}>
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-dialog-centered modal-lg modal-dialog-scrollable">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto rounded-2xl border-0 shadow-lg">
-
-                        {/* HEADER */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-navy text-white border-0 rounded-top-4">
-                            <h5 className="font-bold text-lg text-navy font-bold flex items-center gap-2">
-                                <i className={`bi ${employeeId ? 'bi-pencil-square' : 'bi-person-plus-fill'}`}></i>
-                                {employeeId ? 'Editar Empleado' : 'Nuevo Empleado'}
-                            </h5>
-                            <button type="button" className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-none text-xl btn-close-white" onClick={onClose} aria-label="Cerrar modal"></button>
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+            <ResponsiveModal
+                open={isOpen}
+                onOpenChange={(open) => { if (!open) onClose(); }}
+                title={<span className="flex items-center gap-2">{titleIcon} {titleText}</span>}
+                footer={footer}
+            >
+                {loading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-6 h-6 text-chrono-blue animate-spin" />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Nombre */}
+                        <div className="sm:col-span-2">
+                            <label className={LABEL_CLASS}>Nombre Completo *</label>
+                            <input type="text" className={FIELD_CLASS} placeholder="Ej: Juan Pérez García"
+                                value={formData.nombre_completo} onChange={(e) => handleChange('nombre_completo', e.target.value)} required />
                         </div>
 
-                        {/* BODY */}
-                        <form onSubmit={handleSubmit}>
-                            <div className="p-6 p-4">
-                                {loading ? (
-                                    <div className="text-center py-6">
-                                        <div className="animate-spin text-chrono-blue" role="status">
-                                            <span className="sr-only">Cargando...</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="row gap-3">
+                        {/* DNI */}
+                        <div>
+                            <label className={LABEL_CLASS}>DNI / NIE</label>
+                            <input type="text" className={FIELD_CLASS} placeholder="12345678X"
+                                value={formData.dni} onChange={(e) => handleChange('dni', e.target.value)} />
+                        </div>
 
-                                        {/* Nombre Completo */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">NOMBRE COMPLETO *</label>
-                                            <input
-                                                type="text"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                placeholder="Ej: Juan Pérez García"
-                                                value={formData.nombre_completo}
-                                                onChange={(e) => handleChange('nombre_completo', e.target.value)}
-                                                required
-                                            />
-                                        </div>
+                        {/* Email */}
+                        <div>
+                            <label className={LABEL_CLASS}>Email Corporativo *</label>
+                            <input type="email" className={FIELD_CLASS} placeholder="empleado@empresa.es"
+                                value={formData.email} onChange={(e) => handleChange('email', e.target.value)} required />
+                        </div>
 
-                                        {/* DNI */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">DNI / NIE</label>
-                                            <input
-                                                type="text"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                placeholder="12345678X"
-                                                value={formData.dni}
-                                                onChange={(e) => handleChange('dni', e.target.value)}
-                                            />
-                                        </div>
+                        {/* Teléfono */}
+                        <div>
+                            <label className={LABEL_CLASS}>Teléfono</label>
+                            <input type="tel" className={FIELD_CLASS} placeholder="+34 600 000 000"
+                                value={formData.telefono} onChange={(e) => handleChange('telefono', e.target.value)} />
+                        </div>
 
-                                        {/* Email */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">EMAIL CORPORATIVO *</label>
-                                            <input
-                                                type="email"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                placeholder="empleado@loom.es"
-                                                value={formData.email}
-                                                onChange={(e) => handleChange('email', e.target.value)}
-                                                required
-                                            />
-                                        </div>
+                        {/* Puesto */}
+                        <div>
+                            <label className={LABEL_CLASS}>Puesto</label>
+                            <input type="text" className={FIELD_CLASS} placeholder="Ej: Desarrollador"
+                                value={formData.puesto} onChange={(e) => handleChange('puesto', e.target.value)} />
+                        </div>
 
-                                        {/* Teléfono */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">TELÉFONO</label>
-                                            <input
-                                                type="tel"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                placeholder="+34 600 000 000"
-                                                value={formData.telefono}
-                                                onChange={(e) => handleChange('telefono', e.target.value)}
-                                            />
-                                        </div>
+                        {/* Departamento */}
+                        <div>
+                            <label className={LABEL_CLASS}>Departamento</label>
+                            <select className={FIELD_CLASS} value={formData.departamento} onChange={(e) => handleChange('departamento', e.target.value)}>
+                                <option value="">Sin asignar</option>
+                                <option>Tecnología</option>
+                                <option>Operaciones</option>
+                                <option>Obra Civil</option>
+                                <option>Administración</option>
+                                <option>Recursos Humanos</option>
+                            </select>
+                        </div>
 
-                                        {/* Puesto */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">PUESTO</label>
-                                            <input
-                                                type="text"
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                placeholder="Ej: Desarrollador"
-                                                value={formData.puesto}
-                                                onChange={(e) => handleChange('puesto', e.target.value)}
-                                            />
-                                        </div>
+                        {/* Sede */}
+                        <div>
+                            <label className={LABEL_CLASS}>Sede Asignada</label>
+                            <select className={FIELD_CLASS} value={formData.sede_id || ''} onChange={(e) => handleChange('sede_id', e.target.value || undefined)}>
+                                <option value="">Sin asignar</option>
+                                {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                            </select>
+                        </div>
 
-                                        {/* Departamento */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">DEPARTAMENTO</label>
-                                            <select
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                value={formData.departamento}
-                                                onChange={(e) => handleChange('departamento', e.target.value)}
-                                            >
-                                                <option value="">Sin asignar</option>
-                                                <option value="Tecnología">Tecnología</option>
-                                                <option value="Operaciones">Operaciones</option>
-                                                <option value="Obra Civil">Obra Civil</option>
-                                                <option value="Administración">Administración</option>
-                                                <option value="Recursos Humanos">Recursos Humanos</option>
-                                            </select>
-                                        </div>
+                        {/* Rol */}
+                        <div className="sm:col-span-2">
+                            <label className={LABEL_CLASS}>Rol de Usuario</label>
+                            <select className={FIELD_CLASS} value={formData.rol} onChange={(e) => handleChange('rol', e.target.value)}>
+                                <option value="empleado">Empleado</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                            {formData.rol === 'admin' && (
+                                <p className="text-xs text-red-500 mt-1 font-medium">⚠️ Tendrá acceso total al panel admin</p>
+                            )}
+                        </div>
 
-                                        {/* Sede Asignada */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">SEDE / OBRA ASIGNADA</label>
-                                            <select
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                value={formData.sede_id || ''}
-                                                onChange={(e) => handleChange('sede_id', e.target.value || undefined)}
-                                            >
-                                                <option value="">Sin asignar</option>
-                                                {sedes.map(sede => (
-                                                    <option key={sede.id} value={sede.id}>{sede.nombre}</option>
-                                                ))}
-                                            </select>
-                                            <small className="form-text text-slate-400">Aparecerá en el mapa de esa sede</small>
-                                        </div>
+                        {/* Estado */}
+                        <div className="sm:col-span-2">
+                            <label className="flex items-center gap-3 cursor-pointer select-none">
+                                <div className="relative">
+                                    <input type="checkbox" className="sr-only peer" checked={formData.activo}
+                                        onChange={(e) => handleChange('activo', e.target.checked)} />
+                                    <div className="w-10 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-chrono-blue/30 rounded-full peer peer-checked:bg-chrono-blue transition-colors" />
+                                    <div className="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                                </div>
+                                <span className="text-sm font-semibold text-navy">
+                                    Empleado {formData.activo ? <span className="text-emerald-600">ACTIVO</span> : <span className="text-red-500">DE BAJA</span>}
+                                </span>
+                            </label>
+                            {!formData.activo && <p className="text-xs text-slate-400 mt-1 ml-13">No aparecerá en listados activos</p>}
+                        </div>
 
-                                        {/* Rol */}
-                                        <div className="md:col-span-6">
-                                            <label className="block text-sm font-semibold text-gray-700 mb-2 text-sm font-bold text-slate-500">ROL DE USUARIO</label>
-                                            <select
-                                                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 outline-none transition-colors text-sm bg-gray-50 border-0"
-                                                value={formData.rol}
-                                                onChange={(e) => handleChange('rol', e.target.value)}
-                                            >
-                                                <option value="empleado">Empleado</option>
-                                                <option value="admin">Administrador</option>
-                                            </select>
-                                            {formData.rol === 'admin' && (
-                                                <small className="form-text text-red-500">⚠️ Tendrá acceso total al panel admin</small>
-                                            )}
-                                        </div>
-
-                                        {/* Estado */}
-                                        <div className="col-span-12">
-                                            <div className="form-check form-switch">
-                                                <input
-                                                    className="accent-chrono-blue"
-                                                    type="checkbox"
-                                                    checked={formData.activo}
-                                                    onChange={(e) => handleChange('activo', e.target.checked)}
-                                                />
-                                                <label className="form-check-label font-bold">
-                                                    Empleado {formData.activo ? 'ACTIVO' : 'DE BAJA'}
-                                                </label>
-                                            </div>
-                                            {!formData.activo && (
-                                                <small className="text-slate-400">Este empleado no aparecerá en listados activos</small>
-                                            )}
-                                        </div>
-
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* FOOTER */}
-                            <div className="flex justify-end gap-2 p-6 border-t border-gray-100 border-0 bg-gray-50 rounded-b-2xl p-3">
-                                <button
-                                    type="button"
-                                    className="bg-white text-navy px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 rounded-full px-4"
-                                    onClick={onClose}
-                                    disabled={saving}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4 flex items-center gap-2"
-                                    disabled={saving || loading}
-                                >
-                                    {saving ? (
-                                        <>
-                                            <span className="animate-spin animate-spin w-4 h-4"></span>
-                                            Guardando...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="bi bi-check-lg"></i>
-                                            {employeeId ? 'Actualizar' : 'Crear Empleado'}
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-
+                        {/* Close hint */}
+                        <button type="button" onClick={onClose} className="sr-only"><X /></button>
                     </div>
-                </div>
-            </div>
+                )}
+            </ResponsiveModal>
         </>
     );
 }
