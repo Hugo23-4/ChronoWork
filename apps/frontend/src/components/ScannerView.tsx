@@ -1,42 +1,34 @@
 'use client';
 
+import { QrCode, Camera } from 'lucide-react';
+
 export default function ScannerView({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-navy z-3 flex flex-col items-center justify-center">
-      
-      {/* Botón Cerrar */}
-      <button 
-        onClick={onClose}
-        className="absolute top-0 right-0 m-4 bg-transparent border-none cursor-pointer text-white no-underline text-4xl"
-        style={{ zIndex: 1060 }}
-      >
+    <div className="fixed inset-0 bg-navy z-[1050] flex flex-col items-center justify-center">
+      {/* Close */}
+      <button onClick={onClose}
+        className="absolute top-0 right-0 m-4 bg-transparent border-none cursor-pointer text-white text-4xl z-[1060] leading-none hover:opacity-75 transition-opacity">
         &times;
       </button>
 
-      {/* Instrucciones */}
-      <div className="text-center text-white mb-6 px-4 relative" style={{ zIndex: 1050 }}>
-        <h3 className="font-bold mb-2">Escanear Código QR</h3>
-        <p className="opacity-75">Enfoca el código de seguridad del empleado</p>
+      {/* Instructions */}
+      <div className="text-center text-white mb-6 px-4 z-[1050]">
+        <h3 className="font-bold mb-2 font-[family-name:var(--font-jakarta)]">Escanear Código QR</h3>
+        <p className="opacity-75 text-sm">Enfoca el código de seguridad del empleado</p>
       </div>
 
-      {/* Retículo de Escaneo (Círculo Verde Neón) */}
+      {/* Scan reticle */}
       <div className="relative flex justify-center items-center">
-        {/* Efecto de radar/scan */}
-        <div className="animate-spin text-emerald-500" style={{ width: '18rem', height: '18rem', borderWidth: '4px' }} role="status"></div>
-        
-        {/* Marco de cámara simulado */}
-        <div className="absolute border border-success border-2 rounded-2xl opacity-50" 
-             style={{ width: '16rem', height: '16rem', boxShadow: '0 0 50px rgba(16, 185, 129, 0.3)' }}>
-        </div>
-        
-        {/* Icono central */}
-        <i className="bi bi-qr-code-scan text-white text-7xl absolute opacity-50"></i>
+        <div className="animate-spin text-emerald-500 rounded-full" style={{ width: '18rem', height: '18rem', border: '4px solid currentColor', borderTopColor: 'transparent' }} />
+        <div className="absolute border-2 border-emerald-500 rounded-2xl opacity-50"
+          style={{ width: '16rem', height: '16rem', boxShadow: '0 0 50px rgba(16, 185, 129, 0.3)' }} />
+        <QrCode className="absolute w-20 h-20 text-white opacity-50" />
       </div>
 
-      {/* Botón de Acción Inferior */}
+      {/* Action button */}
       <div className="absolute bottom-0 w-full p-4 mb-4 text-center">
-        <button className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none btn-lg w-full py-3 rounded-full font-bold shadow-lg">
-          <i className="bi bi-camera-fill mr-2"></i> Capturar Hash
+        <button className="bg-navy text-white w-full py-3 rounded-full font-bold shadow-lg border border-white/20 cursor-pointer hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
+          <Camera className="w-5 h-5" /> Capturar Hash
         </button>
       </div>
     </div>

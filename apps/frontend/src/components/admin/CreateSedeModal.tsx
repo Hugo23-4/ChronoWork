@@ -3,10 +3,16 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import dynamic from 'next/dynamic';
+import { MapPin, Info, Check, Loader2 } from 'lucide-react';
+import { ResponsiveModal } from '@/components/ui/ResponsiveModal';
 
 const LocationPicker = dynamic(() => import('@/components/admin/LocationPicker'), {
     ssr: false,
-    loading: () => <div className="text-center py-4"><div className="animate-spin text-chrono-blue"></div></div>
+    loading: () => (
+        <div className="flex justify-center items-center h-48 bg-slate-50 rounded-xl">
+            <Loader2 className="w-5 h-5 text-chrono-blue animate-spin" />
+        </div>
+    ),
 });
 
 interface CreateSedeModalProps {
@@ -30,7 +36,6 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
             alert('Por favor, ingresa un nombre para la sede');
             return;
         }
-
         setSaving(true);
         try {
             const { error } = await supabase
@@ -43,15 +48,12 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
                     radio_metros: formData.radio,
                     activo: true
                 });
-
             if (error) throw error;
-
-            alert('✅ Sede creada exitosamente');
             onSave();
             handleClose();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error creating sede:', error);
-            alert('Error al crear sede: ' + error.message);
+            alert('Error al crear sede: ' + (error instanceof Error ? error.message : 'Error desconocido'));
         } finally {
             setSaving(false);
         }
@@ -62,148 +64,100 @@ export default function CreateSedeModal({ isOpen, onClose, onSave }: CreateSedeM
         onClose();
     };
 
-    if (!isOpen) return null;
+    const footer = (
+        <>
+            <button
+                type="button"
+                onClick={handleClose}
+                disabled={saving}
+                className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-full font-semibold hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 text-sm"
+            >
+                Cancelar
+            </button>
+            <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-navy text-white px-4 py-2.5 rounded-full font-semibold hover:bg-slate-800 transition-colors cursor-pointer border-none flex items-center gap-2 disabled:opacity-50 text-sm"
+            >
+                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><Check className="w-4 h-4" /> Crear Sede</>}
+            </button>
+        </>
+    );
 
     return (
-        <>
-            {/* Backdrop */}
-            <div
-                className="modal-backdrop fade show"
-                style={{ zIndex: 1050 }}
-                onClick={handleClose}
-            ></div>
+        <ResponsiveModal
+            open={isOpen}
+            onOpenChange={(open) => { if (!open) handleClose(); }}
+            title={<span className="flex items-center gap-2"><MapPin className="w-5 h-5 text-chrono-blue" /> Nueva Sede / Centro de Trabajo</span>}
+            footer={footer}
+        >
+            <div className="space-y-4">
+                {/* Nombre */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                        Nombre de la Sede *
+                    </label>
+                    <input
+                        type="text"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
+                        placeholder="Ej: Oficina Central, Obra Madrid Norte..."
+                        value={formData.nombre}
+                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                    />
+                </div>
 
-            {/* Modal */}
-            <div className="modal fade show block" style={{ zIndex: 1055 }} tabIndex={-1}>
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-dialog-centered modal-lg">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-auto border-0 shadow-lg rounded-2xl">
+                {/* Dirección */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                        Dirección
+                    </label>
+                    <input
+                        type="text"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm"
+                        placeholder="Calle, número, ciudad..."
+                        value={formData.direccion}
+                        onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                    />
+                </div>
 
-                        {/* Header */}
-                        <div className="flex items-center justify-between p-6 border-b border-gray-100 border-0 pb-0">
-                            <h5 className="font-bold text-lg text-navy font-bold text-navy">
-                                <i className="bi bi-geo-alt-fill text-chrono-blue mr-2"></i>
-                                Nueva Sede / Centro de Trabajo
-                            </h5>
-                            <button
-                                type="button"
-                                className="text-gray-400 hover:text-gray-600 cursor-pointer bg-transparent border-none text-xl"
-                                onClick={handleClose}
-                                disabled={saving}
-                            ></button>
-                        </div>
-
-                        {/* Body */}
-                        <div className="p-6 px-4">
-
-                            {/* Nombre */}
-                            <div className="mb-3">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase">
-                                    Nombre de la Sede *
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm rounded-full shadow-sm border-0"
-                                    placeholder="Ej: Oficina Central, Obra Madrid Norte..."
-                                    value={formData.nombre}
-                                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                                />
-                            </div>
-
-                            {/* Dirección */}
-                            <div className="mb-3">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase">
-                                    Dirección
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm rounded-full shadow-sm border-0"
-                                    placeholder="Calle, número, ciudad..."
-                                    value={formData.direccion}
-                                    onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                                />
-                            </div>
-
-                            {/* Radio */}
-                            <div className="mb-3">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase flex items-center justify-between">
-                                    <span>Radio de Geofencing</span>
-                                    <span className="bg-chrono-blue text-white text-xs px-2 py-0.5 rounded-full font-bold">{formData.radio}m</span>
-                                </label>
-                                <input
-                                    type="range"
-                                    className="form-range"
-                                    min="50"
-                                    max="500"
-                                    step="10"
-                                    value={formData.radio}
-                                    onChange={(e) => setFormData({ ...formData, radio: parseInt(e.target.value) })}
-                                />
-                                <div className="flex justify-between">
-                                    <small className="text-slate-400">50m</small>
-                                    <small className="text-slate-400">500m</small>
-                                </div>
-                            </div>
-
-                            {/* Mapa */}
-                            <div className="mb-3">
-                                <label className="block text-sm font-semibold text-gray-700 mb-2 font-bold text-sm text-slate-500 uppercase">
-                                    Ubicación en el Mapa
-                                </label>
-                                <div style={{ height: '300px' }} className="rounded-2xl overflow-hidden shadow-sm">
-                                    <LocationPicker
-                                        lat={formData.lat}
-                                        lng={formData.lng}
-                                        radio={formData.radio}
-                                        onLocationSelect={(newLat: number, newLng: number) => {
-                                            setFormData({
-                                                ...formData,
-                                                lat: newLat,
-                                                lng: newLng
-                                            });
-                                        }}
-                                    />
-                                </div>
-                                <small className="text-slate-400 block mt-2">
-                                    <i className="bi bi-info-circle mr-1"></i>
-                                    Click en el mapa para seleccionar la ubicación exacta
-                                </small>
-                            </div>
-
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex justify-end gap-2 p-6 border-t border-gray-100 border-0 pt-0">
-                            <button
-                                type="button"
-                                className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition-colors cursor-pointer rounded-full px-4"
-                                onClick={handleClose}
-                                disabled={saving}
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                type="button"
-                                className="bg-navy text-white px-4 py-2.5 rounded-xl font-semibold hover:bg-slate-dark transition-colors cursor-pointer border-none rounded-full px-4 flex items-center gap-2"
-                                onClick={handleSave}
-                                disabled={saving}
-                            >
-                                {saving ? (
-                                    <>
-                                        <span className="animate-spin animate-spin w-4 h-4"></span>
-                                        Guardando...
-                                    </>
-                                ) : (
-                                    <>
-                                        <i className="bi bi-check-lg"></i>
-                                        Crear Sede
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
+                {/* Radio */}
+                <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-sm font-bold text-slate-500 uppercase tracking-wide">Radio de Geofencing</label>
+                        <span className="bg-chrono-blue text-white text-xs px-2.5 py-0.5 rounded-full font-bold">{formData.radio}m</span>
+                    </div>
+                    <input
+                        type="range"
+                        className="w-full accent-chrono-blue"
+                        min="50" max="500" step="10"
+                        value={formData.radio}
+                        onChange={(e) => setFormData({ ...formData, radio: parseInt(e.target.value) })}
+                    />
+                    <div className="flex justify-between text-xs text-slate-400 mt-1">
+                        <span>50m</span><span>500m</span>
                     </div>
                 </div>
+
+                {/* Mapa */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+                        Ubicación en el Mapa
+                    </label>
+                    <div style={{ height: '280px' }} className="rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+                        <LocationPicker
+                            lat={formData.lat}
+                            lng={formData.lng}
+                            radio={formData.radio}
+                            onLocationSelect={(lat, lng) => setFormData({ ...formData, lat, lng })}
+                        />
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+                        <Info className="w-3.5 h-3.5 shrink-0" />
+                        Click en el mapa para seleccionar la ubicación exacta
+                    </p>
+                </div>
             </div>
-        </>
+        </ResponsiveModal>
     );
 }

@@ -256,13 +256,13 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
           </div>
 
           {blockingError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl py-3 px-4 text-sm mb-4 font-bold">
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-400 rounded-xl py-3 px-4 text-sm mb-4 font-bold">
               {blockingError}
             </div>
           )}
 
           {locationError && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 rounded-xl py-2 px-4 text-sm mb-3">
+            <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800/60 text-yellow-700 dark:text-yellow-400 rounded-xl py-2 px-4 text-sm mb-3">
               {locationError}
             </div>
           )}
@@ -275,8 +275,8 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
                 className={cn(
                   'w-full py-3.5 rounded-full font-bold text-base shadow-lg transition-all cursor-pointer border-none',
                   loading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-navy text-white hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0'
+                    ? 'bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed shadow-none'
+                    : 'bg-[#0F172A] dark:bg-blue-600 dark:hover:bg-blue-500 text-white hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0'
                 )}
               >
                 {loading ? 'Ubicando...' : 'REGISTRAR ENTRADA'}
@@ -288,8 +288,8 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
                 className={cn(
                   'w-full py-3.5 rounded-full font-bold text-base transition-all cursor-pointer',
                   loading
-                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                    : 'bg-transparent text-red-500 border-2 border-red-500 hover:bg-red-50'
+                    ? 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 border-gray-200 dark:border-zinc-700 cursor-not-allowed'
+                    : 'bg-transparent text-red-500 border-2 border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
                 )}
               >
                 {loading ? 'Procesando...' : 'REGISTRAR SALIDA'}
@@ -308,7 +308,7 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
           <div
             className={cn(
               'h-full w-full transition-colors',
-              status === 'trabajando' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'
+              status === 'trabajando' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-200 dark:bg-zinc-700'
             )}
           />
         </div>

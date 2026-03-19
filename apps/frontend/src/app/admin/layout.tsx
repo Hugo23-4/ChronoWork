@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileMenu from '@/components/admin/AdminMobileMenu';
+import AdminMobileHeader from '@/components/dashboard/AdminMobileHeader';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,10 +42,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-bg-body">
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
                 <div className="text-center">
                     <Loader2 className="w-10 h-10 text-chrono-blue animate-spin mx-auto" />
-                    <p className="text-slate-400 text-sm mt-3">Verificando acceso...</p>
+                    <p className="text-slate-400 dark:text-zinc-500 text-sm mt-3">Verificando acceso...</p>
                 </div>
             </div>
         );
@@ -59,9 +60,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <AdminSidebar />
             </div>
 
-            {/* Contenido Principal */}
-            <main className="flex-grow overflow-auto bg-bg-body relative">
-                <div className="p-3 md:p-4">
+            {/* Main content */}
+            <main className="flex-grow overflow-auto bg-white dark:bg-black relative">
+                <div className="p-5 md:p-8 pt-20 lg:pt-8 pb-28 md:pb-8 lg:pb-8">
                     {children}
                 </div>
             </main>
@@ -70,6 +71,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="lg:hidden">
                 <AdminMobileMenu />
             </div>
+
+            {/* Fixed top header — mobile only */}
+            <AdminMobileHeader />
         </div>
     );
 }

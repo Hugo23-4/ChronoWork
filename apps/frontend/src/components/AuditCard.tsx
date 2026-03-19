@@ -1,68 +1,55 @@
 'use client';
 
+import { ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 interface AuditLogProps {
   id: number;
   timestamp: string;
-  fechaCorta: string; 
+  fechaCorta: string;
   tipo: 'entrada' | 'modificacion' | 'error';
   titulo: string;
-  detalle: {
-    label: string;
-    valorAntiguo?: string;
-    valorNuevo: string;
-  };
+  detalle: { label: string; valorAntiguo?: string; valorNuevo: string; };
   actor: string;
   hash: string;
   estado: string;
 }
 
 export default function AuditCard({ data }: { data: AuditLogProps }) {
-  
-  const getCardStyle = () => {
-    switch (data.tipo) {
-      case 'modificacion':
-        return 'border-warning border-2 bg-amber-500 bg-opacity-10'; 
-      case 'error':
-        return 'border-danger border-opacity-25 bg-red-500 bg-opacity-10'; 
-      default:
-        return 'border-0 shadow-sm bg-white'; 
-    }
-  };
+  const cardStyle = {
+    modificacion: 'border-amber-400 border-2 bg-amber-500/10',
+    error: 'border-red-400/25 bg-red-500/10',
+    entrada: 'border-0 shadow-sm bg-white',
+  }[data.tipo];
 
-  const getTitleColor = () => {
-    switch (data.tipo) {
-      case 'modificacion': return 'text-warning-emphasis'; 
-      case 'error': return 'text-red-500';
-      default: return 'text-emerald-500';
-    }
-  };
+  const titleColor = {
+    modificacion: 'text-amber-600',
+    error: 'text-red-500',
+    entrada: 'text-emerald-500',
+  }[data.tipo];
 
   return (
-    <div className={`card mb-3 p-3 rounded-2xl ${getCardStyle()}`}>
-      {/* Cabecera */}
+    <div className={cn('mb-3 p-3 rounded-2xl border', cardStyle)}>
+      {/* Header */}
       <div className="flex justify-between items-center mb-2">
-        <span className={`text-sm font-bold uppercase ${getTitleColor()}`} style={{ fontSize: '0.75rem' }}>
-          {data.tipo === 'modificacion' ? 'MODIFICACIÓN MANUAL' : 
-           data.tipo === 'error' ? 'INTENTO FALLIDO' : 'ENTRADA REGISTRADA'}
+        <span className={cn('text-[0.7rem] font-bold uppercase', titleColor)}>
+          {data.tipo === 'modificacion' ? 'MODIFICACIÓN MANUAL' : data.tipo === 'error' ? 'INTENTO FALLIDO' : 'ENTRADA REGISTRADA'}
         </span>
         <small className="text-slate-400 font-mono">{data.fechaCorta}</small>
       </div>
 
       <h5 className="font-bold mb-2 text-navy">{data.titulo}</h5>
 
-      {/* CORRECCIÓN AQUI: Usamos data.detalle.valorAntiguo en lugar de data.valorAntiguo */}
       <div className="mb-3">
         {data.detalle.valorAntiguo && (
-          <span className="text-decoration-line-through text-red-500 mr-2 opacity-75">
+          <span className="line-through text-red-500 mr-2 opacity-75">
             {data.detalle.label} {data.detalle.valorAntiguo}
           </span>
         )}
-        <span className="font-bold text-navy">
-           {/* También corregimos aquí la condición */}
-           {data.detalle.valorAntiguo && <i className="bi bi-arrow-right-short mx-1"></i>}
-           
-           {!data.detalle.valorAntiguo && data.detalle.label + ' '} 
-           {data.detalle.valorNuevo}
+        <span className="font-bold text-navy inline-flex items-center gap-1">
+          {data.detalle.valorAntiguo && <ArrowRight className="w-4 h-4 text-slate-400" />}
+          {!data.detalle.valorAntiguo && data.detalle.label + ' '}
+          {data.detalle.valorNuevo}
         </span>
       </div>
 
@@ -71,13 +58,10 @@ export default function AuditCard({ data }: { data: AuditLogProps }) {
       {/* Footer */}
       <div className="flex justify-between items-center mt-2">
         <div className="flex items-center gap-2">
-            <div className={`rounded-full ${data.tipo === 'modificacion' ? 'bg-red-500' : 'bg-chrono-blue'}`} 
-                 style={{ width: '10px', height: '10px' }}></div>
-            <small className="font-bold text-navy">{data.actor}</small>
+          <div className={cn('rounded-full w-2.5 h-2.5', data.tipo === 'modificacion' ? 'bg-red-500' : 'bg-chrono-blue')} />
+          <small className="font-bold text-navy">{data.actor}</small>
         </div>
-        <small className="font-mono text-warning-emphasis" style={{ fontSize: '0.7rem' }}>
-          Hash: {data.hash.substring(0, 10)}...
-        </small>
+        <small className="font-mono text-amber-600 text-[0.7rem]">Hash: {data.hash.substring(0, 10)}...</small>
       </div>
     </div>
   );

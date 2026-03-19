@@ -1,7 +1,9 @@
 import { AuthProvider } from '@/context/AuthContext';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { LazyMotion, domAnimation } from 'framer-motion';
+import { ThemeProvider } from 'next-themes';
 import './globals.css';
 
 const inter = Inter({
@@ -17,6 +19,12 @@ const jakarta = Plus_Jakarta_Sans({
   display: 'swap',
   variable: '--font-jakarta',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: {
@@ -38,12 +46,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${inter.variable} ${jakarta.variable}`}>
+    <html lang="es" className={`${inter.variable} ${jakarta.variable}`} suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-          {children}
-          <SpeedInsights />
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange={false}>
+          <LazyMotion features={domAnimation} strict>
+            <AuthProvider>
+              {children}
+              <SpeedInsights />
+            </AuthProvider>
+          </LazyMotion>
+        </ThemeProvider>
       </body>
     </html>
   );
