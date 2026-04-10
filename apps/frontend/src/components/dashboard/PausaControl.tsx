@@ -94,8 +94,10 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
 
   const fetchPausasConfig = async () => {
     const { data } = await supabase.from('configuracion_pausas').select('*').eq('activa', true);
-    if (data) {
+    if (data && data.length > 0) {
       setPausasConfig(data);
+      // Only mark as fetched when there is actual config — if the result is empty,
+      // retry on the next clock-in in case an admin has created pauses since then.
       configFetchedRef.current = true;
     }
   };
