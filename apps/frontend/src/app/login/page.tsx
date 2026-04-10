@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ScanFace, Loader2, Clock } from 'lucide-react';
 
 const MAX_BIOMETRIC_ATTEMPTS = 2;
-const BIOMETRIC_TIMEOUT_MS = 8000;
 
 async function checkBiometricSupport(): Promise<boolean> {
   if (typeof window === 'undefined' || !window.PublicKeyCredential) return false;
@@ -76,14 +75,12 @@ export default function LoginPage() {
     setBioStatus('prompting');
     setError(null);
 
-    const tid = setTimeout(() => { }, BIOMETRIC_TIMEOUT_MS);
     try {
       const optRes = await fetch('/api/auth/passkey/login-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: null }),
       });
-      clearTimeout(tid);
 
       if (!optRes.ok) { setShowBio(false); return; }
       const options = await optRes.json();
@@ -107,7 +104,6 @@ export default function LoginPage() {
       router.push('/dashboard');
 
     } catch (err: unknown) {
-      clearTimeout(tid);
       const name = (err instanceof Error) ? err.name : '';
       if (name === 'NotAllowedError' || name === 'AbortError' || name === 'TypeError') {
         setShowBio(false);
