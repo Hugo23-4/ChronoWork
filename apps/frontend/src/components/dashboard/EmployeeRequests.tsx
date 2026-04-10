@@ -75,22 +75,31 @@ export default function EmployeeRequests() {
       return;
     }
     setLoading(true);
+    let uploadedFileName: string | null = null;
     try {
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${user?.id}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('justificantes').upload(fileName, selectedFile);
       if (uploadError) throw uploadError;
+      uploadedFileName = fileName;
+
       const { error: dbError } = await supabase.from('solicitudes').insert({
         empleado_id: user?.id, tipo: 'baja', fecha_inicio: bajaData.date,
         comentario: bajaData.comment, archivo_path: fileName, estado: 'pendiente'
       });
-      if (dbError) throw dbError;
+      if (dbError) {
+        // Rollback: remove the orphaned file from Storage before surfacing the error
+        await supabase.storage.from('justificantes').remove([fileName]);
+        throw dbError;
+      }
+
       setActiveModal(null);
       fetchMyHistory();
       setToast({ message: 'Baja tramitada correctamente', type: 'success' });
     } catch (err: unknown) {
-      setToast({ message: 'Error al subir: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
+      setToast({ message: 'Error al tramitar la baja: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
     } finally {
+      uploadedFileName = null;
       setLoading(false);
     }
   };
