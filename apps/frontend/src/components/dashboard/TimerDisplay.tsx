@@ -194,41 +194,38 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
   };
 
   const registrarSalida = async () => {
+    if (!currentFichajeId) throw new Error('No hay fichaje activo para cerrar');
+
+    const horaActual = new Date().toISOString();
+
+    let lat = null;
+    let lng = null;
     try {
-      const horaActual = new Date().toISOString();
-
-      let lat = null;
-      let lng = null;
-      try {
-        const pos = await getPosition();
-        lat = pos.coords.latitude;
-        lng = pos.coords.longitude;
-      } catch {
-        // No se pudo obtener ubicación de salida
-      }
-
-      const updateData: Record<string, unknown> = { hora_salida: horaActual };
-      if (lat && lng) {
-        updateData.latitud_salida = lat;
-        updateData.longitud_salida = lng;
-      }
-
-      const { error } = await supabase
-        .from('fichajes')
-        .update(updateData)
-        .eq('empleado_id', userId)
-        .is('hora_salida', null)
-        .select();
-
-      if (error) throw error;
-
-      setStartTime(null);
-      setElapsed(0);
-      setStatus('fuera');
-      if (onStatusChange) onStatusChange();
-    } catch (error: unknown) {
-      throw error;
+      const pos = await getPosition();
+      lat = pos.coords.latitude;
+      lng = pos.coords.longitude;
+    } catch {
+      // Ubicación de salida opcional — no bloquea el fichaje
     }
+
+    const updateData: Record<string, unknown> = { hora_salida: horaActual };
+    if (lat && lng) {
+      updateData.latitud_salida = lat;
+      updateData.longitud_salida = lng;
+    }
+
+    const { error } = await supabase
+      .from('fichajes')
+      .update(updateData)
+      .eq('id', currentFichajeId);
+
+    if (error) throw error;
+
+    setCurrentFichajeId(undefined);
+    setStartTime(null);
+    setElapsed(0);
+    setStatus('fuera');
+    if (onStatusChange) onStatusChange();
   };
 
   const formatTime = (ms: number) => {
