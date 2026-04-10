@@ -13,10 +13,11 @@ export default function DashboardPage() {
   const weeklyGoal = 40;
 
   useEffect(() => {
-    if (user) {
-      calculateWeeklyHours();
-    }
-  }, [user]);
+    if (!user?.id) return;
+    // Promise.all keeps independent fetches parallel as more are added here
+    Promise.all([calculateWeeklyHours()]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const calculateWeeklyHours = async () => {
     try {
