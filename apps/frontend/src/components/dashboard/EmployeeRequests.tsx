@@ -111,8 +111,13 @@ export default function EmployeeRequests() {
         comentario: bajaData.comment, archivo_path: fileName, estado: 'pendiente'
       });
       if (dbError) {
-        // Rollback: remove the orphaned file from Storage before surfacing the error
-        await supabase.storage.from('justificantes').remove([fileName]);
+        // Rollback: remove the orphaned file from Storage before surfacing the error.
+        // Use a dedicated try/catch so a Storage failure doesn't swallow the DB error.
+        try {
+          await supabase.storage.from('justificantes').remove([uploadedFileName]);
+        } catch (rollbackError: unknown) {
+          console.error('Storage rollback failed — orphaned file:', uploadedFileName, rollbackError);
+        }
         throw dbError;
       }
 
@@ -122,7 +127,6 @@ export default function EmployeeRequests() {
     } catch (err: unknown) {
       setToast({ message: 'Error al tramitar la baja: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
     } finally {
-      uploadedFileName = null;
       setLoading(false);
     }
   };
