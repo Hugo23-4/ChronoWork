@@ -73,3 +73,21 @@ supabase/functions/.import_map.json
 # --- AGENT CONFIG (no subir al repo) ---
 # Skills, workflows y reglas del agente de IA
 .agent/
+
+# --- LOCAL TOOLING ---
+.claude/
+*.local
+
+# --- SUPABASE MIGRATIONS ---
+supabase/migrations/*.sql
+
+# --- EXPORTS Y REPORTES ---
+exports/
+*.csv
+*.xlsx
+
+# --- CÓDIGO SENSIBLE DE NEGOCIO ---
+apps/frontend/src/app/api/auth/passkey/
+apps/frontend/src/middleware.ts
+apps/frontend/src/context/AuthContext.tsx
+apps/frontend/src/lib/supabase.ts
