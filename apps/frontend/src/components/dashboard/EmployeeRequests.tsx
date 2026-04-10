@@ -67,6 +67,12 @@ export default function EmployeeRequests() {
 
   const submitVacation = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (vacationData.start && vacationData.end && vacationData.end <= vacationData.start) {
+      setToast({ message: 'La fecha de fin debe ser posterior a la de inicio.', type: 'warning' });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.from('solicitudes').insert({
