@@ -229,6 +229,11 @@ export default function EmployeeRequests() {
                 </span>
               </div>
             ))}
+            {myRequests.length === 50 && (
+              <div className="px-4 py-3 text-center text-xs text-slate-400 border-t border-gray-50">
+                Mostrando las 50 solicitudes más recientes
+              </div>
+            )}
           </div>
         )}
       </div>
