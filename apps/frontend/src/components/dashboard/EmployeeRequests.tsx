@@ -7,14 +7,30 @@ import { Sun, Bandage, Clock, CalendarCheck, FileText, X, Loader2 } from 'lucide
 import { cn } from '@/lib/utils';
 import Toast from '@/components/ui/Toast';
 
+interface Solicitud {
+  id: string;
+  empleado_id: string;
+  tipo: 'vacaciones' | 'baja';
+  estado: 'pendiente' | 'aprobado' | 'rechazado';
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  comentario?: string | null;
+  archivo_path?: string | null;
+  es_parcial?: boolean | null;
+  horas_ausencia?: number | null;
+  familiar_relacion?: string | null;
+  hora_salida_prevista?: string | null;
+  hora_regreso_prevista?: string | null;
+  created_at: string;
+}
+
 export default function EmployeeRequests() {
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [activeModal, setActiveModal] = useState<'vacaciones' | 'baja' | 'parcial' | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [myRequests, setMyRequests] = useState<any[]>([]);
+  const [myRequests, setMyRequests] = useState<Solicitud[]>([]);
 
   const [vacationData, setVacationData] = useState({ start: '', end: '', comment: '' });
   const [bajaData, setBajaData] = useState({ date: '', comment: '' });
@@ -175,7 +191,7 @@ export default function EmployeeRequests() {
         ) : (
           <div className="divide-y divide-gray-100">
             {myRequests.map((req) => (
-              <div key={req.id as string} className="p-3.5 flex justify-between items-center">
+              <div key={req.id} className="p-3.5 flex justify-between items-center">
                 <div className="flex gap-3 items-center">
                   {req.tipo === 'vacaciones'
                     ? <CalendarCheck className="w-5 h-5 text-amber-500" />
@@ -186,11 +202,11 @@ export default function EmployeeRequests() {
                       {req.es_parcial ? 'Ausencia Parcial' : req.tipo === 'baja' ? 'Baja Médica' : 'Vacaciones'}
                       {req.es_parcial && (
                         <span className="ml-1.5 bg-sky-500/10 text-sky-600 text-[0.65rem] px-1.5 py-0.5 rounded-full font-bold">
-                          {req.horas_ausencia as number}h
+                          {req.horas_ausencia}h
                         </span>
                       )}
                     </div>
-                    <small className="text-slate-400 text-xs">{new Date(req.created_at as string).toLocaleDateString()}</small>
+                    <small className="text-slate-400 text-xs">{new Date(req.created_at).toLocaleDateString()}</small>
                   </div>
                 </div>
                 <span className={cn(
@@ -198,7 +214,7 @@ export default function EmployeeRequests() {
                   req.estado === 'pendiente' ? 'bg-amber-100 text-amber-700' :
                     req.estado === 'aprobado' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                 )}>
-                  {(req.estado as string).toUpperCase()}
+                  {req.estado.toUpperCase()}
                 </span>
               </div>
             ))}
