@@ -38,21 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Verificar sesión activa al cargar la app
-    const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session) {
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    };
-
-    initializeAuth();
-
-    // 2. Escuchar cambios en el estado de autenticación (Login/Logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // onAuthStateChange fires INITIAL_SESSION on mount with the current session (or null),
+    // then SIGNED_IN / SIGNED_OUT on subsequent changes. Using it as the single source of
+    // truth avoids the double fetchProfile that happened when getSession() + onAuthStateChange
+    // both triggered fetchProfile on the same login.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         setUser(session.user);
         await fetchProfile(session.user.id);
