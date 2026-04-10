@@ -57,7 +57,8 @@ export default function EmployeeRequests() {
         .from('solicitudes')
         .select('*')
         .eq('empleado_id', user?.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
       if (data) setMyRequests(data);
     } catch (error) {
       console.error("Error cargando historial", error);
