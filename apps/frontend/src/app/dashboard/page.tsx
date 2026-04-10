@@ -7,36 +7,16 @@ import TimerDisplay from '@/components/dashboard/TimerDisplay';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const [userName, setUserName] = useState('Compañero');
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [weeklyHours, setWeeklyHours] = useState(0);
   const weeklyGoal = 40;
 
   useEffect(() => {
     if (user) {
-      fetchUserData();
       calculateWeeklyHours();
     }
   }, [user]);
-
-  const fetchUserData = async () => {
-    try {
-      const { data } = await supabase
-        .from('empleados_info')
-        .select('nombre_completo')
-        .eq('id', user?.id)
-        .single();
-
-      if (data?.nombre_completo) {
-        setUserName(data.nombre_completo);
-      }
-    } catch (error) {
-      console.error('Error al cargar perfil:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const calculateWeeklyHours = async () => {
     try {
@@ -83,6 +63,8 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error calculando horas:', error);
       setWeeklyHours(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,7 +90,7 @@ export default function DashboardPage() {
           {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
         <h1 className="font-extrabold text-[#0F172A] dark:text-zinc-200 text-[2.2rem] leading-[1.1] tracking-tight font-[family-name:var(--font-jakarta)]">
-          Hola, {userName.split(' ')[0]} <span className="text-2xl">👋</span>
+          Hola, {(profile?.nombre_completo ?? 'Compañero').split(' ')[0]} <span className="text-2xl">👋</span>
         </h1>
         <p className="text-slate-400 dark:text-zinc-500 text-base mt-2">Estado de tu jornada laboral</p>
       </div>
