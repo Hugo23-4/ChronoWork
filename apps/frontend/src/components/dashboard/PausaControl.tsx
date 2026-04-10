@@ -37,10 +37,14 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
   const [showMenu, setShowMenu] = useState(false);
   const [loading, setLoading] = useState(false);
   const notifiedRef = useRef<Set<string>>(new Set());
+  // Config rarely changes — fetch once per component lifetime, not on every clock-in
+  const configFetchedRef = useRef(false);
 
   useEffect(() => {
     if (isWorking) {
-      fetchPausasConfig();
+      if (!configFetchedRef.current) {
+        fetchPausasConfig();
+      }
       checkPausaActiva();
     }
   }, [isWorking, userId]);
@@ -78,7 +82,10 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
 
   const fetchPausasConfig = async () => {
     const { data } = await supabase.from('configuracion_pausas').select('*').eq('activa', true);
-    if (data) setPausasConfig(data);
+    if (data) {
+      setPausasConfig(data);
+      configFetchedRef.current = true;
+    }
   };
 
   const checkPausaActiva = async () => {
