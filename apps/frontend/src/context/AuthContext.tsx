@@ -46,11 +46,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (session) {
         setUser(session.user);
         await fetchProfile(session.user.id);
+        setLoading(false);
       } else {
         setUser(null);
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
