@@ -30,6 +30,18 @@ interface PausaActiva {
   notificar_antes_min: number;
 }
 
+// Shape of the pausas_registro row returned by checkPausaActiva (includes the join)
+interface PausaRegistroRow {
+  id: string;
+  hora_inicio: string;
+  configuracion_pausas: {
+    nombre: string;
+    duracion_minutos: number;
+    notificar_fin: boolean;
+    notificar_antes_min: number;
+  } | null;
+}
+
 export default function PausaControl({ userId, isWorking, fichajeId }: PausaControlProps) {
   const [pausasConfig, setPausasConfig] = useState<PausaConfig[]>([]);
   const [pausaActiva, setPausaActiva] = useState<PausaActiva | null>(null);
@@ -99,14 +111,15 @@ export default function PausaControl({ userId, isWorking, fichajeId }: PausaCont
       .maybeSingle();
 
     if (data) {
-      const config = (data as Record<string, unknown>).configuracion_pausas as Record<string, unknown> | null;
+      const row = data as unknown as PausaRegistroRow;
+      const config = row.configuracion_pausas;
       setPausaActiva({
-        id: data.id,
-        nombre: (config?.nombre as string) || 'Pausa',
-        duracion_minutos: (config?.duracion_minutos as number) || 15,
-        hora_inicio: data.hora_inicio,
-        notificar_fin: (config?.notificar_fin as boolean) ?? true,
-        notificar_antes_min: (config?.notificar_antes_min as number) ?? 3,
+        id: row.id,
+        nombre: config?.nombre ?? 'Pausa',
+        duracion_minutos: config?.duracion_minutos ?? 15,
+        hora_inicio: row.hora_inicio,
+        notificar_fin: config?.notificar_fin ?? true,
+        notificar_antes_min: config?.notificar_antes_min ?? 3,
       });
     }
   };
