@@ -5,12 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Sun, Bandage, Clock, CalendarCheck, FileText, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Toast from '@/components/ui/Toast';
 
 export default function EmployeeRequests() {
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [activeModal, setActiveModal] = useState<'vacaciones' | 'baja' | 'parcial' | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [myRequests, setMyRequests] = useState<any[]>([]);
 
@@ -58,9 +60,9 @@ export default function EmployeeRequests() {
       if (error) throw error;
       setActiveModal(null);
       fetchMyHistory();
-      alert('Solicitud enviada correctamente');
+      setToast({ message: 'Solicitud enviada correctamente', type: 'success' });
     } catch (err: unknown) {
-      alert('Error: ' + (err instanceof Error ? err.message : String(err)));
+      setToast({ message: 'Error: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -68,7 +70,10 @@ export default function EmployeeRequests() {
 
   const submitBaja = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) return alert('Por favor, adjunta el parte médico.');
+    if (!selectedFile) {
+      setToast({ message: 'Por favor, adjunta el parte médico.', type: 'warning' });
+      return;
+    }
     setLoading(true);
     try {
       const fileExt = selectedFile.name.split('.').pop();
@@ -82,9 +87,9 @@ export default function EmployeeRequests() {
       if (dbError) throw dbError;
       setActiveModal(null);
       fetchMyHistory();
-      alert('Baja tramitada correctamente');
+      setToast({ message: 'Baja tramitada correctamente', type: 'success' });
     } catch (err: unknown) {
-      alert('Error al subir: ' + (err instanceof Error ? err.message : String(err)));
+      setToast({ message: 'Error al subir: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -106,9 +111,9 @@ export default function EmployeeRequests() {
       if (error) throw error;
       setActiveModal(null);
       fetchMyHistory();
-      alert('Ausencia parcial registrada correctamente');
+      setToast({ message: 'Ausencia parcial registrada correctamente', type: 'success' });
     } catch (err: unknown) {
-      alert('Error: ' + (err instanceof Error ? err.message : String(err)));
+      setToast({ message: 'Error: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -336,6 +341,8 @@ export default function EmployeeRequests() {
           </div>
         </div>
       )}
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }
