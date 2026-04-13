@@ -3,32 +3,42 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Activity, BookOpen, QrCode, FileBarChart, Clock, Info, LogOut } from 'lucide-react';
+import { Activity, BookOpen, QrCode, FileBarChart, UserCircle, Clock, Info, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InspectorSidebarProps {
-    remainingTime: string;
+    remainingSeconds: number;
     daysUsed: number;
     maxDays: number;
-    minutesUsedToday: number;
     maxMinutesPerDay: number;
 }
 
 const menuItems = [
     { icon: Activity, label: 'Monitor en Tiempo Real', href: '/inspector' },
-    { icon: BookOpen, label: 'Registro Inmutable (Log)', href: '/inspector/log' },
+    { icon: BookOpen, label: 'Registro de Auditoría (Log)', href: '/inspector/log' },
     { icon: QrCode, label: 'Escanear / Verificar', href: '/inspector/escanear' },
     { icon: FileBarChart, label: 'Exportar Informe Legal', href: '/inspector/exportar' },
+    { icon: UserCircle, label: 'Perfil', href: '/inspector/perfil' },
 ];
 
-export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, minutesUsedToday, maxMinutesPerDay }: InspectorSidebarProps) {
+// > 5 min: show "X min" to reduce noise; ≤ 5 min: show MM:SS with urgency styling
+const formatTimer = (secs: number): string => {
+    if (secs > 300) return `${Math.ceil(secs / 60)} min`;
+    return `${Math.floor(secs / 60).toString().padStart(2, '0')}:${(secs % 60).toString().padStart(2, '0')}`;
+};
+
+const getInitials = (nombre?: string | null): string => {
+    if (!nombre) return 'INS';
+    return nombre.split(' ').slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('');
+};
+
+export default function InspectorSidebar({ remainingSeconds, daysUsed, maxDays, maxMinutesPerDay }: InspectorSidebarProps) {
     const pathname = usePathname();
     const { profile, signOut } = useAuth();
 
     const isActive = (path: string) => path === '/inspector' ? pathname === path : pathname.startsWith(path);
-
-    const timeParts = remainingTime.split(':');
-    const remainingMinutes = parseInt(timeParts[0]) + (parseInt(timeParts[1]) > 0 ? 1 : 0);
+    const isUrgent = remainingSeconds <= 300;
+    const remainingMinutes = Math.ceil(remainingSeconds / 60);
     const usagePercent = Math.round(((maxMinutesPerDay - remainingMinutes) / maxMinutesPerDay) * 100);
 
     return (
@@ -62,19 +72,27 @@ export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, min
             </ul>
 
             {/* Session Info Card */}
-            <div className="rounded-2xl p-3 mb-3 bg-amber-500/10 border border-amber-500/20">
+            <div className={cn('rounded-2xl p-3 mb-3 border', isUrgent ? 'bg-red-500/10 border-red-500/30' : 'bg-amber-500/10 border-amber-500/20')}>
                 <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-amber-500" />
-                    <small className="text-amber-500 font-bold">SESIÓN ACTIVA</small>
+                    <Clock className={cn('w-4 h-4', isUrgent ? 'text-red-400' : 'text-amber-500')} />
+                    <small className={cn('font-bold', isUrgent ? 'text-red-400' : 'text-amber-500')}>
+                        {isUrgent ? '⚠ TIEMPO AGOTÁNDOSE' : 'SESIÓN ACTIVA'}
+                    </small>
                 </div>
-                <div className="font-mono font-bold text-white text-2xl mb-1">{remainingTime}</div>
-                <small className="text-white/50">Tiempo restante hoy</small>
+                <div className={cn(
+                    'font-mono font-bold text-2xl mb-1',
+                    isUrgent ? 'text-red-400 animate-pulse' : 'text-white',
+                    !isUrgent && 'font-sans' // minutes view doesn't need monospace
+                )}>
+                    {formatTimer(remainingSeconds)}
+                </div>
+                <small className="text-white/50">Tiempo restante</small>
 
                 {/* Progress bar */}
                 <div className="mt-2 mb-2">
                     <div className="rounded-full overflow-hidden h-1 bg-white/10">
                         <div className="rounded-full h-full transition-all duration-1000"
-                            style={{ width: `${usagePercent}%`, background: usagePercent > 80 ? '#EF4444' : '#F59E0B' }} />
+                            style={{ width: `${usagePercent}%`, background: isUrgent ? '#EF4444' : '#F59E0B' }} />
                     </div>
                 </div>
 
@@ -103,7 +121,9 @@ export default function InspectorSidebar({ remainingTime, daysUsed, maxDays, min
             {/* Inspector Badge */}
             <div className="mt-4 pt-3 border-t border-slate-700/25">
                 <div className="flex items-center gap-3 px-2">
-                    <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center font-bold text-navy text-xs">INS</div>
+                    <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center font-bold text-navy text-xs">
+                        {getInitials(profile?.nombre_completo)}
+                    </div>
                     <div className="overflow-hidden flex-grow">
                         <div className="font-bold text-white truncate max-w-[130px]">{profile?.nombre_completo || 'Inspector'}</div>
                         <small className="text-amber-500 block text-[0.7rem]">Acceso Inspector</small>
