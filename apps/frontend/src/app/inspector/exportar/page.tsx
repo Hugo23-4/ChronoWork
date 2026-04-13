@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FileText, FileSpreadsheet, BarChart3, Loader2, Inbox, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Toast from '@/components/ui/Toast';
 
 interface ReportData { empleado: string; horas_totales: string; totalMinutes: number; dias_trabajados: number; fichajes_count: number; }
 
@@ -15,6 +16,7 @@ export default function InspectorExportarPage() {
     const [downloading, setDownloading] = useState(false);
     const [preview, setPreview] = useState<ReportData[]>([]);
     const [generated, setGenerated] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
     const refIdRef = useRef(`AUDIT-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 5).toUpperCase()}`);
 
     const generatePreview = async () => {
@@ -81,7 +83,7 @@ export default function InspectorExportarPage() {
             const pageHeight = doc.internal.pageSize.getHeight(); doc.setFillColor(248, 250, 252); doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
             doc.setTextColor(148, 163, 184); doc.setFontSize(7); doc.text('Documento generado automáticamente por ChronoWork System v1.0 — No válido sin firma digital', pageWidth / 2, pageHeight - 7, { align: 'center' });
             doc.save(`ChronoWork_Informe_${periodo.inicio}_${periodo.fin}.pdf`);
-        } catch (error) { console.error('Error generating PDF:', error); alert('Error al generar el PDF. Inténtalo de nuevo.'); }
+        } catch (error) { console.error('Error generating PDF:', error); setToast({ message: 'Error al generar el PDF. Inténtalo de nuevo.', type: 'error' }); }
         setDownloading(false);
     };
 
@@ -238,5 +240,6 @@ export default function InspectorExportarPage() {
                 </button>
             </div>
         </div>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     );
 }
