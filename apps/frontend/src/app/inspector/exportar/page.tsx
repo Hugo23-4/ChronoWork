@@ -7,12 +7,31 @@ import { cn } from '@/lib/utils';
 import Toast from '@/components/ui/Toast';
 
 interface ReportData { empleado: string; horas_totales: string; totalMinutes: number; dias_trabajados: number; fichajes_count: number; }
+interface FichajeExport { empleado_id: string; fecha: string; hora_entrada: string | null; hora_salida: string | null; empleados_info: { nombre_completo: string } | null; }
+
+// Split a date range into per-month chunks to avoid unbounded queries
+const getMonthChunks = (inicio: string, fin: string): Array<[string, string]> => {
+    const chunks: Array<[string, string]> = [];
+    const endDate = new Date(fin + 'T00:00:00');
+    let current = new Date(inicio + 'T00:00:00');
+    current = new Date(current.getFullYear(), current.getMonth(), 1);
+    while (current <= endDate) {
+        const chunkStart = current.toISOString().split('T')[0];
+        const lastOfMonth = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+        const chunkEnd = lastOfMonth <= endDate ? lastOfMonth.toISOString().split('T')[0] : fin;
+        const effectiveStart = chunkStart < inicio ? inicio : chunkStart;
+        chunks.push([effectiveStart, chunkEnd]);
+        current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+    }
+    return chunks;
+};
 
 export default function InspectorExportarPage() {
     const [periodo, setPeriodo] = useState({ inicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0], fin: new Date().toISOString().split('T')[0] });
     const [tipoReporte, setTipoReporte] = useState<'completo' | 'resumen'>('completo');
     const [formato, setFormato] = useState<'pdf' | 'excel'>('pdf');
     const [loading, setLoading] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState<{ loaded: number; total: number } | null>(null);
     const [downloading, setDownloading] = useState(false);
     const [preview, setPreview] = useState<ReportData[]>([]);
     const [generated, setGenerated] = useState(false);
@@ -21,28 +40,40 @@ export default function InspectorExportarPage() {
 
     const generatePreview = async () => {
         setLoading(true);
-        const { data: fichajes, error } = await supabase.from('fichajes').select('*').gte('fecha', periodo.inicio).lte('fecha', periodo.fin).order('fecha', { ascending: true });
-        if (error) { console.error('Error generating report:', error); setLoading(false); return; }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const empleadoIds = [...new Set((fichajes || []).map((f: any) => f.empleado_id))];
-        const empMap: Record<string, string> = {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (empleadoIds.length > 0) { const { data: emps } = await supabase.from('empleados_info').select('id, nombre_completo').in('id', empleadoIds); (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; }); }
+        const chunks = getMonthChunks(periodo.inicio, periodo.fin);
+        setLoadingProgress({ loaded: 0, total: chunks.length });
+
+        const allFichajes: FichajeExport[] = [];
+        for (let i = 0; i < chunks.length; i++) {
+            const [from, to] = chunks[i];
+            const { data, error } = await supabase
+                .from('fichajes')
+                .select('empleado_id, fecha, hora_entrada, hora_salida, empleados_info(nombre_completo)')
+                .gte('fecha', from)
+                .lte('fecha', to)
+                .order('fecha', { ascending: true })
+                .limit(1000);
+            if (error) { console.error('Error fetching chunk:', error); setLoading(false); setLoadingProgress(null); return; }
+            allFichajes.push(...(data || []) as FichajeExport[]);
+            setLoadingProgress({ loaded: i + 1, total: chunks.length });
+        }
+
         const byEmployee: Record<string, { nombre: string; totalMinutes: number; dias: Set<string>; count: number }> = {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (fichajes || []).forEach((f: any) => {
-            const empId = f.empleado_id; const nombre = empMap[empId] || 'Desconocido';
+        const parseTime = (t: string) => { if (t.includes('T')) return new Date(t); const [h, m] = t.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
+        allFichajes.forEach(f => {
+            const empId = f.empleado_id;
+            const nombre = f.empleados_info?.nombre_completo ?? 'Desconocido';
             if (!byEmployee[empId]) byEmployee[empId] = { nombre, totalMinutes: 0, dias: new Set(), count: 0 };
             byEmployee[empId].dias.add(f.fecha); byEmployee[empId].count++;
             if (f.hora_entrada && f.hora_salida) {
-                const parseTime = (t: string) => { if (t.includes('T')) return new Date(t); const [h, m] = t.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
                 const diffMin = (parseTime(f.hora_salida).getTime() - parseTime(f.hora_entrada).getTime()) / 60000;
                 if (diffMin > 0) byEmployee[empId].totalMinutes += diffMin;
             }
         });
+
         const reportData: ReportData[] = Object.values(byEmployee).map(emp => ({ empleado: emp.nombre, horas_totales: `${Math.floor(emp.totalMinutes / 60)}h ${Math.round(emp.totalMinutes % 60).toString().padStart(2, '0')}m`, totalMinutes: emp.totalMinutes, dias_trabajados: emp.dias.size, fichajes_count: emp.count }));
         reportData.sort((a, b) => b.totalMinutes - a.totalMinutes);
-        setPreview(reportData); setGenerated(true); setLoading(false);
+        setPreview(reportData); setGenerated(true); setLoading(false); setLoadingProgress(null);
     };
 
     const downloadPDF = async () => {
@@ -155,7 +186,7 @@ export default function InspectorExportarPage() {
                             </div>
                             <button onClick={generatePreview} disabled={loading}
                                 className="w-full py-3 rounded-full font-bold text-white border-none cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm shadow-lg shadow-amber-500/25">
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <BarChart3 className="w-5 h-5" />} Generar Informe Oficial
+                                {loading ? <><Loader2 className="w-5 h-5 animate-spin" />{loadingProgress ? `Cargando datos... ${loadingProgress.loaded} / ${loadingProgress.total} meses` : 'Procesando...'}</> : <><BarChart3 className="w-5 h-5" /> Generar Informe Oficial</>}
                             </button>
                         </div>
                     </div>
@@ -236,7 +267,7 @@ export default function InspectorExportarPage() {
                 </div>
                 <button onClick={generated ? handleDownload : generatePreview} disabled={loading || downloading}
                     className="w-full py-3.5 rounded-full font-bold text-white mb-6 border-none cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-lg shadow-lg shadow-amber-500/25">
-                    {loading || downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : generated ? <><Download className="w-5 h-5" /> Descargar Informe</> : <><BarChart3 className="w-5 h-5" /> Generar Informe Oficial</>}
+                    {loading ? <><Loader2 className="w-5 h-5 animate-spin" />{loadingProgress ? `${loadingProgress.loaded} / ${loadingProgress.total} meses` : 'Procesando...'}</> : downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : generated ? <><Download className="w-5 h-5" /> Descargar Informe</> : <><BarChart3 className="w-5 h-5" /> Generar Informe Oficial</>}
                 </button>
             </div>
         </div>
