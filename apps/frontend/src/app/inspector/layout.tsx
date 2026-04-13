@@ -10,6 +10,9 @@ import { Loader2, ShieldAlert, Clock, LogOut, Lock } from 'lucide-react';
 
 const MAX_SESSIONS_PER_WEEK = 3;
 const MAX_MINUTES_PER_SESSION = 60;
+const LS_KEY = 'cw_inspector_session';
+
+interface StoredSession { sessionId: string; startTimestamp: number; }
 
 export default function InspectorLayout({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
@@ -21,6 +24,10 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     const [sessionsUsedThisWeek, setSessionsUsedThisWeek] = useState(0);
     const sessionIdRef = useRef<string | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const remainingSecondsRef = useRef(MAX_MINUTES_PER_SESSION * 60);
+
+    // Keep ref in sync so beforeunload closure always has the current value
+    useEffect(() => { remainingSecondsRef.current = remainingSeconds; }, [remainingSeconds]);
 
     const getMonday = () => {
         const d = new Date(); const day = d.getDay(); const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -34,23 +41,42 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         return data?.length || 0;
     }, [user]);
 
+    // Reconcile any session that was left open because beforeunload fired too fast
+    const reconcileOrphanSession = useCallback(async () => {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (!raw) return;
+            const stored: StoredSession = JSON.parse(raw);
+            const elapsedMs = Date.now() - stored.startTimestamp;
+            const durationMinutes = Math.max(1, Math.ceil(elapsedMs / 60000));
+            await supabase.from('inspector_sesiones').update({ hora_fin: new Date().toISOString(), duracion_minutos: durationMinutes }).eq('id', stored.sessionId).is('hora_fin', null);
+            localStorage.removeItem(LS_KEY);
+        } catch { /* non-critical — ignore parse errors */ }
+    }, []);
+
     const startSession = useCallback(async () => {
         if (!user) return;
         const { data, error } = await supabase.from('inspector_sesiones').insert({ inspector_id: user.id, fecha: new Date().toISOString().split('T')[0], hora_inicio: new Date().toISOString() }).select('id').single();
         if (error) { console.error('Error starting session:', error); return; }
-        if (data) sessionIdRef.current = data.id;
+        if (data) {
+            sessionIdRef.current = data.id;
+            localStorage.setItem(LS_KEY, JSON.stringify({ sessionId: data.id, startTimestamp: Date.now() } satisfies StoredSession));
+        }
     }, [user]);
 
     const endSession = useCallback(async () => {
         if (!sessionIdRef.current) return;
-        const elapsed = MAX_MINUTES_PER_SESSION * 60 - remainingSeconds;
+        const elapsed = MAX_MINUTES_PER_SESSION * 60 - remainingSecondsRef.current;
+        localStorage.removeItem(LS_KEY);
         await supabase.from('inspector_sesiones').update({ hora_fin: new Date().toISOString(), duracion_minutos: Math.ceil(elapsed / 60) }).eq('id', sessionIdRef.current);
         sessionIdRef.current = null;
-    }, [remainingSeconds]);
+    }, []);
 
     useEffect(() => {
         const checkAccess = async () => {
             if (!user) { router.push('/login'); return; }
+            // Close any session that was left open from a previous tab closure
+            await reconcileOrphanSession();
             const { data } = await supabase.from('empleados_info').select('rol, rol_id').eq('id', user.id).single();
             if (data?.rol === 'inspector' || data?.rol_id === 3) {
                 const sessionsUsed = await checkWeeklySessions(); setSessionsUsedThisWeek(sessionsUsed);
@@ -74,10 +100,23 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     }, [isInspector]);
 
     useEffect(() => {
-        const handleBeforeUnload = () => { endSession(); };
+        const handleBeforeUnload = () => {
+            if (!sessionIdRef.current) return;
+            const elapsed = MAX_MINUTES_PER_SESSION * 60 - remainingSecondsRef.current;
+            const durationMinutes = Math.max(1, Math.ceil(elapsed / 60));
+            // sendBeacon is guaranteed to complete even on tab close
+            const sent = navigator.sendBeacon(
+                '/api/inspector/end-session',
+                new Blob([JSON.stringify({ sessionId: sessionIdRef.current, durationMinutes })], { type: 'application/json' })
+            );
+            // If beacon was queued successfully, clear localStorage to avoid double-close on next visit
+            if (sent) localStorage.removeItem(LS_KEY);
+            // If not sent (e.g. browser does not support or quota exceeded), localStorage entry
+            // remains and reconcileOrphanSession will close the session on next mount.
+        };
         window.addEventListener('beforeunload', handleBeforeUnload);
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-    }, [endSession]);
+    }, []);
 
     const formatTime = (secs: number) => `${Math.floor(secs / 60).toString().padStart(2, '0')}:${(secs % 60).toString().padStart(2, '0')}`;
 
