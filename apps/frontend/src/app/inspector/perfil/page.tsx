@@ -16,6 +16,7 @@ export default function InspectorPerfilPage() {
     const [loading, setLoading] = useState(true);
     const [totalSessions, setTotalSessions] = useState(0);
     const MAX_SESSIONS_PER_WEEK = 3;
+    const getInitials = (nombre?: string | null) => { if (!nombre) return 'INS'; return nombre.split(' ').slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join(''); };
 
     useEffect(() => { fetchSessions(); }, [user]);
 
@@ -39,7 +40,7 @@ export default function InspectorPerfilPage() {
                     {/* Profile Card */}
                     <div className="bg-white rounded-2xl overflow-hidden mb-4 shadow-sm border border-gray-100">
                         <div className="text-center py-6 px-4 bg-gradient-to-br from-navy to-slate-800">
-                            <div className="w-[72px] h-[72px] rounded-full mx-auto flex items-center justify-center font-bold text-navy mb-3 bg-amber-500 text-lg">INS</div>
+                            <div className="w-[72px] h-[72px] rounded-full mx-auto flex items-center justify-center font-bold text-navy mb-3 bg-amber-500 text-lg">{getInitials(profile?.nombre_completo)}</div>
                             <h4 className="font-bold text-white mb-1 text-lg">{profile?.nombre_completo || 'Inspector'}</h4>
                             <p className="text-white/50 text-sm mb-2">{user?.email || 'inspector@chronowork.es'}</p>
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full mt-1 bg-amber-500/20 text-amber-500 text-xs font-bold">
