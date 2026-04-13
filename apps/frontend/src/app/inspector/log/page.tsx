@@ -75,7 +75,7 @@ export default function InspectorLogPage() {
             {/* Header */}
             <div className="mb-5 p-5 rounded-2xl bg-gradient-to-br from-navy to-slate-800">
                 <h2 className="font-bold text-white mb-1 text-xl font-[family-name:var(--font-jakarta)]">Registro de Auditoría</h2>
-                <p className="text-white/50 text-sm mb-0">Log de inmutabilidad (Blockchain)</p>
+                <p className="text-white/50 text-sm mb-0">Registro de auditoría con hash verificable</p>
                 <div className="flex items-center gap-2 mt-2">
                     <ShieldAlert className="w-4 h-4 text-amber-500" />
                     <span className="font-bold text-amber-500 text-sm">MODO LECTURA: NO EDITABLE</span>
