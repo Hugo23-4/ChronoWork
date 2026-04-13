@@ -15,7 +15,7 @@ const LS_KEY = 'cw_inspector_session';
 interface StoredSession { sessionId: string; startTimestamp: number; }
 
 export default function InspectorLayout({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isInspector, setIsInspector] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -74,6 +74,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
 
     useEffect(() => {
         const checkAccess = async () => {
+            if (authLoading) return;
             if (!user) { router.push('/login'); return; }
             // Close any session that was left open from a previous tab closure
             await reconcileOrphanSession();
@@ -86,7 +87,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         };
         checkAccess();
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [user]);
+    }, [user, authLoading]);
 
     useEffect(() => {
         if (!isInspector) return;
