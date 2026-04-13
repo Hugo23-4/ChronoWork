@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import useSWR from 'swr';
 import { RefreshCcw, Clock, MapPin, Loader2, FileX } from 'lucide-react';
@@ -38,6 +38,7 @@ export default function InspectorMonitorPage() {
     const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterStatus, setFilterStatus] = useState<'todos' | 'activos' | 'completados'>('todos');
     const [isLive, setIsLive] = useState(false);
+    const [now, setNow] = useState(() => new Date());
     const lastUpdateRef = useRef<Date>(new Date());
 
     const { data: fichajes, error, mutate, isValidating } = useSWR(
@@ -55,7 +56,22 @@ export default function InspectorMonitorPage() {
         return () => { supabase.removeChannel(channel); };
     }, [filterDate, mutate]);
 
+    useEffect(() => {
+        const t = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(t);
+    }, []);
+
     const formatTime = (t: string | null) => { if (!t) return '--:--'; if (t.includes('T')) return new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); return t.substring(0, 5); };
+
+    const formatDuration = useCallback((f: FichajeMonitor) => {
+        if (!f.hora_entrada) return '—';
+        const parseT = (t: string) => { if (t.includes('T')) return new Date(t); const [h, m] = t.split(':').map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return d; };
+        const start = parseT(f.hora_entrada);
+        const end = f.hora_salida ? parseT(f.hora_salida) : now;
+        const diffMin = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
+        const h = Math.floor(diffMin / 60); const m = diffMin % 60;
+        return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }, [now]);
     const getStatus = (f: FichajeMonitor) => !f.hora_salida ? { label: 'EN TURNO', dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' } : { label: 'COMPLETADO', dot: 'bg-slate-400', text: 'text-slate-500', bg: 'bg-gray-100' };
     const activeCount = items.filter((f: FichajeMonitor) => !f.hora_salida).length;
     const completedCount = items.filter((f: FichajeMonitor) => f.hora_salida).length;
@@ -126,16 +142,16 @@ export default function InspectorMonitorPage() {
                         <table className="w-full">
                             <thead className="bg-navy">
                                 <tr>
-                                    {['EMPLEADO', 'SEDE', 'ENTRADA', 'SALIDA', 'STATUS', 'GPS', 'HASH'].map(h => (
+                                    {['EMPLEADO', 'SEDE', 'ENTRADA', 'SALIDA', 'DURACIÓN', 'STATUS', 'GPS', 'HASH'].map(h => (
                                         <th key={h} className="text-white/50 text-xs font-bold py-3 px-4">{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {loading ? (
-                                    <tr><td colSpan={7} className="text-center py-10"><Loader2 className="w-7 h-7 text-amber-500 animate-spin mx-auto" /><p className="text-slate-400 text-sm mt-2">Cargando registros...</p></td></tr>
+                                    <tr><td colSpan={8} className="text-center py-10"><Loader2 className="w-7 h-7 text-amber-500 animate-spin mx-auto" /><p className="text-slate-400 text-sm mt-2">Cargando registros...</p></td></tr>
                                 ) : items.length === 0 ? (
-                                    <tr><td colSpan={7} className="text-center py-10"><FileX className="w-10 h-10 text-slate-300 mx-auto mb-2" /><p className="text-slate-400 text-sm">No hay registros para esta fecha</p></td></tr>
+                                    <tr><td colSpan={8} className="text-center py-10"><FileX className="w-10 h-10 text-slate-300 mx-auto mb-2" /><p className="text-slate-400 text-sm">No hay registros para esta fecha</p></td></tr>
                                 ) : items.map((f: FichajeMonitor) => {
                                     const st = getStatus(f);
                                     return (
@@ -144,6 +160,7 @@ export default function InspectorMonitorPage() {
                                             <td className="px-4 py-3 text-slate-400 text-sm"><div className="flex items-center gap-1"><MapPin className="w-3 h-3" />{f.sede_nombre}</div></td>
                                             <td className="px-4 py-3 font-mono font-bold text-sm">{formatTime(f.hora_entrada)}</td>
                                             <td className="px-4 py-3 font-mono font-bold text-sm">{formatTime(f.hora_salida)}</td>
+                                            <td className="px-4 py-3 font-mono text-sm text-slate-600">{formatDuration(f)}</td>
                                             <td className="px-4 py-3"><span className={cn('inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-bold', st.bg, st.text)}><div className={cn('w-1.5 h-1.5 rounded-full', st.dot)} />{st.label}</span></td>
                                             <td className="px-4 py-3"><span className={cn('font-bold text-xs', f.has_gps ? 'text-emerald-500' : 'text-red-500')}>{f.has_gps ? '✓ GPS OK' : '✗ SIN GPS'}</span></td>
                                             <td className="px-4 py-3"><code className="text-amber-500 text-[0.7rem]">{f.hash}</code></td>
