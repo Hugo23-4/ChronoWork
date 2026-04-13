@@ -7,27 +7,31 @@ import { RefreshCcw, Clock, MapPin, Loader2, FileX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FichajeMonitor { id: string; empleado_id: string; nombre_completo: string; sede_nombre: string; fecha: string; hora_entrada: string; hora_salida: string | null; has_gps: boolean; hash: string; }
+interface FichajeRaw { id: string; empleado_id: string; sede_id: string | null; fecha: string; hora_entrada: string; hora_salida: string | null; latitud_entrada: number | null; longitud_entrada: number | null; empleados_info: { nombre_completo: string } | null; sedes: { nombre: string } | null; }
 
 const generateHash = (id: string) => { const c = '0123456789abcdef'; let h = '0x'; for (let i = 0; i < 8; i++) h += c[Math.abs(id.charCodeAt(i % id.length) * (i + 3)) % 16]; return h + '...' + id.substring(0, 4); };
 
 const fetchFichajesData = async ([, date, status]: [string, string, string]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let query = supabase.from('fichajes').select('*').eq('fecha', date).order('hora_entrada', { ascending: false });
+    let query = supabase
+        .from('fichajes')
+        .select('id, empleado_id, sede_id, fecha, hora_entrada, hora_salida, latitud_entrada, longitud_entrada, empleados_info(nombre_completo), sedes(nombre)')
+        .eq('fecha', date)
+        .order('hora_entrada', { ascending: false });
     if (status === 'activos') query = query.is('hora_salida', null);
     else if (status === 'completados') query = query.not('hora_salida', 'is', null);
-    const { data: raw, error } = await query;
+    const { data, error } = await query;
     if (error) throw error;
-    const fichData = raw || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const empIds = [...new Set(fichData.map((f: any) => f.empleado_id))];
-    const empMap: Record<string, string> = {};
-    if (empIds.length > 0) { const { data: emps } = await supabase.from('empleados_info').select('id, nombre_completo').in('id', empIds); (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; }); }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sedeIds = [...new Set(fichData.map((f: any) => f.sede_id).filter(Boolean))];
-    const sedeMap: Record<string, string> = {};
-    if (sedeIds.length > 0) { const { data: sedes } = await supabase.from('sedes').select('id, nombre').in('id', sedeIds); (sedes || []).forEach((s: any) => { sedeMap[s.id] = s.nombre; }); }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return fichData.map((f: any) => ({ id: f.id, empleado_id: f.empleado_id, nombre_completo: empMap[f.empleado_id] || 'Desconocido', sede_nombre: sedeMap[f.sede_id] || 'Sin sede', fecha: f.fecha, hora_entrada: f.hora_entrada, hora_salida: f.hora_salida, has_gps: !!(f.latitud_entrada && f.longitud_entrada), hash: generateHash(f.id) }));
+    return (data || []).map((f: FichajeRaw) => ({
+        id: f.id,
+        empleado_id: f.empleado_id,
+        nombre_completo: f.empleados_info?.nombre_completo ?? 'Desconocido',
+        sede_nombre: f.sedes?.nombre ?? 'Sin sede',
+        fecha: f.fecha,
+        hora_entrada: f.hora_entrada,
+        hora_salida: f.hora_salida,
+        has_gps: !!(f.latitud_entrada && f.longitud_entrada),
+        hash: generateHash(f.id),
+    }));
 };
 
 export default function InspectorMonitorPage() {
@@ -53,10 +57,8 @@ export default function InspectorMonitorPage() {
 
     const formatTime = (t: string | null) => { if (!t) return '--:--'; if (t.includes('T')) return new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); return t.substring(0, 5); };
     const getStatus = (f: FichajeMonitor) => !f.hora_salida ? { label: 'EN TURNO', dot: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50' } : { label: 'COMPLETADO', dot: 'bg-slate-400', text: 'text-slate-500', bg: 'bg-gray-100' };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const activeCount = items.filter((f: any) => !f.hora_salida).length;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const completedCount = items.filter((f: any) => f.hora_salida).length;
+    const activeCount = items.filter((f: FichajeMonitor) => !f.hora_salida).length;
+    const completedCount = items.filter((f: FichajeMonitor) => f.hora_salida).length;
 
     return (
         <div className="animate-fade-up">

@@ -16,44 +16,41 @@ export default function InspectorLogPage() {
 
     const fetchLog = async () => {
         setLoading(true);
-        const { data: fichajes, error } = await supabase.from('fichajes').select('*').order('created_at', { ascending: false }).limit(50);
-        if (error) { console.error('Error fetching log:', error); setLoading(false); return; }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const empleadoIds = [...new Set((fichajes || []).map((f: any) => f.empleado_id))];
-        const empMap: Record<string, string> = {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (empleadoIds.length > 0) { const { data: emps } = await supabase.from('empleados_info').select('id, nombre_completo').in('id', empleadoIds); (emps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; }); }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sedeIds = [...new Set((fichajes || []).map((f: any) => f.sede_id).filter(Boolean))];
-        const sedeMap: Record<string, string> = {};
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (sedeIds.length > 0) { const { data: sedes } = await supabase.from('sedes').select('id, nombre').in('id', sedeIds); (sedes || []).forEach((s: any) => { sedeMap[s.id] = s.nombre; }); }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: solicitudes } = await supabase.from('solicitudes').select('*').in('tipo', ['correccion', 'modificacion']).eq('estado', 'aprobada').order('created_at', { ascending: false }).limit(20);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const solEmpIds = [...new Set((solicitudes || []).map((s: any) => s.empleado_id))];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (solEmpIds.length > 0) { const { data: solEmps } = await supabase.from('empleados_info').select('id, nombre_completo').in('id', solEmpIds); (solEmps || []).forEach((e: any) => { empMap[e.id] = e.nombre_completo; }); }
+
+        interface FichajeLog { id: string; empleado_id: string; sede_id: string | null; fecha: string; hora_entrada: string | null; hora_salida: string | null; latitud_entrada: number | null; longitud_entrada: number | null; latitud_salida: number | null; longitud_salida: number | null; ubicacion_error: number | null; empleados_info: { nombre_completo: string } | null; sedes: { nombre: string } | null; }
+        interface SolicitudLog { id: string; empleado_id: string; tipo: string; descripcion: string | null; correccion_salida: string | null; created_at: string; empleados_info: { nombre_completo: string } | null; }
+
+        const [fichajesRes, solicitudesRes] = await Promise.all([
+            supabase.from('fichajes').select('id, empleado_id, sede_id, fecha, hora_entrada, hora_salida, latitud_entrada, longitud_entrada, latitud_salida, longitud_salida, ubicacion_error, empleados_info(nombre_completo), sedes(nombre)').order('created_at', { ascending: false }).limit(50),
+            supabase.from('solicitudes').select('id, empleado_id, tipo, descripcion, correccion_salida, created_at, empleados_info(nombre_completo)').in('tipo', ['correccion', 'modificacion']).eq('estado', 'aprobada').order('created_at', { ascending: false }).limit(20),
+        ]);
+
+        if (fichajesRes.error) { console.error('Error fetching log:', fichajesRes.error); setLoading(false); return; }
+
+        const fichajes = (fichajesRes.data || []) as FichajeLog[];
+        const solicitudes = (solicitudesRes.data || []) as SolicitudLog[];
 
         const logEntries: LogEntry[] = [];
         const chars = '0123456789abcdef';
         const makeHash = (seed: string) => { let h = '0x'; for (let i = 0; i < 8; i++) h += chars[Math.abs(seed.charCodeAt(i % seed.length) * (i + 1)) % 16]; return h + '...' + seed.substring(0, 4); };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (fichajes || []).forEach((f: any) => {
-            const empNombre = empMap[f.empleado_id] || 'Desconocido';
-            const sedeName = sedeMap[f.sede_id] || 'Sin sede';
-            const hasGps = !!(f.latitud_entrada && f.longitud_entrada);
-            if (f.ubicacion_error && f.ubicacion_error > 500) logEntries.push({ id: f.id + '_fallido', tipo: 'intento_fallido', empleado_nombre: empNombre, sede_nombre: sedeName, fecha: f.fecha, hora: f.hora_entrada || '--:--', detalle: empNombre, subdetalle: `⚠ Fuera de rango (${Math.round(f.ubicacion_error / 1000)}km)`, actor: empNombre, hash: makeHash(f.id + 'fail') });
-            logEntries.push({ id: f.id + '_entrada', tipo: 'entrada', empleado_nombre: empNombre, sede_nombre: sedeName, fecha: f.fecha, hora: f.hora_entrada || '--:--', detalle: empNombre, subdetalle: `📍 ${sedeName} (${hasGps ? 'GPS Válido' : 'Sin GPS'})`, actor: empNombre, hash: makeHash(f.id) });
-            if (f.hora_salida) logEntries.push({ id: f.id + '_salida', tipo: 'salida', empleado_nombre: empNombre, sede_nombre: sedeName, fecha: f.fecha, hora: f.hora_salida, detalle: empNombre, subdetalle: `📍 ${sedeName} (GPS Válido)`, actor: empNombre, hash: makeHash(f.id + 'out') });
+
+        fichajes.forEach(f => {
+            const empNombre = f.empleados_info?.nombre_completo ?? 'Desconocido';
+            const sedeName = f.sedes?.nombre ?? 'Sin sede';
+            const hasGpsEntrada = !!(f.latitud_entrada && f.longitud_entrada);
+            const hasGpsSalida = !!(f.latitud_salida && f.longitud_salida);
+            if (typeof f.ubicacion_error === 'number' && f.ubicacion_error > 500) logEntries.push({ id: f.id + '_fallido', tipo: 'intento_fallido', empleado_nombre: empNombre, sede_nombre: sedeName, fecha: f.fecha, hora: f.hora_entrada || '--:--', detalle: empNombre, subdetalle: `⚠ Fuera de rango (${Math.round(f.ubicacion_error / 1000)}km)`, actor: empNombre, hash: makeHash(f.id + 'fail') });
+            logEntries.push({ id: f.id + '_entrada', tipo: 'entrada', empleado_nombre: empNombre, sede_nombre: sedeName, fecha: f.fecha, hora: f.hora_entrada || '--:--', detalle: empNombre, subdetalle: `📍 ${sedeName} (${hasGpsEntrada ? 'GPS Válido' : 'Sin GPS'})`, actor: empNombre, hash: makeHash(f.id) });
+            if (f.hora_salida) logEntries.push({ id: f.id + '_salida', tipo: 'salida', empleado_nombre: empNombre, sede_nombre: sedeName, fecha: f.fecha, hora: f.hora_salida, detalle: empNombre, subdetalle: `📍 ${sedeName} (${hasGpsSalida ? 'GPS Válido' : 'Sin GPS'})`, actor: empNombre, hash: makeHash(f.id + 'out') });
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (solicitudes || []).forEach((s: any) => {
-            const empNombre = empMap[s.empleado_id] || 'Desconocido';
+
+        solicitudes.forEach(s => {
+            const empNombre = s.empleados_info?.nombre_completo ?? 'Desconocido';
             const fecha = s.created_at ? new Date(s.created_at).toISOString().split('T')[0] : '';
             const hora = s.created_at ? new Date(s.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--:--';
             logEntries.push({ id: s.id + '_mod', tipo: 'modificacion', empleado_nombre: empNombre, sede_nombre: '', fecha, hora, detalle: s.descripcion || 'Corrección de Hora', subdetalle: s.tipo === 'correccion' ? `Salida: --:-- → ${s.correccion_salida ? new Date(s.correccion_salida).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '16:00'}` : 'Modificación aprobada', actor: 'Admin (RRHH)', hash: makeHash(s.id) });
         });
+
         logEntries.sort((a, b) => (b.fecha + ' ' + b.hora).localeCompare(a.fecha + ' ' + a.hora));
         setEntries(logEntries); setLoading(false);
     };
