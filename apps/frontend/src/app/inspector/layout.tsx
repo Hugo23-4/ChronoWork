@@ -164,7 +164,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
                         <small className="hidden md:inline text-slate-500">restante</small>
                     </div>
                 </div>
-                <div className="p-3 md:p-4 pb-6 mb-6">{children}</div>
+                <div className="p-3 md:p-4 pb-6 mb-6 [--content-p:0.75rem] md:[--content-p:1rem]">{children}</div>
             </main>
             <div className="lg:hidden"><InspectorMobileMenu /></div>
         </div>
