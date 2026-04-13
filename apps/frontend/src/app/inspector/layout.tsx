@@ -151,7 +151,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="flex h-screen overflow-hidden">
-            <div className="hidden lg:block"><InspectorSidebar remainingTime={formatTime(remainingSeconds)} daysUsed={sessionsUsedThisWeek} maxDays={MAX_SESSIONS_PER_WEEK} minutesUsedToday={MAX_MINUTES_PER_SESSION - Math.floor(remainingSeconds / 60)} maxMinutesPerDay={MAX_MINUTES_PER_SESSION} /></div>
+            <div className="hidden lg:block"><InspectorSidebar remainingSeconds={remainingSeconds} daysUsed={sessionsUsedThisWeek} maxDays={MAX_SESSIONS_PER_WEEK} maxMinutesPerDay={MAX_MINUTES_PER_SESSION} /></div>
             <main className="flex-grow overflow-auto relative bg-[#FAFBFC]">
                 <div className={`flex items-center justify-between px-4 py-2 border-b ${remainingSeconds < 300 ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200'}`}>
                     <div className="flex items-center gap-2">
