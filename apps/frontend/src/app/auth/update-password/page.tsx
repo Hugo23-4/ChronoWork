@@ -32,7 +32,7 @@ export default function UpdatePasswordPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+    <div className="flex items-center justify-center min-h-dvh bg-gray-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm border border-gray-100">
         <div className="text-center mb-5">
           <h2 className="font-bold text-navy font-[family-name:var(--font-jakarta)]">Nueva Contraseña</h2>

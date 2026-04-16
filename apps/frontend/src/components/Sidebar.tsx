@@ -20,7 +20,7 @@ export default function Sidebar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <div className="hidden md:flex flex-col h-screen fixed top-0 left-0 p-3 bg-navy w-[280px] z-[1040]">
+    <div className="hidden md:flex flex-col h-dvh fixed top-0 left-0 p-3 bg-navy w-[280px] z-[1040]">
       {/* Brand */}
       <div className="mb-6 px-2">
         <h4 className="text-white font-bold mb-0 font-[family-name:var(--font-jakarta)]">ChronoWork</h4>

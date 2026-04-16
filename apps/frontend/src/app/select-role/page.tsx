@@ -31,13 +31,13 @@ export default function RoleSelectionPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-navy flex items-center justify-center">
+    <div className="min-h-dvh bg-navy flex items-center justify-center">
       <Loader2 className="w-10 h-10 text-chrono-blue animate-spin" />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-navy flex flex-col items-center justify-center p-8 relative overflow-hidden">
+    <div className="min-h-dvh bg-navy flex flex-col items-center justify-center p-8 relative overflow-hidden">
       {/* Orbs */}
       <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.2) 0%, transparent 70%)' }} />
       <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)' }} />

@@ -180,7 +180,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-bg-body">
+    <div className="flex min-h-dvh bg-bg-body">
 
       {/* ── Panel izquierdo (Desktop) ─────────────────────────────────── */}
       <div className="hidden lg:flex flex-col justify-between p-10 relative overflow-hidden login-bg w-[46%] shrink-0">
@@ -234,7 +234,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Panel derecho — Formulario ────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center p-5 md:p-8 relative min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center p-5 md:p-8 relative min-h-dvh overflow-hidden">
 
         {/* Decorative orb mobile */}
         <div className="lg:hidden absolute -top-10 -right-10 w-56 h-56 rounded-full bg-[radial-gradient(circle,rgba(37,99,235,0.07)_0%,transparent_70%)] pointer-events-none" />

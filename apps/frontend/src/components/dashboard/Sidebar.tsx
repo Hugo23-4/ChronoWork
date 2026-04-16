@@ -23,7 +23,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="flex flex-col h-full text-white p-3 w-[280px] min-h-screen bg-[#0F172A] dark:bg-zinc-950 dark:border-r dark:border-zinc-800/60">
+    <div className="flex flex-col h-full text-white p-3 w-[280px] min-h-dvh bg-[#0F172A] dark:bg-zinc-950 dark:border-r dark:border-zinc-800/60">
 
       {/* LOGO */}
       <div className="mb-4 px-2 mt-2">

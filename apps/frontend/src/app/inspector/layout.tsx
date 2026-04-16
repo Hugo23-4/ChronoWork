@@ -122,14 +122,14 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     const formatTime = (secs: number) => `${Math.floor(secs / 60).toString().padStart(2, '0')}:${(secs % 60).toString().padStart(2, '0')}`;
 
     if (loading) return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-navy">
+        <div className="min-h-dvh flex flex-col items-center justify-center bg-navy">
             <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-3" />
             <p className="text-white/50">Verificando acceso de inspector...</p>
         </div>
     );
 
     if (sessionError) return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-navy">
+        <div className="min-h-dvh flex flex-col items-center justify-center p-4 bg-navy">
             <div className="text-center">
                 <Lock className="w-16 h-16 text-amber-500 mx-auto mb-4" />
                 <h3 className="text-white font-bold mt-3 text-xl">Acceso Limitado</h3>
@@ -151,7 +151,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
     if (!isInspector) return null;
 
     return (
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-dvh overflow-hidden">
             <div className="hidden lg:block"><InspectorSidebar remainingSeconds={remainingSeconds} daysUsed={sessionsUsedThisWeek} maxDays={MAX_SESSIONS_PER_WEEK} maxMinutesPerDay={MAX_MINUTES_PER_SESSION} /></div>
             <main className="flex-grow overflow-auto relative bg-[#FAFBFC]">
                 <div className={`flex items-center justify-between px-4 py-2 border-b ${remainingSeconds < 300 ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200'}`}>

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================================
    CHRONOWORK DESIGN SYSTEM v4.0
@@ -85,14 +86,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv11', 'ss01';
-}
-
-/* ── Dark mode baseline ────────────────────────────────── */
-/* Ensure any page inside the dark layout gets OLED black */
-.dark body,
-.dark main {
-  background-color: #000000 !important;
-  color: #e5e5ea;
 }
 
 /* ── Dark: card/list elevation cascade ───────────────────── */

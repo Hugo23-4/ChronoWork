@@ -49,7 +49,7 @@ const stats = [
 
 export default function LandingPage() {
   return (
-    <main className="bg-navy text-white min-h-screen overflow-hidden">
+    <main className="bg-navy text-white min-h-dvh overflow-hidden">
 
       {/* ═══════════════════════════════════════════════════════════════════
           NAVBAR

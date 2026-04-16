@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-white dark:bg-black">
+      <div className="flex h-dvh items-center justify-center bg-white dark:bg-black">
         <Loader2 className="w-8 h-8 animate-spin text-chrono-blue" />
       </div>
     );
@@ -28,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
 
       {/* Sidebar Desktop */}
       <div className="hidden lg:block">

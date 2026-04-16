@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+            <div className="min-h-dvh flex items-center justify-center bg-white dark:bg-black">
                 <div className="text-center">
                     <Loader2 className="w-10 h-10 text-chrono-blue animate-spin mx-auto" />
                     <p className="text-slate-400 dark:text-zinc-500 text-sm mt-3">Verificando acceso...</p>
@@ -55,7 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!isAdmin) return null;
 
     return (
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-dvh overflow-hidden">
             {/* Sidebar Desktop */}
             <div className="hidden lg:block">
                 <AdminSidebar />

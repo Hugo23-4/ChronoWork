@@ -70,7 +70,7 @@ export default function InspectorEscanearPage() {
     const handleReset = () => { setSearchQuery(''); setResult(null); setSearched(false); stopCamera(); };
 
     return (
-        <div className="animate-fade-up bg-navy min-h-screen px-4 py-6"
+        <div className="animate-fade-up bg-navy min-h-dvh px-4 py-6"
             style={{ marginInline: 'calc(-1 * var(--content-p, 0.75rem))', marginTop: 'calc(-1 * var(--content-p, 0.75rem))' }}>
             {/* Header */}
             <div className="text-center mb-5 pt-3">
