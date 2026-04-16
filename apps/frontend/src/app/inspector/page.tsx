@@ -21,7 +21,7 @@ const fetchFichajesData = async ([, date, status]: [string, string, string]) => 
     else if (status === 'completados') query = query.not('hora_salida', 'is', null);
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map((f: FichajeRaw) => ({
+    return ((data || []) as unknown as FichajeRaw[]).map((f: FichajeRaw) => ({
         id: f.id,
         empleado_id: f.empleado_id,
         nombre_completo: f.empleados_info?.nombre_completo ?? 'Desconocido',

@@ -27,8 +27,8 @@ export default function InspectorLogPage() {
 
         if (fichajesRes.error) { console.error('Error fetching log:', fichajesRes.error); setLoading(false); return; }
 
-        const fichajes = (fichajesRes.data || []) as FichajeLog[];
-        const solicitudes = (solicitudesRes.data || []) as SolicitudLog[];
+        const fichajes = (fichajesRes.data || []) as unknown as FichajeLog[];
+        const solicitudes = (solicitudesRes.data || []) as unknown as SolicitudLog[];
 
         const logEntries: LogEntry[] = [];
         const chars = '0123456789abcdef';
