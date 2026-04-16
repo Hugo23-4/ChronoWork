@@ -40,7 +40,7 @@ export default function AdminSidebar() {
       </div>
 
       {/* Menú Admin */}
-      <span className="text-slate-500 uppercase font-bold px-3 mb-2 text-[0.7rem] tracking-wide">
+      <span className="text-slate-500 dark:text-zinc-400 uppercase font-bold px-3 mb-2 text-[0.7rem] tracking-wide">
         Panel de Administración
       </span>
       <ul className="flex flex-col mb-4 gap-1">
@@ -86,7 +86,7 @@ export default function AdminSidebar() {
       <div className="mt-4 pt-3 border-t border-slate-700/25">
         <div className="flex items-center gap-3 px-2">
           <div className="bg-red-500 rounded-full flex items-center justify-center text-white font-bold w-10 h-10 text-sm">
-            {profile?.nombre_completo?.substring(0, 2).toUpperCase() || 'AD'}
+            {profile?.nombre_completo?.split(' ').map((n: string) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'AD'}
           </div>
           <div className="overflow-hidden flex-grow">
             <div className="font-bold text-white truncate max-w-[130px]">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import Toast from '@/components/ui/Toast';
 import { PencilLine, UserPlus, Check, Loader2, X } from 'lucide-react';
 import { ResponsiveModal } from '@/components/ui/ResponsiveModal';
@@ -31,10 +32,11 @@ interface SedeOption {
     nombre: string;
 }
 
-const FIELD_CLASS = 'w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm';
-const LABEL_CLASS = 'block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5';
+const FIELD_CLASS = 'w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm';
+const LABEL_CLASS = 'block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5';
 
 export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave }: EmployeeFormModalProps) {
+    const { profile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [sedes, setSedes] = useState<SedeOption[]>([]);
@@ -57,7 +59,9 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
     }, [isOpen, employeeId]);
 
     const fetchSedes = async () => {
-        const { data } = await supabase.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+        let query = supabase.from('sedes').select('id, nombre').eq('activo', true).order('nombre');
+        if (profile?.empresa_id) query = query.eq('empresa_id', profile.empresa_id);
+        const { data } = await query;
         if (data) setSedes(data);
     };
 
@@ -125,7 +129,7 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
     const footer = (
         <>
             <button type="button" onClick={onClose} disabled={saving}
-                className="bg-white text-navy border border-gray-200 px-4 py-2.5 rounded-full font-semibold hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 text-sm">
+                className="bg-white text-navy border border-gray-200 dark:border-zinc-700 px-4 py-2.5 rounded-full font-semibold hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 text-sm">
                 Cancelar
             </button>
             <button type="button" onClick={handleSubmit} disabled={saving || loading}
@@ -238,7 +242,7 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                                     Empleado {formData.activo ? <span className="text-emerald-600">ACTIVO</span> : <span className="text-red-500">DE BAJA</span>}
                                 </span>
                             </label>
-                            {!formData.activo && <p className="text-xs text-slate-400 mt-1 ml-13">No aparecerá en listados activos</p>}
+                            {!formData.activo && <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1 ml-13">No aparecerá en listados activos</p>}
                         </div>
 
                         {/* Close hint */}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Clock, FileText, Users } from 'lucide-react';
+import { BarChart3, Clock, FileText, Users, MapPin, Calendar, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { m, AnimatePresence } from 'framer-motion';
 
@@ -13,10 +13,13 @@ interface MenuItem {
 }
 
 const adminItems: MenuItem[] = [
-  { name: 'Panel',      href: '/admin',            icon: BarChart3 },
-  { name: 'Fichajes',   href: '/admin/fichajes',   icon: Clock },
-  { name: 'Solicitudes',href: '/admin/solicitudes',icon: FileText },
-  { name: 'Equipo',     href: '/admin/usuarios',   icon: Users },
+  { name: 'Panel',       href: '/admin',             icon: BarChart3 },
+  { name: 'Fichajes',    href: '/admin/fichajes',    icon: Clock },
+  { name: 'Solicitudes', href: '/admin/solicitudes', icon: FileText },
+  { name: 'Equipo',      href: '/admin/usuarios',    icon: Users },
+  { name: 'Centros',     href: '/admin/centros',     icon: MapPin },
+  { name: 'Turnos',      href: '/admin/turnos',      icon: Calendar },
+  { name: 'Pausas',      href: '/admin/pausas',      icon: Coffee },
 ];
 
 export default function AdminMobileMenu() {

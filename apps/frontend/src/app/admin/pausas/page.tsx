@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import { Plus, X, Pencil, Trash2, Coffee, Info, CheckCircle, Loader2, Bell, BellOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void 
 );
 
 export default function AdminPausasPage() {
+  const { profile } = useAuth();
   const [pausas, setPausas] = useState<PausaConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,11 +38,12 @@ export default function AdminPausasPage() {
     es_retribuida: true, activa: true, notificar_inicio: true, notificar_fin: true, notificar_antes_min: 3,
   });
 
-  useEffect(() => { fetchPausas(); }, []);
+  useEffect(() => { fetchPausas(); }, [profile?.empresa_id]);
 
   const fetchPausas = async () => {
+    if (!profile?.empresa_id) return;
     setLoading(true);
-    const { data } = await supabase.from('configuracion_pausas').select('*').order('tipo_jornada');
+    const { data } = await supabase.from('configuracion_pausas').select('*').eq('empresa_id', profile.empresa_id).order('tipo_jornada');
     if (data) setPausas(data);
     setLoading(false);
   };
@@ -60,14 +63,26 @@ export default function AdminPausasPage() {
   const handleSave = async () => {
     if (!form.nombre.trim()) return;
     setSaving(true);
-    const payload = { nombre: form.nombre, tipo_jornada: form.tipo_jornada, duracion_minutos: form.duracion_minutos, hora_inicio_sugerida: form.hora_inicio_sugerida || null, hora_fin_sugerida: form.hora_fin_sugerida || null, es_retribuida: form.es_retribuida, activa: form.activa, notificar_inicio: form.notificar_inicio, notificar_fin: form.notificar_fin, notificar_antes_min: form.notificar_antes_min };
-    if (editId) await supabase.from('configuracion_pausas').update(payload).eq('id', editId);
-    else await supabase.from('configuracion_pausas').insert(payload);
-    setSaving(false); setShowModal(false); setSuccess(editId ? 'Pausa actualizada' : 'Pausa creada'); setTimeout(() => setSuccess(''), 3000); fetchPausas();
+    const payload = { nombre: form.nombre, tipo_jornada: form.tipo_jornada, duracion_minutos: form.duracion_minutos, hora_inicio_sugerida: form.hora_inicio_sugerida || null, hora_fin_sugerida: form.hora_fin_sugerida || null, es_retribuida: form.es_retribuida, activa: form.activa, notificar_inicio: form.notificar_inicio, notificar_fin: form.notificar_fin, notificar_antes_min: form.notificar_antes_min, empresa_id: profile?.empresa_id };
+    const { error } = editId
+      ? await supabase.from('configuracion_pausas').update(payload).eq('id', editId)
+      : await supabase.from('configuracion_pausas').insert(payload);
+    setSaving(false);
+    if (error) { alert('Error guardando pausa: ' + error.message); return; }
+    setShowModal(false); setSuccess(editId ? 'Pausa actualizada' : 'Pausa creada'); setTimeout(() => setSuccess(''), 3000); fetchPausas();
   };
 
-  const handleDelete = async (id: string) => { if (!confirm('¿Eliminar esta pausa?')) return; await supabase.from('configuracion_pausas').delete().eq('id', id); fetchPausas(); };
-  const toggleActive = async (id: string, current: boolean) => { await supabase.from('configuracion_pausas').update({ activa: !current }).eq('id', id); fetchPausas(); };
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Eliminar esta pausa?')) return;
+    const { error } = await supabase.from('configuracion_pausas').delete().eq('id', id);
+    if (error) { alert('Error eliminando pausa: ' + error.message); return; }
+    fetchPausas();
+  };
+  const toggleActive = async (id: string, current: boolean) => {
+    const { error } = await supabase.from('configuracion_pausas').update({ activa: !current }).eq('id', id);
+    if (error) { alert('Error actualizando pausa: ' + error.message); return; }
+    fetchPausas();
+  };
 
   const presets = [
     { nombre: 'Desayuno', tipo: 'mañana', duracion: 15, inicio: '10:30', fin: '10:45' },
@@ -81,13 +96,13 @@ export default function AdminPausasPage() {
   };
 
   return (
-    <div className="animate-fade-up pb-20 lg:pb-6">
+    <div className="animate-fade-up">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-5 gap-3">
         <div>
           <p className="text-chrono-blue font-bold uppercase text-xs mb-1 tracking-widest">Configuración · Convenio</p>
-          <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)]">Pausas y Descansos</h2>
-          <p className="text-slate-400 text-sm mt-1 hidden md:block">Art. 34.4 ET: mínimo 15 min si jornada &gt; 6h.</p>
+          <h2 className="font-bold text-navy dark:text-zinc-100 text-2xl font-[family-name:var(--font-jakarta)]">Pausas y Descansos</h2>
+          <p className="text-slate-400 dark:text-zinc-500 text-sm mt-1 hidden md:block">Art. 34.4 ET: mínimo 15 min si jornada &gt; 6h.</p>
         </div>
         <button onClick={openNew}
           className="bg-gradient-to-br from-navy to-slate-dark text-white px-5 py-2.5 rounded-xl font-bold text-sm border-none cursor-pointer flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
@@ -114,14 +129,14 @@ export default function AdminPausasPage() {
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 text-chrono-blue animate-spin" /></div>
       ) : pausas.length === 0 ? (
-        <div className="bg-white rounded-2xl p-10 text-center border-[1.5px] border-dashed border-gray-200">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-10 text-center border-[1.5px] border-dashed border-gray-200">
           <Coffee className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <h5 className="font-bold text-slate-500 mb-2">Sin pausas configuradas</h5>
-          <p className="text-slate-400 text-sm mb-4">Crea pausas según tu convenio colectivo.</p>
+          <h5 className="font-bold text-slate-500 dark:text-zinc-400 mb-2">Sin pausas configuradas</h5>
+          <p className="text-slate-400 dark:text-zinc-500 text-sm mb-4">Crea pausas según tu convenio colectivo.</p>
           <div className="flex flex-wrap gap-2 justify-center">
             {presets.map(p => (
               <button key={p.nombre} onClick={() => { openNew(); setTimeout(() => applyPreset(p), 50); }}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold border-[1.5px] border-gray-200 bg-white text-slate-500 cursor-pointer hover:border-gray-300 transition-colors">
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold border-[1.5px] border-gray-200 bg-white text-slate-500 dark:text-zinc-400 cursor-pointer hover:border-gray-300 transition-colors">
                 + {p.nombre} ({p.duracion} min)
               </button>
             ))}
@@ -130,11 +145,11 @@ export default function AdminPausasPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {pausas.map(p => (
-            <div key={p.id} className={cn('bg-white rounded-2xl p-5 border-[1.5px] shadow-sm transition-all',
+            <div key={p.id} className={cn('bg-white dark:bg-zinc-900 rounded-2xl p-5 border-[1.5px] shadow-sm transition-all',
               p.activa ? 'border-gray-100' : 'border-red-200 opacity-60')}>
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h6 className="font-bold text-navy text-base mb-1">{p.nombre}</h6>
+                  <h6 className="font-bold text-navy dark:text-zinc-100 text-base mb-1">{p.nombre}</h6>
                   <span className="bg-blue-50 text-blue-800 text-[0.65rem] px-2.5 py-0.5 rounded-full font-semibold border border-blue-200/50">
                     {TIPOS_JORNADA.find(t => t.value === p.tipo_jornada)?.label || p.tipo_jornada}
                   </span>
@@ -144,12 +159,12 @@ export default function AdminPausasPage() {
 
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div>
-                  <div className="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider">Duración</div>
-                  <div className="font-bold text-navy text-lg">{p.duracion_minutos} min</div>
+                  <div className="text-[0.65rem] text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Duración</div>
+                  <div className="font-bold text-navy dark:text-zinc-100 text-lg">{p.duracion_minutos} min</div>
                 </div>
                 <div>
-                  <div className="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider">Horario</div>
-                  <div className="font-semibold text-slate-500 text-sm">
+                  <div className="text-[0.65rem] text-slate-400 dark:text-zinc-500 font-bold uppercase tracking-wider">Horario</div>
+                  <div className="font-semibold text-slate-500 dark:text-zinc-400 text-sm">
                     {p.hora_inicio_sugerida && p.hora_fin_sugerida ? `${p.hora_inicio_sugerida.substring(0, 5)}–${p.hora_fin_sugerida.substring(0, 5)}` : 'Flexible'}
                   </div>
                 </div>
@@ -164,7 +179,7 @@ export default function AdminPausasPage() {
 
               <div className="flex gap-2">
                 <button onClick={() => openEdit(p)}
-                  className="flex-1 py-1.5 rounded-lg border border-gray-200 bg-transparent text-slate-500 text-sm font-semibold cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
+                  className="flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 bg-transparent text-slate-500 dark:text-zinc-400 text-sm font-semibold cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
                   <Pencil className="w-3 h-3" /> Editar
                 </button>
                 <button onClick={() => handleDelete(p.id)}
@@ -179,26 +194,26 @@ export default function AdminPausasPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-navy/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="animate-scale-in bg-white rounded-2xl p-7 w-full max-w-[480px] max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="fixed inset-0 bg-navy/60 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="animate-scale-in bg-white dark:bg-zinc-900 rounded-2xl p-7 w-full max-w-[480px] max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-start mb-5">
               <div>
-                <h5 className="font-bold text-navy text-lg">{editId ? 'Editar Pausa' : 'Nueva Pausa'}</h5>
-                <p className="text-slate-400 text-sm mt-1">Configura según el convenio colectivo</p>
+                <h5 className="font-bold text-navy dark:text-zinc-100 text-lg">{editId ? 'Editar Pausa' : 'Nueva Pausa'}</h5>
+                <p className="text-slate-400 dark:text-zinc-500 text-sm mt-1">Configura según el convenio colectivo</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="bg-transparent border-none cursor-pointer text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => setShowModal(false)} className="bg-transparent border-none cursor-pointer text-slate-400 dark:text-zinc-500 hover:text-slate-600 p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {!editId && (
               <div className="mb-4">
-                <label className="text-xs font-semibold text-slate-400 mb-1.5 block">Plantillas rápidas</label>
+                <label className="text-xs font-semibold text-slate-400 dark:text-zinc-500 mb-1.5 block">Plantillas rápidas</label>
                 <div className="flex flex-wrap gap-2">
                   {presets.map(p => (
                     <button key={p.nombre} onClick={() => applyPreset(p)}
                       className={cn('px-3 py-1 rounded-full text-xs font-semibold border-[1.5px] cursor-pointer transition-all',
-                        form.nombre === p.nombre ? 'border-chrono-blue bg-blue-50 text-blue-800' : 'border-gray-200 text-slate-500 bg-transparent')}>
+                        form.nombre === p.nombre ? 'border-chrono-blue bg-blue-50 text-blue-800' : 'border-gray-200 text-slate-500 dark:text-zinc-400 bg-transparent')}>
                       {p.nombre}
                     </button>
                   ))}
@@ -209,7 +224,7 @@ export default function AdminPausasPage() {
             <div className="mb-4">
               <label className="text-sm font-semibold text-slate-600 block mb-1.5">Nombre de la pausa</label>
               <input type="text" value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm outline-none focus:border-chrono-blue" placeholder="Ej: Desayuno, Comida..." />
+                className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm outline-none focus:border-chrono-blue" placeholder="Ej: Desayuno, Comida..." />
             </div>
 
             <div className="mb-4">
@@ -218,7 +233,7 @@ export default function AdminPausasPage() {
                 {TIPOS_JORNADA.map(t => (
                   <button key={t.value} onClick={() => setForm(f => ({ ...f, tipo_jornada: t.value }))}
                     className={cn('px-3.5 py-1.5 rounded-xl text-sm font-semibold border-[1.5px] cursor-pointer transition-all',
-                      form.tipo_jornada === t.value ? 'border-chrono-blue bg-blue-50 text-blue-800' : 'border-gray-200 text-slate-500 bg-transparent')}>
+                      form.tipo_jornada === t.value ? 'border-chrono-blue bg-blue-50 text-blue-800' : 'border-gray-200 text-slate-500 dark:text-zinc-400 bg-transparent')}>
                     {t.label}
                   </button>
                 ))}
@@ -229,17 +244,17 @@ export default function AdminPausasPage() {
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1.5">Duración (min)</label>
                 <input type="number" value={form.duracion_minutos} onChange={e => setForm(f => ({ ...f, duracion_minutos: parseInt(e.target.value) || 15 }))}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm font-bold outline-none focus:border-chrono-blue" min={5} max={120} />
+                  className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm font-bold outline-none focus:border-chrono-blue" min={5} max={120} />
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1.5">Hora inicio</label>
                 <input type="time" value={form.hora_inicio_sugerida} onChange={e => setForm(f => ({ ...f, hora_inicio_sugerida: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm outline-none focus:border-chrono-blue" />
+                  className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm outline-none focus:border-chrono-blue" />
               </div>
               <div>
                 <label className="text-sm font-semibold text-slate-600 block mb-1.5">Hora fin</label>
                 <input type="time" value={form.hora_fin_sugerida} onChange={e => setForm(f => ({ ...f, hora_fin_sugerida: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm outline-none focus:border-chrono-blue" />
+                  className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm outline-none focus:border-chrono-blue" />
               </div>
             </div>
 
@@ -252,7 +267,7 @@ export default function AdminPausasPage() {
                 <div key={key} className="flex justify-between items-center px-3 py-2.5 rounded-xl bg-gray-50">
                   <div>
                     <div className="text-sm font-semibold text-navy">{label}</div>
-                    <div className="text-[0.7rem] text-slate-400">{desc}</div>
+                    <div className="text-[0.7rem] text-slate-400 dark:text-zinc-500">{desc}</div>
                   </div>
                   <Toggle checked={form[key]} onChange={() => setForm(f => ({ ...f, [key]: !f[key] }))} />
                 </div>
@@ -262,12 +277,12 @@ export default function AdminPausasPage() {
             <div className="mb-5">
               <label className="text-sm font-semibold text-slate-600 block mb-1.5">Avisar X minutos antes de terminar</label>
               <input type="number" value={form.notificar_antes_min} onChange={e => setForm(f => ({ ...f, notificar_antes_min: parseInt(e.target.value) || 0 }))}
-                className="w-24 px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm font-bold outline-none focus:border-chrono-blue" min={0} max={30} />
+                className="w-24 px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm font-bold outline-none focus:border-chrono-blue" min={0} max={30} />
             </div>
 
             <div className="flex gap-2">
               <button onClick={() => setShowModal(false)}
-                className="flex-1 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-transparent text-slate-500 cursor-pointer font-semibold text-sm hover:bg-gray-50 transition-colors">
+                className="flex-1 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-transparent text-slate-500 dark:text-zinc-400 cursor-pointer font-semibold text-sm hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving || !form.nombre.trim()}

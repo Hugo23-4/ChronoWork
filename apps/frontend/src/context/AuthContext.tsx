@@ -11,6 +11,7 @@ interface EmpleadoProfile {
   email: string;
   rol: 'admin' | 'empleado' | 'inspector';
   rol_id: number;
+  empresa_id?: string;
   dni?: string;
   telefono?: string;
   puesto?: string;

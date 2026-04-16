@@ -10,16 +10,17 @@ import AdminMobileHeader from '@/components/dashboard/AdminMobileHeader';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         checkAdminAccess();
-    }, [user]);
+    }, [user, authLoading]);
 
     const checkAdminAccess = async () => {
+        if (authLoading) return;
         if (!user) {
             router.push('/login');
             return;
@@ -62,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Main content */}
             <main className="flex-grow overflow-auto bg-white dark:bg-black relative">
-                <div className="p-5 md:p-8 pt-20 lg:pt-8 pb-28 md:pb-8 lg:pb-8">
+                <div className="p-5 md:p-8 pt-14 lg:pt-8 pb-20 md:pb-8 lg:pb-8">
                     {children}
                 </div>
             </main>

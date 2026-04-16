@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import EmployeeFormModal from '@/components/admin/EmployeeFormModal';
 import { Search, Plus, Mail, Phone, Pencil, Users, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ interface Empleado {
 }
 
 export default function UsuariosPage() {
+  const { profile } = useAuth();
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -32,33 +34,30 @@ export default function UsuariosPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
-  useEffect(() => { fetchEmpleados(); }, [currentPage, filter]);
+  useEffect(() => { fetchEmpleados(); }, [currentPage, filter, search, profile?.empresa_id]);
 
   const fetchEmpleados = async () => {
+    if (!profile?.empresa_id) return;
     setLoading(true);
-    const { data, error, count } = await supabase
+    const from = (currentPage - 1) * itemsPerPage;
+    const to = currentPage * itemsPerPage - 1;
+    let query = supabase
       .from('empleados_info')
       .select('*, roles(nombre)', { count: 'exact' })
-      .order('nombre_completo', { ascending: true });
+      .eq('empresa_id', profile.empresa_id)
+      .order('nombre_completo', { ascending: true })
+      .range(from, to);
+    if (filter === 'activo') query = query.eq('activo', true);
+    else if (filter === 'baja') query = query.eq('activo', false);
+    if (search) query = query.or(`nombre_completo.ilike.%${search}%,dni.ilike.%${search}%,email.ilike.%${search}%`);
+    const { data, error, count } = await query;
     if (error) console.error('Error fetching empleados:', error);
-    if (data) { setEmpleados(data); setTotalCount(count || data.length); }
+    if (data) { setEmpleados(data); setTotalCount(count || 0); }
     setLoading(false);
   };
 
-  const filteredEmpleados = empleados.filter(emp => {
-    const s = search.toLowerCase();
-    const matchesSearch = !search ||
-      emp.nombre_completo?.toLowerCase().includes(s) ||
-      emp.dni?.toLowerCase().includes(s) ||
-      emp.email?.toLowerCase().includes(s) ||
-      emp.puesto?.toLowerCase().includes(s) ||
-      emp.departamento?.toLowerCase().includes(s);
-    const matchesFilter = filter === 'todos' ? true : filter === 'activo' ? emp.activo !== false : emp.activo === false;
-    return matchesSearch && matchesFilter;
-  });
-
-  const totalPages = Math.ceil(filteredEmpleados.length / itemsPerPage);
-  const paginatedEmpleados = filteredEmpleados.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  const paginatedEmpleados = empleados;
 
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'U';
   const getAvatarColor = (name: string) => {
@@ -72,7 +71,7 @@ export default function UsuariosPage() {
   const handleSaveEmployee = () => { fetchEmpleados(); handleCloseModal(); };
 
   return (
-    <div className="animate-fade-up pb-20 lg:pb-6">
+    <div className="animate-fade-up">
 
       {/* Mobile Header */}
       <div className="lg:hidden bg-navy text-white px-4 py-3 mb-4 rounded-b-2xl shadow-sm -mx-4 -mt-4">
@@ -86,12 +85,12 @@ export default function UsuariosPage() {
       <div className="hidden lg:flex justify-between items-center mb-5">
         <div>
           <p className="text-chrono-blue font-bold uppercase text-xs mb-1 tracking-widest">Gestión</p>
-          <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)]">Directorio de Personal</h2>
+          <h2 className="font-bold text-navy dark:text-zinc-100 text-2xl font-[family-name:var(--font-jakarta)]">Directorio de Personal</h2>
         </div>
         <div className="flex gap-3 items-center">
           <div className="relative w-[280px]">
-            <Search className="w-4 h-4 absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-            <input type="text" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-full text-sm outline-none focus:ring-2 focus:ring-chrono-blue/20"
+            <Search className="w-4 h-4 absolute top-1/2 left-3 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
+            <input type="text" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-zinc-800 border-none rounded-full text-sm outline-none focus:ring-2 focus:ring-chrono-blue/20"
               placeholder="Buscar por nombre, DNI..." value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
           </div>
@@ -105,8 +104,8 @@ export default function UsuariosPage() {
       {/* Mobile Search + Filters */}
       <div className="lg:hidden mb-4">
         <div className="relative mb-3">
-          <Search className="w-4 h-4 absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" />
-          <input type="text" className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-full text-sm outline-none focus:border-chrono-blue"
+          <Search className="w-4 h-4 absolute top-1/2 left-3 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
+          <input type="text" className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-full text-sm outline-none focus:border-chrono-blue"
             placeholder="Buscar empleado..." value={search}
             onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
         </div>
@@ -114,7 +113,7 @@ export default function UsuariosPage() {
           {(['todos', 'activo', 'baja'] as const).map(f => (
             <button key={f} onClick={() => { setFilter(f); setCurrentPage(1); }}
               className={cn('text-xs py-1.5 px-4 rounded-full font-semibold border-none cursor-pointer transition-colors',
-                filter === f ? 'bg-navy text-white' : 'bg-white text-slate-500 border border-gray-200')}>
+                filter === f ? 'bg-navy text-white' : 'bg-white text-slate-500 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700')}>
               {f === 'todos' ? 'Todos' : f === 'activo' ? 'Activos' : 'Bajas'}
             </button>
           ))}
@@ -122,42 +121,42 @@ export default function UsuariosPage() {
       </div>
 
       {/* Desktop Table */}
-      <div className="bg-white shadow-sm rounded-2xl overflow-hidden hidden lg:block">
+      <div className="bg-white dark:bg-zinc-900 shadow-sm rounded-2xl overflow-hidden hidden lg:block">
         <table className="w-full">
-          <thead className="bg-gray-50/80">
+          <thead className="bg-gray-50/80 dark:bg-zinc-800">
             <tr>
               {['Empleado', 'Cargo / Rol', 'Departamento', 'Estado', 'Contacto', 'Acciones'].map((h, i) => (
-                <th key={h} className={cn('py-3.5 px-5 text-slate-500 text-xs uppercase font-bold tracking-wider text-left',
+                <th key={h} className={cn('py-3.5 px-5 text-slate-500 dark:text-zinc-400 text-xs uppercase font-bold tracking-wider text-left',
                   i === 4 && 'text-center', i === 5 && 'text-right')}>{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
             {loading ? (
               <tr><td colSpan={6} className="text-center py-10"><Loader2 className="w-7 h-7 text-chrono-blue animate-spin mx-auto" /></td></tr>
             ) : paginatedEmpleados.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-10 text-slate-400">
+              <tr><td colSpan={6} className="text-center py-10 text-slate-400 dark:text-zinc-500">
                 <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
                 {search ? 'No se encontraron empleados' : 'No hay empleados registrados'}
               </td></tr>
             ) : paginatedEmpleados.map((emp) => (
-              <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
+              <tr key={emp.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-800 transition-colors">
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
                     <div className={cn(getAvatarColor(emp.nombre_completo), 'w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0')}>
                       {getInitials(emp.nombre_completo)}
                     </div>
                     <div>
-                      <div className="font-bold text-navy text-sm">{emp.nombre_completo || 'Sin nombre'}</div>
+                      <div className="font-bold text-navy dark:text-zinc-100 text-sm">{emp.nombre_completo || 'Sin nombre'}</div>
                       <small className="text-chrono-blue text-xs">{emp.email || 'Sin email'}</small>
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-3.5 text-navy text-sm">{emp.puesto || 'Sin definir'}</td>
-                <td className="px-5 py-3.5 text-slate-500 text-sm">{emp.departamento || 'Sin asignar'}</td>
+                <td className="px-5 py-3.5 text-navy dark:text-zinc-100 text-sm">{emp.puesto || 'Sin definir'}</td>
+                <td className="px-5 py-3.5 text-slate-500 dark:text-zinc-400 text-sm">{emp.departamento || 'Sin asignar'}</td>
                 <td className="px-5 py-3.5">
                   <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[0.65rem] font-bold border',
-                    emp.activo !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-gray-100 text-slate-500 border-gray-200')}>
+                    emp.activo !== false ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-gray-100 text-slate-500 dark:text-zinc-400 border-gray-200')}>
                     {emp.activo !== false ? 'ACTIVO' : 'BAJA'}
                   </span>
                 </td>
@@ -187,12 +186,12 @@ export default function UsuariosPage() {
             ))}
           </tbody>
         </table>
-        {!loading && filteredEmpleados.length > 0 && (
-          <div className="flex justify-between items-center p-3.5 border-t border-gray-100 bg-gray-50/50">
-            <small className="text-slate-400 text-xs">Mostrando {paginatedEmpleados.length} de {filteredEmpleados.length} empleados</small>
+        {!loading && totalCount > 0 && (
+          <div className="flex justify-between items-center p-3.5 border-t border-gray-100 dark:border-zinc-800 bg-gray-50/50">
+            <small className="text-slate-400 dark:text-zinc-500 text-xs">Mostrando {paginatedEmpleados.length} de {totalCount} empleados</small>
             <div className="flex gap-2">
               <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}
-                className="text-xs py-1.5 px-3 rounded-full bg-white border border-gray-200 font-semibold text-slate-500 cursor-pointer hover:bg-gray-50 transition-colors disabled:opacity-40">
+                className="text-xs py-1.5 px-3 rounded-full bg-white border border-gray-200 dark:border-zinc-700 font-semibold text-slate-500 dark:text-zinc-400 cursor-pointer hover:bg-gray-50 transition-colors disabled:opacity-40">
                 ← Anterior
               </button>
               <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => p + 1)}
@@ -209,39 +208,43 @@ export default function UsuariosPage() {
         {loading ? (
           <div className="text-center py-10"><Loader2 className="w-7 h-7 text-chrono-blue animate-spin mx-auto" /></div>
         ) : paginatedEmpleados.length === 0 ? (
-          <div className="text-center py-10 text-slate-400">
+          <div className="text-center py-10 text-slate-400 dark:text-zinc-500">
             <Users className="w-10 h-10 mx-auto mb-2 opacity-30" />
             {search ? 'No se encontraron empleados' : 'No hay empleados registrados'}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {paginatedEmpleados.map((emp) => (
-              <div key={emp.id} className="bg-white shadow-sm rounded-2xl p-3.5">
+              <div key={emp.id} className="bg-white dark:bg-zinc-900 shadow-sm rounded-2xl p-3.5">
                 <div className="flex items-center gap-3">
                   <div className={cn(getAvatarColor(emp.nombre_completo), 'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold shrink-0')}>
                     {getInitials(emp.nombre_completo)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h6 className="font-bold text-navy text-sm truncate">{emp.nombre_completo || 'Sin nombre'}</h6>
-                    <small className="text-slate-400 text-xs block">{emp.puesto || 'Sin puesto'}</small>
+                    <h6 className="font-bold text-navy dark:text-zinc-100 text-sm truncate">{emp.nombre_completo || 'Sin nombre'}</h6>
+                    <small className="text-slate-400 dark:text-zinc-500 text-xs block">{emp.puesto || 'Sin puesto'}</small>
                     <span className={cn('inline-block mt-1 rounded-full px-2 py-0.5 text-[0.6rem] font-bold',
-                      emp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-slate-500')}>
+                      emp.activo !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-slate-500 dark:text-zinc-400')}>
                       {emp.activo !== false ? 'ACTIVO' : 'BAJA'}
                     </span>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     {emp.email && (
                       <a href={`mailto:${emp.email}`} title="Email"
-                        className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                        className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 dark:border-zinc-700 flex items-center justify-center">
                         <Mail className="w-4 h-4 text-chrono-blue" />
                       </a>
                     )}
                     {emp.telefono && (
                       <a href={`tel:${emp.telefono}`} title="Llamar"
-                        className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                        className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 dark:border-zinc-700 flex items-center justify-center">
                         <Phone className="w-4 h-4 text-emerald-500" />
                       </a>
                     )}
+                    <button onClick={() => handleOpenEdit(emp.id)} title="Editar"
+                      className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center cursor-pointer">
+                      <Pencil className="w-4 h-4 text-amber-500" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -251,8 +254,8 @@ export default function UsuariosPage() {
         {!loading && totalPages > 1 && (
           <div className="flex justify-center gap-2 mt-4">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}
-              className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center cursor-pointer disabled:opacity-40">←</button>
-            <span className="flex items-center px-3 text-slate-400 text-sm">{currentPage} / {totalPages}</span>
+              className="w-10 h-10 rounded-full bg-white border border-gray-200 dark:border-zinc-700 flex items-center justify-center cursor-pointer disabled:opacity-40">←</button>
+            <span className="flex items-center px-3 text-slate-400 dark:text-zinc-500 text-sm">{currentPage} / {totalPages}</span>
             <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}
               className="w-10 h-10 rounded-full bg-navy text-white border-none flex items-center justify-center cursor-pointer disabled:opacity-40">→</button>
           </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
-import AdminMobileHeader from './AdminMobileHeader';
+import { useAuth } from '@/context/AuthContext';
 import CreateSedeModal from '@/components/admin/CreateSedeModal';
 import SedeListModal from '@/components/admin/SedeListModal';
 import { Users, AlertCircle, Clock, Hourglass, Building2, Plus, List, Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -16,7 +16,7 @@ const AdminLocationMap = dynamic(() => import('@/components/admin/AdminLocationM
     loading: () => (
         <div className="flex flex-col items-center justify-center h-full bg-slate-50 rounded-2xl">
             <Loader2 className="w-6 h-6 text-chrono-blue animate-spin mb-2" />
-            <small className="text-slate-400">Cargando mapa...</small>
+            <small className="text-slate-400 dark:text-zinc-500">Cargando mapa...</small>
         </div>
     )
 });
@@ -81,13 +81,14 @@ const statCards = (stats: { activos: number; total: number; alertas: number; ret
         gradient: 'from-slate-700 via-slate-800 to-navy',
         glow: 'shadow-slate-700/25',
         trend: Minus,
-        trendColor: 'text-slate-400',
+        trendColor: 'text-slate-400 dark:text-zinc-500',
         bg: 'bg-slate-700',
         hideOnMobile: true,
     },
 ];
 
 export default function AdminView({ userName }: AdminViewProps) {
+    const { profile } = useAuth();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ activos: 0, total: 0, alertas: 0, retrasos: 0, pendientes: 0 });
     const [actividad, setActividad] = useState<ActivityItem[]>([]);
@@ -96,16 +97,22 @@ export default function AdminView({ userName }: AdminViewProps) {
     const [currentTime, setCurrentTime] = useState('');
 
     useEffect(() => {
+        if (!profile?.empresa_id) return;
         fetchDashboardData();
         const tick = () => setCurrentTime(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
         tick();
         const interval = setInterval(tick, 60000);
         return () => clearInterval(interval);
-    }, []);
+    }, [profile?.empresa_id]);
 
     const fetchDashboardData = async () => {
+        if (!profile?.empresa_id) return;
         try {
             const today = new Date().toISOString().split('T')[0];
+            const eid = profile.empresa_id;
+            // dia_semana: 0=Lun … 4=Vie (same encoding as turnos table)
+            const jsDay = new Date().getDay(); // 0=Sun,1=Mon…6=Sat
+            const diaSemana = jsDay === 0 ? -1 : jsDay - 1; // -1 = weekend, no turnos
 
             const [
                 { count: activosHoy },
@@ -113,17 +120,30 @@ export default function AdminView({ userName }: AdminViewProps) {
                 { count: solicitudesPendientes },
                 { count: totalEmpleados },
                 { data: ultimasSolicitudes },
+                { data: turnosHoy },
             ] = await Promise.all([
-                supabase.from('fichajes').select('*', { count: 'exact', head: true }).eq('fecha', today).is('hora_salida', null),
-                supabase.from('fichajes').select('hora_entrada').eq('fecha', today),
-                supabase.from('solicitudes').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
-                supabase.from('empleados_info').select('*', { count: 'exact', head: true }),
-                supabase.from('solicitudes').select('*, empleados_info(nombre_completo)').order('created_at', { ascending: false }).limit(5),
+                supabase.from('fichajes').select('*', { count: 'exact', head: true }).eq('empresa_id', eid).eq('fecha', today).is('hora_salida', null),
+                supabase.from('fichajes').select('empleado_id, hora_entrada').eq('empresa_id', eid).eq('fecha', today),
+                supabase.from('solicitudes').select('*', { count: 'exact', head: true }).eq('empresa_id', eid).eq('estado', 'pendiente'),
+                supabase.from('empleados_info').select('*', { count: 'exact', head: true }).eq('empresa_id', eid),
+                supabase.from('solicitudes').select('*, empleados_info(nombre_completo)').eq('empresa_id', eid).order('created_at', { ascending: false }).limit(5),
+                diaSemana >= 0
+                    ? supabase.from('turnos').select('empleado_id, hora_inicio').eq('empresa_id', eid).eq('dia_semana', diaSemana)
+                    : Promise.resolve({ data: [] }),
             ]);
+
+            // Build map: empleado_id → expected start time (minutes from midnight)
+            const turnoMap: Record<string, number> = {};
+            (turnosHoy || []).forEach((t: Record<string, string>) => {
+                const [h, m] = (t.hora_inicio || '').split(':').map(Number);
+                if (!isNaN(h)) turnoMap[t.empleado_id] = h * 60 + (m || 0);
+            });
 
             let retrasosCount = 0;
             (fichajesHoy || []).forEach((f: Record<string, string>) => {
                 try {
+                    // Only count retraso if employee has a turno today
+                    if (!(f.empleado_id in turnoMap)) return;
                     let horaEntrada: Date;
                     if (f.hora_entrada.includes('T') || f.hora_entrada.includes('Z')) {
                         horaEntrada = new Date(f.hora_entrada);
@@ -132,8 +152,9 @@ export default function AdminView({ userName }: AdminViewProps) {
                         horaEntrada = new Date();
                         horaEntrada.setHours(hours, minutes, 0, 0);
                     }
-                    const limite = new Date(); limite.setHours(9, 0, 0, 0);
-                    if (horaEntrada > limite) retrasosCount++;
+                    const entradaMinutos = horaEntrada.getHours() * 60 + horaEntrada.getMinutes();
+                    // Retraso = más de 5 min tarde respecto al turno asignado
+                    if (entradaMinutos > turnoMap[f.empleado_id] + 5) retrasosCount++;
                 } catch { /* skip */ }
             });
 
@@ -266,7 +287,7 @@ export default function AdminView({ userName }: AdminViewProps) {
                 {/* MAP */}
                 <div className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-3">
-                        <h5 className="font-bold text-navy font-[family-name:var(--font-jakarta)]">
+                        <h5 className="font-bold text-navy dark:text-zinc-100 font-[family-name:var(--font-jakarta)]">
                             Ubicación en Tiempo Real
                         </h5>
                         <div className="flex gap-2">
@@ -279,26 +300,26 @@ export default function AdminView({ userName }: AdminViewProps) {
                             </button>
                             <button
                                 onClick={() => setShowSedeListModal(true)}
-                                className="bg-white text-navy text-xs font-semibold rounded-full flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-all hover:shadow-sm active:scale-95"
+                                className="bg-white text-navy dark:text-zinc-100 text-xs font-semibold rounded-full flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-zinc-700 cursor-pointer hover:bg-gray-50 transition-all hover:shadow-sm active:scale-95"
                             >
                                 <List className="w-3.5 h-3.5" />
                                 <span className="hidden md:inline">Ver Todas</span>
                             </button>
                         </div>
                     </div>
-                    <div className="bg-white border border-gray-100 shadow-sm rounded-2xl overflow-hidden relative h-80">
+                    <div className="bg-white border border-gray-100 dark:border-zinc-800 shadow-sm rounded-2xl overflow-hidden relative h-80">
                         <AdminLocationMap />
                     </div>
                 </div>
 
                 {/* ACTIVITY FEED */}
                 <div>
-                    <h5 className="font-bold text-navy mb-3 font-[family-name:var(--font-jakarta)]">Actividad Reciente</h5>
+                    <h5 className="font-bold text-navy dark:text-zinc-100 mb-3 font-[family-name:var(--font-jakarta)]">Actividad Reciente</h5>
                     <div className="flex flex-col gap-2">
                         {loading ? (
                             <div className="flex flex-col gap-2">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="bg-white rounded-2xl p-3.5 border border-gray-100 flex items-center gap-3">
+                                    <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-gray-100 dark:border-zinc-800 flex items-center gap-3">
                                         <div className="skeleton w-9 h-9 rounded-full shrink-0" />
                                         <div className="flex-grow">
                                             <div className="skeleton h-3 w-3/4 rounded mb-2" />
@@ -308,14 +329,14 @@ export default function AdminView({ userName }: AdminViewProps) {
                                 ))}
                             </div>
                         ) : actividad.length === 0 ? (
-                            <div className="bg-white rounded-2xl p-6 text-center border border-gray-100">
+                            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center border border-gray-100 dark:border-zinc-800">
                                 <Clock className="w-7 h-7 text-slate-300 mx-auto mb-2" />
-                                <small className="text-slate-400">Sin actividad reciente</small>
+                                <small className="text-slate-400 dark:text-zinc-500">Sin actividad reciente</small>
                             </div>
                         ) : (
                             actividad.map((item) => (
                                 <div key={item.id}
-                                    className="bg-white border border-gray-100 rounded-2xl p-3.5 hover:shadow-md hover:-translate-y-px transition-all duration-200 cursor-default group">
+                                    className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-3.5 hover:shadow-md hover:-translate-y-px transition-all duration-200 cursor-default group">
                                     <div className="flex gap-3 items-start">
                                         {/* Avatar */}
                                         <div
@@ -326,10 +347,10 @@ export default function AdminView({ userName }: AdminViewProps) {
                                         </div>
                                         <div className="flex-grow min-w-0">
                                             <div className="flex items-center justify-between mb-0.5">
-                                                <h6 className="font-bold text-navy text-xs m-0 truncate">{item.titulo}</h6>
+                                                <h6 className="font-bold text-navy dark:text-zinc-100 text-xs m-0 truncate">{item.titulo}</h6>
                                                 <span className="text-slate-300 text-[10px] shrink-0 ml-2">{item.tiempo}</span>
                                             </div>
-                                            <p className="text-slate-400 text-xs m-0 truncate">{item.descripcion}</p>
+                                            <p className="text-slate-400 dark:text-zinc-500 text-xs m-0 truncate">{item.descripcion}</p>
                                         </div>
                                         {/* Status dot */}
                                         <div className={cn('w-2 h-2 rounded-full shrink-0 mt-1.5', item.color)} />

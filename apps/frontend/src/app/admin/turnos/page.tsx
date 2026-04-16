@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 import { Plus, X, Trash2, Calendar, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,10 +16,11 @@ const TURNO_COLORS: Record<string, { bg: string; text: string; border: string }>
   mañana:   { bg: 'bg-amber-500/10', text: 'text-amber-800', border: 'border-amber-300/40' },
   tarde:    { bg: 'bg-indigo-500/10', text: 'text-indigo-800', border: 'border-indigo-300/40' },
   completo: { bg: 'bg-emerald-500/10', text: 'text-emerald-800', border: 'border-emerald-300/40' },
-  libre:    { bg: 'bg-slate-100', text: 'text-slate-500', border: 'border-slate-200' },
+  libre:    { bg: 'bg-slate-100', text: 'text-slate-500 dark:text-zinc-400', border: 'border-slate-200' },
 };
 
 export default function TurnosPage() {
+  const { profile } = useAuth();
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,13 +35,14 @@ export default function TurnosPage() {
   const [modalFin, setModalFin] = useState('14:00');
   const [editingTurnoId, setEditingTurnoId] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [profile?.empresa_id]);
 
   const fetchData = async () => {
+    if (!profile?.empresa_id) return;
     setLoading(true);
     const [{ data: emps }, { data: tur }] = await Promise.all([
-      supabase.from('empleados_info').select('id, nombre_completo, puesto').order('nombre_completo'),
-      supabase.from('turnos').select('*'),
+      supabase.from('empleados_info').select('id, nombre_completo, puesto').eq('empresa_id', profile.empresa_id).order('nombre_completo'),
+      supabase.from('turnos').select('*').eq('empresa_id', profile.empresa_id),
     ]);
     if (emps) setEmpleados(emps);
     if (tur) setTurnos(tur);
@@ -62,15 +65,22 @@ export default function TurnosPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const payload = { empleado_id: modalEmpleado, dia_semana: modalDia, tipo: modalTipo, hora_inicio: modalInicio, hora_fin: modalFin };
-    if (editingTurnoId) await supabase.from('turnos').update(payload).eq('id', editingTurnoId);
-    else await supabase.from('turnos').insert(payload);
-    setSaving(false); setSuccess('Turno guardado correctamente'); setTimeout(() => setSuccess(''), 3000); setShowModal(false); fetchData();
+    const payload = { empleado_id: modalEmpleado, dia_semana: modalDia, tipo: modalTipo, hora_inicio: modalInicio, hora_fin: modalFin, empresa_id: profile?.empresa_id };
+    const { error } = editingTurnoId
+      ? await supabase.from('turnos').update(payload).eq('id', editingTurnoId)
+      : await supabase.from('turnos').insert(payload);
+    setSaving(false);
+    if (error) { setSuccess(''); alert('Error guardando turno: ' + error.message); return; }
+    setSuccess('Turno guardado correctamente'); setTimeout(() => setSuccess(''), 3000); setShowModal(false); fetchData();
   };
 
   const handleDelete = async () => {
     if (!editingTurnoId) return;
-    setSaving(true); await supabase.from('turnos').delete().eq('id', editingTurnoId); setSaving(false); setShowModal(false); fetchData();
+    setSaving(true);
+    const { error } = await supabase.from('turnos').delete().eq('id', editingTurnoId);
+    setSaving(false);
+    if (error) { alert('Error eliminando turno: ' + error.message); return; }
+    setShowModal(false); fetchData();
   };
 
   const getTipoLabel = (tipo: string) => ({ mañana: '☀️ Mañana', tarde: '🌙 Tarde', completo: '📋 Completo', libre: '✈️ Libre' }[tipo] || tipo);
@@ -86,13 +96,13 @@ export default function TurnosPage() {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="animate-fade-up pb-20 lg:pb-6">
+    <div className="animate-fade-up">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-5 gap-3">
         <div>
           <p className="text-chrono-blue font-bold uppercase text-xs mb-1 tracking-widest">Gestión</p>
-          <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)]">Turnos y Horarios</h2>
-          <p className="text-slate-400 text-sm mt-1 hidden md:block">Configura los horarios semanales de tu equipo.</p>
+          <h2 className="font-bold text-navy dark:text-zinc-100 text-2xl font-[family-name:var(--font-jakarta)]">Turnos y Horarios</h2>
+          <p className="text-slate-400 dark:text-zinc-500 text-sm mt-1 hidden md:block">Configura los horarios semanales de tu equipo.</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           {(['mañana', 'tarde', 'completo', 'libre'] as const).map(tipo => {
@@ -117,27 +127,27 @@ export default function TurnosPage() {
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 text-chrono-blue animate-spin" /></div>
       ) : empleados.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border-[1.5px] border-dashed border-gray-200">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-12 text-center border-[1.5px] border-dashed border-gray-200">
           <Calendar className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-          <h5 className="font-bold text-slate-500 mb-1">No hay empleados</h5>
-          <p className="text-slate-400 text-sm">Añade empleados primero desde la sección Usuarios.</p>
+          <h5 className="font-bold text-slate-500 dark:text-zinc-400 mb-1">No hay empleados</h5>
+          <p className="text-slate-400 dark:text-zinc-500 text-sm">Añade empleados primero desde la sección Usuarios.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px]">
               <thead>
-                <tr className="bg-gray-50/80 border-b border-gray-100">
-                  <th className="py-3.5 px-5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-[200px]">Empleado</th>
+                <tr className="bg-gray-50/80 dark:bg-zinc-800 border-b border-gray-100 dark:border-zinc-800">
+                  <th className="py-3.5 px-5 text-left text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider w-[200px]">Empleado</th>
                   {DIAS.map((dia, i) => (
-                    <th key={dia} className="py-3.5 px-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <th key={dia} className="py-3.5 px-3 text-center text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
                       <div>{dia}</div>
                       <div className="text-[0.65rem] font-normal text-slate-300 normal-case tracking-normal">{DIAS_COMPLETOS[i]}</div>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-zinc-800">
                 {empleados.map(emp => (
                   <tr key={emp.id}>
                     <td className="py-3 px-5">
@@ -148,7 +158,7 @@ export default function TurnosPage() {
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-navy">{emp.nombre_completo}</div>
-                          <div className="text-xs text-slate-400">{emp.puesto || 'Sin puesto'}</div>
+                          <div className="text-xs text-slate-400 dark:text-zinc-500">{emp.puesto || 'Sin puesto'}</div>
                         </div>
                       </div>
                     </td>
@@ -183,14 +193,14 @@ export default function TurnosPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-navy/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="animate-scale-in bg-white rounded-2xl p-7 w-full max-w-[420px] shadow-2xl">
+        <div className="fixed inset-0 bg-navy/60 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="animate-scale-in bg-white dark:bg-zinc-900 rounded-2xl p-7 w-full max-w-[420px] shadow-2xl">
             <div className="flex justify-between items-start mb-5">
               <div>
-                <h5 className="font-bold text-navy text-lg">{editingTurnoId ? 'Editar Turno' : 'Asignar Turno'}</h5>
-                <p className="text-slate-400 text-sm mt-1">{DIAS_COMPLETOS[modalDia]} — {empleados.find(e => e.id === modalEmpleado)?.nombre_completo}</p>
+                <h5 className="font-bold text-navy dark:text-zinc-100 text-lg">{editingTurnoId ? 'Editar Turno' : 'Asignar Turno'}</h5>
+                <p className="text-slate-400 dark:text-zinc-500 text-sm mt-1">{DIAS_COMPLETOS[modalDia]} — {empleados.find(e => e.id === modalEmpleado)?.nombre_completo}</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="bg-transparent border-none cursor-pointer text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => setShowModal(false)} className="bg-transparent border-none cursor-pointer text-slate-400 dark:text-zinc-500 hover:text-slate-600 p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -205,7 +215,7 @@ export default function TurnosPage() {
                   return (
                     <button key={tipo} onClick={() => handleTipoChange(tipo)}
                       className={cn('py-2.5 px-3.5 rounded-xl border-[1.5px] cursor-pointer text-sm font-semibold text-left transition-all',
-                        selected ? cn(c.bg, c.text, c.border) : 'border-gray-200 text-slate-500 bg-transparent hover:border-gray-300')}>
+                        selected ? cn(c.bg, c.text, c.border) : 'border-gray-200 text-slate-500 dark:text-zinc-400 bg-transparent hover:border-gray-300')}>
                       {getTipoLabel(tipo)}
                     </button>
                   );
@@ -219,12 +229,12 @@ export default function TurnosPage() {
                 <div>
                   <label className="text-sm font-semibold text-slate-600 block mb-1.5">Hora entrada</label>
                   <input type="time" value={modalInicio} onChange={e => setModalInicio(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm font-semibold outline-none focus:border-chrono-blue" />
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm font-semibold outline-none focus:border-chrono-blue" />
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-slate-600 block mb-1.5">Hora salida</label>
                   <input type="time" value={modalFin} onChange={e => setModalFin(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm font-semibold outline-none focus:border-chrono-blue" />
+                    className="w-full px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 text-sm font-semibold outline-none focus:border-chrono-blue" />
                 </div>
               </div>
             )}
@@ -238,7 +248,7 @@ export default function TurnosPage() {
                 </button>
               )}
               <button onClick={() => setShowModal(false)}
-                className="flex-1 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-transparent text-slate-500 cursor-pointer font-semibold text-sm hover:bg-gray-50 transition-colors">
+                className="flex-1 py-2.5 rounded-xl border-[1.5px] border-gray-200 bg-transparent text-slate-500 dark:text-zinc-400 cursor-pointer font-semibold text-sm hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving}

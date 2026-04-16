@@ -54,7 +54,7 @@ export default function InspectorExportarPage() {
                 .order('fecha', { ascending: true })
                 .limit(1000);
             if (error) { console.error('Error fetching chunk:', error); setLoading(false); setLoadingProgress(null); return; }
-            allFichajes.push(...(data || []) as FichajeExport[]);
+            allFichajes.push(...(data || []) as unknown as FichajeExport[]);
             setLoadingProgress({ loaded: i + 1, total: chunks.length });
         }
 
@@ -270,7 +270,7 @@ export default function InspectorExportarPage() {
                     {loading ? <><Loader2 className="w-5 h-5 animate-spin" />{loadingProgress ? `${loadingProgress.loaded} / ${loadingProgress.total} meses` : 'Procesando...'}</> : downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : generated ? <><Download className="w-5 h-5" /> Descargar Informe</> : <><BarChart3 className="w-5 h-5" /> Generar Informe Oficial</>}
                 </button>
             </div>
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         </div>
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     );
 }
