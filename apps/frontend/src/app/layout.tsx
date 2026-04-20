@@ -24,6 +24,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -32,6 +36,12 @@ export const metadata: Metadata = {
     template: '%s | ChronoWork',
   },
   description: 'Sistema profesional de fichajes e integridad del dato. Control horario transparente y cumplimiento legal.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'ChronoWork',
+  },
   openGraph: {
     title: 'ChronoWork — Gestión Horaria',
     description: 'Sistema profesional de fichajes e integridad del dato.',

@@ -1,0 +1,18 @@
+{
+  "name": "ChronoWork — Gestión Horaria",
+  "short_name": "ChronoWork",
+  "description": "Sistema profesional de fichajes e integridad del dato.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

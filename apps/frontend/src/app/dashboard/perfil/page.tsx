@@ -119,22 +119,22 @@ export default function PerfilPage() {
   return (
     <div className="animate-fade-up pb-20 lg:pb-6">
       <div className="mb-5 hidden lg:block">
-        <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)] mb-1">Tu Perfil de Empleado</h2>
+        <h2 className="font-bold text-navy dark:text-zinc-100 text-2xl font-[family-name:var(--font-jakarta)] mb-1">Tu Perfil de Empleado</h2>
       </div>
 
       <div className="grid lg:grid-cols-12 gap-5">
         {/* LEFT: ID CARD */}
         <div className="lg:col-span-4">
-          <div className="bg-white shadow-sm rounded-2xl overflow-hidden h-full">
-            <div className="hidden lg:block h-24 bg-gradient-to-br from-navy to-slate-dark" />
+          <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl overflow-hidden h-full">
+            <div className="hidden lg:block h-24 bg-gradient-to-br from-navy to-slate-dark dark:from-zinc-700 dark:to-zinc-900" />
             <div className="p-5 text-center lg:-mt-12">
               {/* Avatar */}
               <div className="relative inline-block mb-3">
                 {profile.avatar_url ? (
                   <img src={profile.avatar_url} alt="Foto de perfil"
-                    className="w-28 h-28 rounded-full border-4 border-white shadow-md object-cover" />
+                    className="w-28 h-28 rounded-full border-4 border-white dark:border-zinc-700 shadow-md object-cover" />
                 ) : (
-                  <div className="w-28 h-28 rounded-full bg-chrono-blue text-white flex items-center justify-center border-4 border-white shadow-md text-4xl font-bold">
+                  <div className="w-28 h-28 rounded-full bg-chrono-blue text-white flex items-center justify-center border-4 border-white dark:border-zinc-700 shadow-md text-4xl font-bold">
                     {getInitials(profile.nombre_completo)}
                   </div>
                 )}
@@ -145,16 +145,16 @@ export default function PerfilPage() {
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
               </div>
 
-              <h3 className="font-bold text-navy text-lg mb-0.5">{profile.nombre_completo}</h3>
-              <p className="text-slate-500 text-sm mb-3">{profile.puesto} • LOOM S.L.</p>
+              <h3 className="font-bold text-navy dark:text-zinc-100 text-lg mb-0.5">{profile.nombre_completo}</h3>
+              <p className="text-slate-500 dark:text-zinc-400 text-sm mb-3">{profile.puesto} • LOOM S.L.</p>
 
               {profile.departamento && (
-                <span className="inline-block bg-gray-100 text-navy text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 mb-3">
+                <span className="inline-block bg-gray-100 dark:bg-zinc-700 text-navy dark:text-zinc-100 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-600 mb-3">
                   {profile.departamento}
                 </span>
               )}
 
-              <div className="hidden lg:inline-block bg-gray-100 text-navy text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 font-mono mb-4">
+              <div className="hidden lg:inline-block bg-gray-100 dark:bg-zinc-700 text-navy dark:text-zinc-100 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-600 font-mono mb-4">
                 ID: {user?.id.substring(0, 8).toUpperCase()}
               </div>
 
@@ -175,8 +175,8 @@ export default function PerfilPage() {
         <div className="lg:col-span-8 space-y-5">
           {/* Contract Data (Desktop) */}
           <div className="hidden lg:block">
-            <h6 className="font-bold text-navy mb-3">Datos del Contrato</h6>
-            <div className="bg-white shadow-sm rounded-2xl p-5">
+            <h6 className="font-bold text-navy dark:text-zinc-100 mb-3">Datos del Contrato</h6>
+            <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-5">
               <div className="grid grid-cols-2 gap-5">
                 {[
                   { label: 'NIF / DNI', value: profile.dni },
@@ -185,8 +185,8 @@ export default function PerfilPage() {
                   { label: 'Convenio Aplicado', value: profile.convenio },
                 ].map(item => (
                   <div key={item.label}>
-                    <small className="text-slate-400 font-bold block mb-1 uppercase text-[0.7rem] tracking-wider">{item.label}</small>
-                    <span className="font-bold text-navy">{item.value}</span>
+                    <small className="text-slate-400 dark:text-zinc-400 font-bold block mb-1 uppercase text-[0.7rem] tracking-wider">{item.label}</small>
+                    <span className="font-bold text-navy dark:text-zinc-100">{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -195,17 +195,17 @@ export default function PerfilPage() {
 
           {/* Personal Info (Mobile) */}
           <div className="lg:hidden">
-            <h6 className="text-slate-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider">Información Personal</h6>
-            <div className="bg-white shadow-sm rounded-2xl p-4 space-y-3">
-              <div className="flex justify-between border-b border-gray-100 pb-3">
-                <span className="font-medium text-navy text-sm">Email</span>
-                <span className="text-slate-500 text-sm text-right break-all pl-3">{profile.email}</span>
+            <h6 className="text-slate-400 dark:text-zinc-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider">Información Personal</h6>
+            <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-4 space-y-3">
+              <div className="flex justify-between border-b border-gray-100 dark:border-zinc-700 pb-3">
+                <span className="font-medium text-navy dark:text-zinc-100 text-sm">Email</span>
+                <span className="text-slate-500 dark:text-zinc-400 text-sm text-right break-all pl-3">{profile.email}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-medium text-navy text-sm">Teléfono</span>
+                <span className="font-medium text-navy dark:text-zinc-100 text-sm">Teléfono</span>
                 {isEditing ? (
                   <div className="flex gap-2 items-center">
-                    <input type="tel" className="w-36 px-3 py-1.5 border border-gray-200 rounded-lg bg-gray-50 text-sm outline-none focus:border-chrono-blue"
+                    <input type="tel" className="w-36 px-3 py-1.5 border border-gray-200 dark:border-zinc-600 rounded-lg bg-gray-50 dark:bg-zinc-700 dark:text-zinc-100 text-sm outline-none focus:border-chrono-blue"
                       value={editedTelefono} onChange={(e) => setEditedTelefono(e.target.value)} />
                     <button onClick={handleSaveTelefono} className="w-7 h-7 bg-emerald-500 text-white rounded-lg flex items-center justify-center border-none cursor-pointer">
                       <Check className="w-3.5 h-3.5" />
@@ -216,7 +216,7 @@ export default function PerfilPage() {
                   </div>
                 ) : (
                   <div className="flex gap-2 items-center">
-                    <span className="text-slate-500 text-sm">{profile.telefono}</span>
+                    <span className="text-slate-500 dark:text-zinc-400 text-sm">{profile.telefono}</span>
                     <button onClick={() => setIsEditing(true)} className="bg-transparent border-none p-0 cursor-pointer text-slate-400 hover:text-chrono-blue transition-colors">
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
@@ -228,39 +228,39 @@ export default function PerfilPage() {
 
           {/* Contract (Mobile) */}
           <div className="lg:hidden">
-            <h6 className="text-slate-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider">Contrato y Puesto</h6>
-            <div className="bg-white shadow-sm rounded-2xl p-4 space-y-3">
-              <div className="flex justify-between border-b border-gray-100 pb-3">
-                <span className="font-medium text-navy text-sm">Puesto</span>
-                <span className="text-slate-500 text-sm">{profile.puesto}</span>
+            <h6 className="text-slate-400 dark:text-zinc-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider">Contrato y Puesto</h6>
+            <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-4 space-y-3">
+              <div className="flex justify-between border-b border-gray-100 dark:border-zinc-700 pb-3">
+                <span className="font-medium text-navy dark:text-zinc-100 text-sm">Puesto</span>
+                <span className="text-slate-500 dark:text-zinc-400 text-sm">{profile.puesto}</span>
               </div>
               <div className="flex justify-between">
-                <span className="font-medium text-navy text-sm">Convenio</span>
-                <span className="text-slate-500 text-sm text-right max-w-[60%]">{profile.convenio}</span>
+                <span className="font-medium text-navy dark:text-zinc-100 text-sm">Convenio</span>
+                <span className="text-slate-500 dark:text-zinc-400 text-sm text-right max-w-[60%]">{profile.convenio}</span>
               </div>
             </div>
           </div>
 
           {/* Security */}
           <div>
-            <h6 className="font-bold text-navy mb-3 hidden lg:block">Seguridad de la Cuenta</h6>
-            <h6 className="text-slate-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider lg:hidden">Seguridad</h6>
-            <div className="bg-white shadow-sm rounded-2xl p-4 space-y-4">
+            <h6 className="font-bold text-navy dark:text-zinc-100 mb-3 hidden lg:block">Seguridad de la Cuenta</h6>
+            <h6 className="text-slate-400 dark:text-zinc-400 font-bold text-xs mb-3 px-1 uppercase tracking-wider lg:hidden">Seguridad</h6>
+            <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-4 space-y-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <span className="font-bold text-navy text-sm flex items-center gap-2">
+                  <span className="font-bold text-navy dark:text-zinc-100 text-sm flex items-center gap-2">
                     <KeyRound className="w-4 h-4 text-slate-400" />
                     Contraseña
                   </span>
-                  <small className="text-slate-400 hidden lg:block text-xs">Se enviará un correo de verificación.</small>
+                  <small className="text-slate-400 dark:text-zinc-400 hidden lg:block text-xs">Se enviará un correo de verificación.</small>
                 </div>
                 <button onClick={handlePasswordReset} disabled={resetLoading}
-                  className="bg-white text-navy border border-gray-200 px-4 py-2 rounded-full text-xs font-bold cursor-pointer hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                  className="bg-white dark:bg-zinc-700 text-navy dark:text-zinc-100 border border-gray-200 dark:border-zinc-600 px-4 py-2 rounded-full text-xs font-bold cursor-pointer hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center gap-1.5">
                   {resetLoading && <Loader2 className="w-3 h-3 animate-spin" />}
                   {resetLoading ? 'Enviando...' : 'Cambiar por Email'}
                 </button>
               </div>
-              <div className="border-t border-gray-100 pt-4">
+              <div className="border-t border-gray-100 dark:border-zinc-700 pt-4">
                 <PasskeyManager />
               </div>
             </div>

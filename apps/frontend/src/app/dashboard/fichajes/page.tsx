@@ -141,8 +141,8 @@ export default function FichajesPage() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between md:items-center mb-5 gap-3">
         <div>
-          <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)] mb-1">Mis Fichajes</h2>
-          <p className="text-slate-400 text-sm hidden md:block">Histórico de entradas y salidas</p>
+          <h2 className="font-bold text-navy dark:text-zinc-100 text-2xl font-[family-name:var(--font-jakarta)] mb-1">Mis Fichajes</h2>
+          <p className="text-slate-400 dark:text-zinc-400 text-sm hidden md:block">Histórico de entradas y salidas</p>
         </div>
       </div>
 
@@ -151,35 +151,35 @@ export default function FichajesPage() {
           <Loader2 className="w-8 h-8 text-chrono-blue animate-spin mx-auto" />
         </div>
       ) : fichajes.length === 0 ? (
-        <div className="bg-white shadow-sm rounded-2xl p-10 text-center">
-          <Clock className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-          <h5 className="font-bold text-slate-400 mb-2">Sin fichajes todavía</h5>
-          <p className="text-slate-400 text-sm">Tus fichajes aparecerán aquí cuando registres entradas</p>
+        <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-10 text-center">
+          <Clock className="w-16 h-16 text-slate-200 dark:text-zinc-600 mx-auto mb-4" />
+          <h5 className="font-bold text-slate-400 dark:text-zinc-400 mb-2">Sin fichajes todavía</h5>
+          <p className="text-slate-400 dark:text-zinc-400 text-sm">Tus fichajes aparecerán aquí cuando registres entradas</p>
         </div>
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="bg-white shadow-sm rounded-2xl overflow-hidden hidden md:block">
+          <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl overflow-hidden hidden md:block">
             <table className="w-full">
-              <thead className="bg-gray-50/80">
+              <thead className="bg-gray-50/80 dark:bg-zinc-700/50">
                 <tr>
-                  <th className="py-3.5 px-5 text-left text-slate-500 text-xs uppercase font-bold tracking-wider">Fecha</th>
-                  <th className="py-3.5 px-5 text-left text-slate-500 text-xs uppercase font-bold tracking-wider">Entrada</th>
-                  <th className="py-3.5 px-5 text-left text-slate-500 text-xs uppercase font-bold tracking-wider">Salida</th>
-                  <th className="py-3.5 px-5 text-left text-slate-500 text-xs uppercase font-bold tracking-wider">Total</th>
-                  <th className="py-3.5 px-5 text-left text-slate-500 text-xs uppercase font-bold tracking-wider">Estado</th>
+                  <th className="py-3.5 px-5 text-left text-slate-500 dark:text-zinc-400 text-xs uppercase font-bold tracking-wider">Fecha</th>
+                  <th className="py-3.5 px-5 text-left text-slate-500 dark:text-zinc-400 text-xs uppercase font-bold tracking-wider">Entrada</th>
+                  <th className="py-3.5 px-5 text-left text-slate-500 dark:text-zinc-400 text-xs uppercase font-bold tracking-wider">Salida</th>
+                  <th className="py-3.5 px-5 text-left text-slate-500 dark:text-zinc-400 text-xs uppercase font-bold tracking-wider">Total</th>
+                  <th className="py-3.5 px-5 text-left text-slate-500 dark:text-zinc-400 text-xs uppercase font-bold tracking-wider">Estado</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-zinc-700">
                 {fichajes.map((f) => {
                   const cfg = getStatusConfig(f.status);
                   const StatusIcon = cfg.icon;
                   return (
-                    <tr key={f.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-3.5 px-5 font-semibold text-navy">{f.date}</td>
+                    <tr key={f.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-700/50 transition-colors">
+                      <td className="py-3.5 px-5 font-semibold text-navy dark:text-zinc-100">{f.date}</td>
                       <td className="py-3.5 px-5 font-mono font-bold text-emerald-500">{f.entry}</td>
                       <td className="py-3.5 px-5 font-mono font-bold text-red-400">{f.exit}</td>
-                      <td className="py-3.5 px-5 font-semibold text-navy">{f.total}</td>
+                      <td className="py-3.5 px-5 font-semibold text-navy dark:text-zinc-100">{f.total}</td>
                       <td className="py-3.5 px-5">
                         <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border', cfg.bg)}>
                           <StatusIcon className="w-3 h-3" />
@@ -199,9 +199,9 @@ export default function FichajesPage() {
               const cfg = getStatusConfig(f.status);
               const StatusIcon = cfg.icon;
               return (
-                <div key={f.id} className="bg-white shadow-sm rounded-2xl p-4">
+                <div key={f.id} className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <div className="font-bold text-navy">{f.date}</div>
+                    <div className="font-bold text-navy dark:text-zinc-100">{f.date}</div>
                     <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border', cfg.bg)}>
                       <StatusIcon className="w-3 h-3" />
                       {cfg.label}
@@ -209,16 +209,16 @@ export default function FichajesPage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     <div>
-                      <div className="text-slate-400 mb-1 text-xs">Entrada</div>
+                      <div className="text-slate-400 dark:text-zinc-400 mb-1 text-xs">Entrada</div>
                       <div className="font-bold text-emerald-500 font-mono">{f.entry}</div>
                     </div>
                     <div>
-                      <div className="text-slate-400 mb-1 text-xs">Salida</div>
+                      <div className="text-slate-400 dark:text-zinc-400 mb-1 text-xs">Salida</div>
                       <div className="font-bold text-red-400 font-mono">{f.exit}</div>
                     </div>
                     <div>
-                      <div className="text-slate-400 mb-1 text-xs">Total</div>
-                      <div className="font-bold text-navy">{f.total}</div>
+                      <div className="text-slate-400 dark:text-zinc-400 mb-1 text-xs">Total</div>
+                      <div className="font-bold text-navy dark:text-zinc-100">{f.total}</div>
                     </div>
                   </div>
                 </div>

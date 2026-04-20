@@ -29,18 +29,18 @@ export default function AuditoriaPage() {
       </div>
 
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-bold mb-0 text-navy font-[family-name:var(--font-jakarta)]">Registro de Integridad</h2>
-        <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border-2 border-navy text-navy font-semibold text-sm cursor-pointer bg-transparent hover:bg-navy hover:text-white transition-colors">
+        <h2 className="font-bold mb-0 text-navy dark:text-zinc-100 font-[family-name:var(--font-jakarta)]">Registro de Integridad</h2>
+        <button className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full border-2 border-navy dark:border-zinc-600 text-navy dark:text-zinc-100 font-semibold text-sm cursor-pointer bg-transparent hover:bg-navy dark:hover:bg-zinc-700 hover:text-white transition-colors">
           <ShieldCheck className="w-4 h-4" /> Verificar Firmas
         </button>
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="hidden md:block bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr className="text-slate-400 text-[0.7rem] uppercase font-bold tracking-widest">
+            <thead className="bg-gray-50 dark:bg-zinc-700/50">
+              <tr className="text-slate-400 dark:text-zinc-400 text-[0.7rem] uppercase font-bold tracking-widest">
                 <th className="py-3 pl-5 text-left">Timestamp (UTC)</th>
                 <th className="py-3 text-left">Acción / Evento</th>
                 <th className="py-3 text-left">Actor</th>
@@ -48,13 +48,13 @@ export default function AuditoriaPage() {
                 <th className="py-3 pr-5 text-left">Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-700">
               {auditLogs.map(log => (
                 <tr key={log.id} className={log.tipo === 'modificacion' ? 'bg-amber-500/5' : ''}>
-                  <td className="pl-5 py-3 font-mono text-slate-400 text-sm">{log.timestamp}</td>
+                  <td className="pl-5 py-3 font-mono text-slate-400 dark:text-zinc-400 text-sm">{log.timestamp}</td>
                   <td className="py-3">
-                    <div className="font-bold text-navy text-sm">{log.titulo}</div>
-                    <small className="text-slate-400">
+                    <div className="font-bold text-navy dark:text-zinc-100 text-sm">{log.titulo}</div>
+                    <small className="text-slate-400 dark:text-zinc-400">
                       {log.detalle.valorAntiguo && <span className="line-through text-red-400 mr-1">{log.detalle.label} {log.detalle.valorAntiguo}</span>}
                       {log.detalle.valorAntiguo && <ArrowRight className="inline w-3 h-3 mx-1 text-slate-400" />}
                       {!log.detalle.valorAntiguo && log.detalle.label + ' '}
@@ -64,11 +64,11 @@ export default function AuditoriaPage() {
                   <td className="py-3">
                     <div className="flex items-center gap-2">
                       <div className={cn('w-2 h-2 rounded-full', log.actor.includes('Admin') ? 'bg-red-500' : 'bg-chrono-blue')} />
-                      <span className="text-sm text-navy">{log.actor}</span>
+                      <span className="text-sm text-navy dark:text-zinc-100">{log.actor}</span>
                     </div>
                   </td>
                   <td className="py-3">
-                    <span className="font-mono text-sm text-slate-400">{log.hash}</span>
+                    <span className="font-mono text-sm text-slate-400 dark:text-zinc-400">{log.hash}</span>
                     <div className="h-0.5 mt-1 rounded-full w-[40%]" style={{ background: log.tipo === 'entrada' ? '#10B981' : '#F59E0B' }} />
                   </td>
                   <td className="pr-5 py-3">
@@ -85,7 +85,7 @@ export default function AuditoriaPage() {
 
       {/* Mobile Cards */}
       <div className="md:hidden mt-3">
-        <h6 className="text-slate-400 uppercase mb-3 px-1 text-xs font-bold tracking-widest">Últimos Movimientos</h6>
+        <h6 className="text-slate-400 dark:text-zinc-400 uppercase mb-3 px-1 text-xs font-bold tracking-widest">Últimos Movimientos</h6>
         {auditLogs.map(log => <AuditCard key={log.id} data={log} />)}
       </div>
     </div>

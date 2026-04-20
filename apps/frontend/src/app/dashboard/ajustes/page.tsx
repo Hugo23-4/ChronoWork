@@ -42,18 +42,18 @@ export default function AjustesPage() {
   return (
     <div className="animate-fade-up pb-20 lg:pb-6">
       <div className="mb-5">
-        <h2 className="font-bold text-navy text-2xl font-[family-name:var(--font-jakarta)] mb-1 hidden lg:block">
+        <h2 className="font-bold text-navy dark:text-zinc-100 text-2xl font-[family-name:var(--font-jakarta)] mb-1 hidden lg:block">
           Configuración de la Aplicación
         </h2>
-        <h2 className="font-bold text-navy text-xl font-[family-name:var(--font-jakarta)] mb-1 lg:hidden">Ajustes</h2>
-        <p className="text-slate-400 text-sm hidden lg:block">Gestiona tus preferencias, alertas y privacidad.</p>
+        <h2 className="font-bold text-navy dark:text-zinc-100 text-xl font-[family-name:var(--font-jakarta)] mb-1 lg:hidden">Ajustes</h2>
+        <p className="text-slate-400 dark:text-zinc-400 text-sm hidden lg:block">Gestiona tus preferencias, alertas y privacidad.</p>
       </div>
 
       {/* ═══ DESKTOP ═══ */}
       <div className="hidden lg:grid grid-cols-2 gap-5">
         {/* Notifications */}
-        <div className="bg-white shadow-sm rounded-2xl p-5">
-          <h5 className="font-bold text-navy mb-5 flex items-center gap-2.5">
+        <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-5">
+          <h5 className="font-bold text-navy dark:text-zinc-100 mb-5 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
               <Bell className="w-4 h-4 text-amber-500" />
             </div>
@@ -67,8 +67,8 @@ export default function AjustesPage() {
             ].map(s => (
               <div key={s.key} className="flex justify-between items-center">
                 <div>
-                  <span className="font-semibold text-navy text-sm block">{s.label}</span>
-                  <small className="text-slate-400 text-xs">{s.desc}</small>
+                  <span className="font-semibold text-navy dark:text-zinc-100 text-sm block">{s.label}</span>
+                  <small className="text-slate-400 dark:text-zinc-400 text-xs">{s.desc}</small>
                 </div>
                 <Toggle checked={settings[s.key]} onChange={() => toggleSetting(s.key)} />
               </div>
@@ -77,8 +77,8 @@ export default function AjustesPage() {
         </div>
 
         {/* Privacy */}
-        <div className="bg-white shadow-sm rounded-2xl p-5">
-          <h5 className="font-bold text-navy mb-5 flex items-center gap-2.5">
+        <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-5">
+          <h5 className="font-bold text-navy dark:text-zinc-100 mb-5 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
               <MapPin className="w-4 h-4 text-red-500" />
             </div>
@@ -113,29 +113,29 @@ export default function AjustesPage() {
         </div>
 
         {/* Help */}
-        <div className="col-span-2 bg-white shadow-sm rounded-2xl p-5">
-          <h5 className="font-bold text-navy mb-4 flex items-center gap-2.5">
+        <div className="col-span-2 bg-white dark:bg-zinc-800 shadow-sm rounded-2xl p-5">
+          <h5 className="font-bold text-navy dark:text-zinc-100 mb-4 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
               <HelpCircle className="w-4 h-4 text-sky-500" />
             </div>
             Centro de Ayuda
           </h5>
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-gray-100 transition-colors">
+            <div className="bg-gray-50 dark:bg-zinc-700/50 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
               <div className="w-10 h-10 bg-chrono-blue/10 rounded-xl flex items-center justify-center">
                 <Play className="w-4 h-4 text-chrono-blue" />
               </div>
               <div>
-                <h6 className="font-bold text-navy text-sm mb-0.5">Ver Tutorial de Uso</h6>
+                <h6 className="font-bold text-navy dark:text-zinc-100 text-sm mb-0.5">Ver Tutorial de Uso</h6>
                 <small className="text-slate-400 text-xs">Aprende a fichar correctamente.</small>
               </div>
             </div>
-            <div className="bg-gray-50 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-gray-100 transition-colors">
+            <div className="bg-gray-50 dark:bg-zinc-700/50 p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
               <div className="w-10 h-10 bg-slate-500/10 rounded-xl flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-slate-500" />
               </div>
               <div>
-                <h6 className="font-bold text-navy text-sm mb-0.5">Contactar Soporte</h6>
+                <h6 className="font-bold text-navy dark:text-zinc-100 text-sm mb-0.5">Contactar Soporte</h6>
                 <small className="text-slate-400 text-xs">Chat con RRHH o Técnico.</small>
               </div>
             </div>
@@ -147,15 +147,15 @@ export default function AjustesPage() {
       <div className="lg:hidden space-y-5">
         {/* Notifications */}
         <div>
-          <p className="text-slate-400 font-bold text-xs mb-2 px-1 uppercase tracking-wider">Notificaciones y Sonido</p>
-          <div className="bg-white shadow-sm rounded-2xl overflow-hidden divide-y divide-gray-100">
+          <p className="text-slate-400 dark:text-zinc-400 font-bold text-xs mb-2 px-1 uppercase tracking-wider">Notificaciones y Sonido</p>
+          <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-zinc-700">
             {[
               { key: 'sonido' as const, label: 'Sonido al Fichar' },
               { key: 'vibracion' as const, label: 'Vibración Háptica' },
               { key: 'alertaOlvido' as const, label: 'Alerta "Olvidé Salir"' },
             ].map(s => (
               <div key={s.key} className="p-3.5 flex justify-between items-center">
-                <span className="font-medium text-navy text-sm">{s.label}</span>
+                <span className="font-medium text-navy dark:text-zinc-100 text-sm">{s.label}</span>
                 <Toggle checked={settings[s.key]} onChange={() => toggleSetting(s.key)} />
               </div>
             ))}
@@ -164,16 +164,16 @@ export default function AjustesPage() {
 
         {/* Privacy */}
         <div>
-          <p className="text-slate-400 font-bold text-xs mb-2 px-1 uppercase tracking-wider">Ubicación y Privacidad</p>
-          <div className="bg-white shadow-sm rounded-2xl overflow-hidden divide-y divide-gray-100">
-            <div className="p-3.5 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors">
-              <span className="font-medium text-navy text-sm">Permisos de Ubicación</span>
+          <p className="text-slate-400 dark:text-zinc-400 font-bold text-xs mb-2 px-1 uppercase tracking-wider">Ubicación y Privacidad</p>
+          <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-zinc-700">
+            <div className="p-3.5 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
+              <span className="font-medium text-navy dark:text-zinc-100 text-sm">Permisos de Ubicación</span>
               <span className="text-slate-400 text-xs flex items-center gap-1">
                 Al usar <ChevronRight className="w-4 h-4" />
               </span>
             </div>
-            <div className="p-3.5 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors">
-              <span className="font-medium text-navy text-sm">Política de Privacidad</span>
+            <div className="p-3.5 flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
+              <span className="font-medium text-navy dark:text-zinc-100 text-sm">Política de Privacidad</span>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
           </div>
@@ -181,21 +181,21 @@ export default function AjustesPage() {
 
         {/* Help */}
         <div>
-          <p className="text-slate-400 font-bold text-xs mb-2 px-1 uppercase tracking-wider">Ayuda</p>
-          <div className="bg-white shadow-sm rounded-2xl overflow-hidden divide-y divide-gray-100">
-            <div className="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors">
+          <p className="text-slate-400 dark:text-zinc-400 font-bold text-xs mb-2 px-1 uppercase tracking-wider">Ayuda</p>
+          <div className="bg-white dark:bg-zinc-800 shadow-sm rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-zinc-700">
+            <div className="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
               <HelpCircle className="w-4 h-4 text-slate-400" />
-              <span className="font-medium text-navy text-sm flex-1">Cómo usar la App</span>
+              <span className="font-medium text-navy dark:text-zinc-100 text-sm flex-1">Cómo usar la App</span>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
-            <div className="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors">
+            <div className="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors">
               <MessageSquare className="w-4 h-4 text-slate-400" />
-              <span className="font-medium text-navy text-sm flex-1">Contactar Soporte</span>
+              <span className="font-medium text-navy dark:text-zinc-100 text-sm flex-1">Contactar Soporte</span>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </div>
-            <div className="p-3.5 flex justify-between items-center bg-gray-50/50">
-              <span className="font-medium text-navy text-sm">Versión de la App</span>
-              <span className="text-slate-500 font-mono text-xs">v1.0.2 (Beta)</span>
+            <div className="p-3.5 flex justify-between items-center bg-gray-50/50 dark:bg-zinc-700/50">
+              <span className="font-medium text-navy dark:text-zinc-100 text-sm">Versión de la App</span>
+              <span className="text-slate-500 dark:text-zinc-400 font-mono text-xs">v1.0.2 (Beta)</span>
             </div>
           </div>
         </div>
