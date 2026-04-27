@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileMenu from '@/components/admin/AdminMobileMenu';
@@ -10,36 +9,25 @@ import AdminMobileHeader from '@/components/dashboard/AdminMobileHeader';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-    const { user, loading: authLoading } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        checkAdminAccess();
-    }, [user, authLoading]);
-
-    const checkAdminAccess = async () => {
         if (authLoading) return;
         if (!user) {
             router.push('/login');
             return;
         }
-
-        const { data } = await supabase
-            .from('empleados_info')
-            .select('rol, rol_id')
-            .eq('id', user.id)
-            .single();
-
-        if (data?.rol === 'admin' || data?.rol_id === 2) {
+        if (profile?.rol === 'admin' || profile?.rol_id === 2) {
             setIsAdmin(true);
             setLoading(false);
         } else {
             setLoading(false);
             router.push('/dashboard');
         }
-    };
+    }, [user, profile, authLoading]);
 
     if (loading) {
         return (

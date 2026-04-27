@@ -15,7 +15,7 @@ const LS_KEY = 'cw_inspector_session';
 interface StoredSession { sessionId: string; startTimestamp: number; }
 
 export default function InspectorLayout({ children }: { children: React.ReactNode }) {
-    const { user, loading: authLoading } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isInspector, setIsInspector] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -78,8 +78,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
             if (!user) { router.push('/login'); return; }
             // Close any session that was left open from a previous tab closure
             await reconcileOrphanSession();
-            const { data } = await supabase.from('empleados_info').select('rol, rol_id').eq('id', user.id).single();
-            if (data?.rol === 'inspector' || data?.rol_id === 3) {
+            if (profile?.rol === 'inspector' || profile?.rol_id === 3) {
                 const sessionsUsed = await checkWeeklySessions(); setSessionsUsedThisWeek(sessionsUsed);
                 if (sessionsUsed >= MAX_SESSIONS_PER_WEEK) { setSessionError(`Has agotado tus ${MAX_SESSIONS_PER_WEEK} sesiones semanales. Vuelve el próximo lunes.`); setLoading(false); return; }
                 await startSession(); setIsInspector(true); setLoading(false);
@@ -87,7 +86,7 @@ export default function InspectorLayout({ children }: { children: React.ReactNod
         };
         checkAccess();
         return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [user, authLoading]);
+    }, [user, profile, authLoading]);
 
     useEffect(() => {
         if (!isInspector) return;
