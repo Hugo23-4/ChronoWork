@@ -105,18 +105,20 @@ export default function LoginPage() {
       if (!verifyRes.ok || !result.verified) return;
 
       if (result.access_token && result.refresh_token) {
-        await supabase.auth.setSession({
+        const { error: setErr } = await supabase.auth.setSession({
           access_token: result.access_token,
           refresh_token: result.refresh_token,
         });
-        router.push('/dashboard');
+        if (setErr) return;
+        await new Promise(r => setTimeout(r, 80));
+        window.location.assign('/dashboard');
       } else if (result.action_link) {
         window.location.href = result.action_link;
       }
     } catch {
       // El usuario tecleó / cerró autofill / abort: ignorar silenciosamente
     }
-  }, [router]);
+  }, []);
 
   const triggerBiometric = useCallback(async () => {
     if (aborted.current) return;
@@ -145,14 +147,23 @@ export default function LoginPage() {
       if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'failed');
 
       if (result.access_token && result.refresh_token) {
-        await supabase.auth.setSession({ access_token: result.access_token, refresh_token: result.refresh_token });
-        router.push('/dashboard');
+        const { error: setErr } = await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token,
+        });
+        if (setErr) throw setErr;
+        // Esperar un tick para que las cookies de Supabase queden persistidas
+        // antes de navegar (algunos browsers iOS bloquean si la cookie aún
+        // no se ha escrito y el middleware SSR no encuentra sesión).
+        await new Promise(r => setTimeout(r, 80));
+        window.location.assign('/dashboard');
         return;
       }
       if (result.action_link) { window.location.href = result.action_link; return; }
-      router.push('/dashboard');
+      window.location.assign('/dashboard');
 
     } catch (err: unknown) {
+      console.error('[login.triggerBiometric]', err);
       const name = (err instanceof Error) ? err.name : '';
       if (name === 'NotAllowedError' || name === 'AbortError' || name === 'TypeError') {
         setShowBio(false);
@@ -163,6 +174,8 @@ export default function LoginPage() {
       if (next >= MAX_BIOMETRIC_ATTEMPTS) {
         setShowBio(false);
         localStorage.removeItem('chrono_has_passkey');
+        const msg = err instanceof Error ? err.message : 'No se pudo verificar la biometría.';
+        setError(`${msg} Usa email y contraseña.`);
       } else {
         setBioStatus('failed');
       }

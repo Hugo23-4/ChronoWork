@@ -133,9 +133,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
 
-        // 7. Crear sesión directamente vía signInWithOtp (más fiable en iOS que action_link)
-        //    Generamos un OTP de un solo uso y lo verificamos de inmediato para obtener
-        //    access_token + refresh_token que el cliente puede usar con setSession()
+        // 7. Generar magiclink y canjearlo server-side por tokens.
+        //    Esto evita la necesidad de que el browser visite el action_link
+        //    (que en iOS Chrome rompe el flujo y deja al usuario "pillado").
         const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
             type: 'magiclink',
             email: userData.user.email!,
@@ -147,31 +147,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Error generando sesión' }, { status: 500 });
         }
 
-        // Extraer el token del action_link para hacer la verificación server-side
-        const actionUrl = new URL(linkData.properties.action_link);
-        const token = actionUrl.searchParams.get('token');
         const tokenHash = linkData.properties.hashed_token;
-
-        if (!token && !tokenHash) {
-            // Fallback: devolver el action_link para que el cliente lo visite
-            return NextResponse.json({
-                verified: true,
-                action_link: linkData.properties.action_link,
-            });
+        if (!tokenHash) {
+            console.error('[login-verify] hashed_token missing from generateLink response');
+            return NextResponse.json({ error: 'Token de sesión inválido' }, { status: 500 });
         }
 
-        // Verificar el OTP server-side para obtener la sesión
+        // verifyOtp server-side con type=email (Supabase >=2.x usa "email" para magiclinks).
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
         const verifyRes = await fetch(`${supabaseUrl}/auth/v1/verify`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            },
-            body: JSON.stringify({
-                token_hash: tokenHash ?? token,
-                type: 'magiclink',
-            }),
+            headers: { 'Content-Type': 'application/json', 'apikey': anonKey },
+            body: JSON.stringify({ token_hash: tokenHash, type: 'email' }),
         });
 
         if (verifyRes.ok) {
@@ -183,13 +171,17 @@ export async function POST(req: NextRequest) {
                     refresh_token: session.refresh_token,
                 });
             }
+            console.error('[login-verify] verifyOtp ok but no tokens:', session);
+        } else {
+            const errBody = await verifyRes.text();
+            console.error('[login-verify] verifyOtp HTTP', verifyRes.status, errBody);
         }
 
-        // Si la verificación server-side falla, dar el action_link como fallback
+        // Si llegamos aquí la verificación falló. NO mandar action_link como fallback
+        // porque la URL Supabase redirige a /auth/callback y el flujo iOS rompe.
         return NextResponse.json({
-            verified: true,
-            action_link: linkData.properties.action_link,
-        });
+            error: 'No se pudo crear la sesión. Inténtalo con email y contraseña.',
+        }, { status: 500 });
 
     } catch (err) {
         console.error('[login-verify] unexpected error:', err);
