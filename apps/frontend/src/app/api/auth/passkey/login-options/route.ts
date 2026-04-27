@@ -2,22 +2,17 @@ import { generateAuthenticationOptions } from '@simplewebauthn/server';
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { getRpId } from '@/lib/webauthn-rp';
 
 export const dynamic = 'force-dynamic';
 
 function getAdmin() {
-    return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-}
-
-function getRpId(req: NextRequest): string {
-    const origin = req.headers.get('origin') ?? '';
-    try { return new URL(origin).hostname; } catch {
-        return (process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost')
-            .replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        throw new Error('Faltan variables de entorno NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
     }
+    return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function POST(req: NextRequest) {

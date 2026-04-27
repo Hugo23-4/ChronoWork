@@ -9,38 +9,75 @@
    ============================================================ */
 
 @theme {
-  /* ── Colors ─────────────────────────────────────────── */
+  /* ── iOS systemic palette ───────────────────────────── */
+  --color-ios-blue: #007AFF;
+  --color-ios-blue-pressed: #0051D0;
+  --color-ios-blue-dark: #0A84FF;
+  --color-ios-green: #34C759;
+  --color-ios-red: #FF3B30;
+  --color-ios-orange: #FF9500;
+  --color-ios-yellow: #FFCC00;
+  --color-ios-purple: #AF52DE;
+  --color-ios-teal: #5AC8FA;
+  --color-ios-indigo: #5856D6;
+
+  /* iOS systemGray scale */
+  --color-systemGray-1: #8E8E93;
+  --color-systemGray-2: #AEAEB2;
+  --color-systemGray-3: #C7C7CC;
+  --color-systemGray-4: #D1D1D6;
+  --color-systemGray-5: #E5E5EA;
+  --color-systemGray-6: #F2F2F7;
+
+  /* iOS label hierarchy */
+  --color-label-primary: #000000;
+  --color-label-secondary: rgba(60, 60, 67, 0.6);
+  --color-label-tertiary: rgba(60, 60, 67, 0.3);
+  --color-separator: rgba(60, 60, 67, 0.12);
+
+  /* Legacy alias map → iOS blue (compat con código existente) */
   --color-navy: #0F172A;
   --color-slate-dark: #1E293B;
-  --color-chrono-blue: #2563EB;
-  --color-chrono-blue-light: #3B82F6;
-  --color-surface: #FFFFFF;          /* Pure white — cards on white base */
-  --color-bg-body: #FFFFFF;          /* TRUE white iOS base layer */
-  --color-bg-subtle: #F2F2F7;        /* iOS systemGray6 — 1st elevation */
+  --color-chrono-blue: #007AFF;
+  --color-chrono-blue-light: #0A84FF;
+  --color-surface: #FFFFFF;
+  --color-bg-body: #FFFFFF;
+  --color-bg-subtle: #F2F2F7;
 
-  --color-success: #10B981;
-  --color-error: #EF4444;
-  --color-warning: #F59E0B;
-  --color-info: #0EA5E9;
+  --color-success: #34C759;
+  --color-error: #FF3B30;
+  --color-warning: #FF9500;
+  --color-info: #5AC8FA;
 
   /* ── Radii ──────────────────────────────────────────── */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-xl: 24px;
+  --radius-control: 14px;
+  --radius-card: 24px;
+  --radius-sheet: 20px;
 
-  /* ── Shadows (light mode — visible on white bg) ──────── */
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.12), 0 4px 8px rgba(15, 23, 42, 0.06);
-  --shadow-xl: 0 28px 60px rgba(15, 23, 42, 0.18), 0 8px 16px rgba(15, 23, 42, 0.08);
+  /* ── Shadows (Apple layered, low-key) ────────────────── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 24px 56px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.05);
+  --shadow-ios-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-ios-md: 0 4px 16px rgba(0, 0, 0, 0.05);
+  --shadow-ios-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+
+  /* ── Easings ────────────────────────────────────────── */
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* ── Animations ─────────────────────────────────────── */
-  --animate-fade-up: cw-fade-up 0.4s ease-out both;
+  --animate-fade-up: cw-fade-up 0.5s var(--ease-out-soft) both;
   --animate-fade-in: cw-fade-in 0.3s ease-out both;
   --animate-scale-in: cw-scale-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-pulse-glow: cw-pulse-glow 2s ease-in-out infinite;
   --animate-shimmer: cw-shimmer 1.6s ease-in-out infinite;
+  --animate-slide-up: cw-slide-up 0.4s var(--ease-out-soft) both;
 }
 
 /* ── Keyframes ───────────────────────────────────────── */
@@ -65,8 +102,13 @@
 }
 
 @keyframes cw-pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.3); }
-  50% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.3); }
+  50% { box-shadow: 0 0 0 10px rgba(0, 122, 255, 0); }
+}
+
+@keyframes cw-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Base ────────────────────────────────────────────── */
@@ -149,7 +191,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 20% 10%, rgba(37, 99, 235, 0.05) 0%, transparent 60%);
+  background: radial-gradient(ellipse at 20% 10%, rgba(0, 122, 255, 0.04) 0%, transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -168,10 +210,167 @@ body {
 
 /* ── Skeleton / Shimmer ───────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, #F2F2F7 25%, #E5E5EA 50%, #F2F2F7 75%);
+  background: linear-gradient(90deg, var(--color-systemGray-6) 25%, var(--color-systemGray-5) 50%, var(--color-systemGray-6) 75%);
   background-size: 200% 100%;
   animation: cw-shimmer 1.6s ease-in-out infinite;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+}
+
+/* ── Apple-like Display Typography ─────────────────────── */
+.cw-display {
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-feature-settings: 'tnum' 1, 'cv11' 1, 'ss01' 1;
+}
+
+.cw-title-1 {
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(1.875rem, 3vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.cw-title-2 {
+  font-family: var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.cw-numeric {
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ── iOS Surfaces ──────────────────────────────────────── */
+.cw-surface {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-ios-sm);
+}
+
+.dark .cw-surface {
+  background-color: #1c1c1e;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+.cw-sheet-panel {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-sheet);
+}
+
+.dark .cw-sheet-panel {
+  background-color: rgba(28, 28, 30, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.cw-sticky-blur {
+  position: sticky;
+  top: 0;
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--color-separator);
+  z-index: 30;
+}
+
+.dark .cw-sticky-blur {
+  background-color: rgba(0, 0, 0, 0.72);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ── iOS Segmented Control ─────────────────────────────── */
+.cw-segmented {
+  display: inline-flex;
+  padding: 2px;
+  background-color: var(--color-systemGray-6);
+  border-radius: 10px;
+  gap: 2px;
+}
+
+.dark .cw-segmented {
+  background-color: rgba(118, 118, 128, 0.24);
+}
+
+.cw-segmented-item {
+  position: relative;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-label-primary);
+  border-radius: 8px;
+  transition: all 0.2s var(--ease-out-soft);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+}
+
+.dark .cw-segmented-item {
+  color: #E5E5EA;
+}
+
+.cw-segmented-item[data-active="true"] {
+  background-color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dark .cw-segmented-item[data-active="true"] {
+  background-color: #636366;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+/* ── iOS Pill Button (CTA) ─────────────────────────────── */
+.cw-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  height: 56px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: var(--color-ios-blue);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring), background-color 0.2s;
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.25);
+}
+
+.cw-cta-primary:hover {
+  background-color: #0066D9;
+}
+
+.cw-cta-primary:active {
+  transform: scale(0.97);
+}
+
+.dark .cw-cta-primary {
+  background-color: var(--color-ios-blue-dark);
+  box-shadow: 0 4px 14px rgba(10, 132, 255, 0.3);
+}
+
+/* Reduced motion — disable all animations/transitions */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Custom Scrollbar ─────────────────────────────────── */

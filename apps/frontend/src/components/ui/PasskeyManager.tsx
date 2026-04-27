@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import { supabase } from '@/lib/supabase';
-import { CheckCircle2, AlertTriangle, Trash2, ShieldOff, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Trash2, ShieldOff, Loader2, Plus, Smartphone, Laptop, Monitor, ScanFace } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBiometricStepUp } from '@/lib/useBiometricStepUp';
+import BiometricStepUpDialog from '@/components/ui/BiometricStepUpDialog';
 
 interface RegisteredDevice {
     id: string;
@@ -13,10 +15,12 @@ interface RegisteredDevice {
     last_used_at: string | null;
 }
 
-/**
- * Sección de gestión de Passkeys / Dispositivos de confianza.
- * Se integra en la página de perfil del empleado.
- */
+function deviceIcon(name: string) {
+    if (/iPhone|iPad|Android/i.test(name)) return Smartphone;
+    if (/Mac/i.test(name)) return Laptop;
+    return Monitor;
+}
+
 export default function PasskeyManager() {
     const [devices, setDevices] = useState<RegisteredDevice[]>([]);
     const [loading, setLoading] = useState(true);
@@ -24,8 +28,9 @@ export default function PasskeyManager() {
     const [supported, setSupported] = useState(false);
     const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
+    const stepUp = useBiometricStepUp();
+
     useEffect(() => {
-        // Comprobar soporte biométrico
         if (
             typeof window !== 'undefined' &&
             window.PublicKeyCredential &&
@@ -42,7 +47,7 @@ export default function PasskeyManager() {
     const fetchDevices = async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) { setLoading(false); return; }
 
         const { data } = await supabase
             .from('passkeys')
@@ -62,7 +67,6 @@ export default function PasskeyManager() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('No hay sesión activa');
 
-            // Detectar nombre del dispositivo automáticamente
             const ua = navigator.userAgent;
             let deviceName = 'Dispositivo';
             if (/iPhone/i.test(ua)) deviceName = 'iPhone';
@@ -72,24 +76,20 @@ export default function PasskeyManager() {
             else if (/Windows/i.test(ua)) deviceName = 'Windows PC';
             deviceName += ` — ${new Date().toLocaleDateString('es-ES')}`;
 
-            // 1. Obtener opciones de registro
             const optRes = await fetch('/api/auth/passkey/register-options', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: user.id,
-                    userEmail: user.email,
-                    userName: user.email,
-                }),
+                body: JSON.stringify({ userId: user.id, userEmail: user.email, userName: user.email }),
             });
 
-            if (!optRes.ok) throw new Error('Error obteniendo opciones de registro');
+            if (!optRes.ok) {
+                const errBody = await optRes.json().catch(() => ({}));
+                throw new Error(errBody.error ?? `Error opciones (HTTP ${optRes.status})`);
+            }
             const options = await optRes.json();
 
-            // 2. Lanzar diálogo de Face ID / Huella
             const credential = await startRegistration({ optionsJSON: options });
 
-            // 3. Verificar y guardar
             const verifyRes = await fetch('/api/auth/passkey/register-verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -97,31 +97,45 @@ export default function PasskeyManager() {
             });
 
             const result = await verifyRes.json();
-            if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'Error verificando');
+            if (!verifyRes.ok || !result.verified) {
+                throw new Error(result.error ?? `Error verificando (HTTP ${verifyRes.status})`);
+            }
 
-            setMessage({ text: '✓ Dispositivo registrado correctamente', type: 'success' });
-            localStorage.setItem('chrono_has_passkey', 'true'); // Flag para auto-trigger en login
+            setMessage({ text: 'Dispositivo registrado correctamente.', type: 'success' });
+            localStorage.setItem('chrono_has_passkey', 'true');
             fetchDevices();
         } catch (err: unknown) {
+            console.error('[PasskeyManager.handleRegister]', err);
             if (err instanceof Error && err.name === 'InvalidStateError') {
-                setMessage({ text: 'Este dispositivo ya está registrado', type: 'warning' });
+                setMessage({ text: 'Este dispositivo ya está registrado.', type: 'warning' });
             } else if (err instanceof Error && err.name === 'NotAllowedError') {
-                // Usuario canceló
+                setMessage({ text: 'Cancelado por el usuario o no permitido por el dispositivo.', type: 'warning' });
+            } else if (err instanceof Error && err.name === 'SecurityError') {
+                setMessage({ text: 'El dominio no permite passkeys. Comprueba HTTPS y rpID.', type: 'error' });
             } else {
-                setMessage({ text: 'No se pudo registrar el dispositivo. Inténtalo de nuevo.', type: 'error' });
+                const msg = err instanceof Error ? err.message : 'Error desconocido';
+                setMessage({ text: msg, type: 'error' });
             }
         } finally {
             setRegistering(false);
         }
     };
 
-    const handleDelete = async (passkeyId: string) => {
+    const handleDelete = async (passkeyId: string, deviceName: string) => {
+        // Step-up sólo si hay otra passkey además de la que se elimina
+        // (si es la única, eliminarla no requiere re-auth porque pierde el flag igualmente)
+        if (devices.length > 1) {
+            const ok = await stepUp.request({ action: 'passkey.delete' });
+            if (!ok) return;
+        }
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
         await supabase.from('passkeys').delete().eq('id', passkeyId).eq('user_id', user.id);
-        setDevices(prev => prev.filter(d => d.id !== passkeyId));
-        setMessage({ text: 'Dispositivo eliminado', type: 'success' });
+        const remaining = devices.filter(d => d.id !== passkeyId);
+        setDevices(remaining);
+        if (remaining.length === 0) localStorage.removeItem('chrono_has_passkey');
+        setMessage({ text: `${deviceName} eliminado.`, type: 'success' });
     };
 
     const formatDate = (dateStr: string) =>
@@ -129,13 +143,25 @@ export default function PasskeyManager() {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-3">
-                <div>
-                    <span className="font-bold block text-navy">Face ID / Huella dactilar</span>
-                    <small className="text-slate-400">
+            <BiometricStepUpDialog
+                state={stepUp.state}
+                onClose={stepUp.close}
+                title="Confirma para eliminar"
+                description="Esta acción retira un dispositivo de confianza vinculado a tu cuenta."
+            />
+
+            <div className="flex justify-between items-start mb-4 gap-3">
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        <ScanFace className="w-[18px] h-[18px] text-ios-blue shrink-0" />
+                        <span className="font-semibold text-[15px] text-[--color-label-primary] dark:text-white">
+                            Face ID / huella dactilar
+                        </span>
+                    </div>
+                    <small className="text-[13px] text-[--color-label-secondary] dark:text-[#aeaeb2]">
                         {devices.length === 0
-                            ? 'Ningún dispositivo registrado'
-                            : `${devices.length} dispositivo${devices.length > 1 ? 's' : ''} de confianza`}
+                            ? 'Ningún dispositivo de confianza registrado.'
+                            : `${devices.length} dispositivo${devices.length > 1 ? 's' : ''} de confianza.`}
                     </small>
                 </div>
 
@@ -143,76 +169,89 @@ export default function PasskeyManager() {
                     <button
                         onClick={handleRegister}
                         disabled={registering}
-                        className="bg-navy text-white px-3 py-2 rounded-full text-sm font-semibold hover:bg-slate-800 transition-colors cursor-pointer border-none flex items-center gap-2 disabled:opacity-60"
+                        className="bg-ios-blue text-white px-3 h-9 rounded-full text-[13px] font-semibold hover:bg-[#0066D9] active:scale-[0.97] transition-all cursor-pointer border-none flex items-center gap-1.5 disabled:opacity-60 shrink-0"
+                        style={{ boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }}
                     >
                         {registering ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" /> Registrando...</>
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Registrando…</>
                         ) : (
-                            <>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                    <path d="M9 9H9.01M15 9H15.01M9 15C9.83 15.67 10.83 16 12 16C13.17 16 14.17 15.67 15 15" />
-                                    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
-                                </svg>
-                                Añadir dispositivo
-                            </>
+                            <><Plus className="w-4 h-4" /> Añadir</>
                         )}
                     </button>
                 )}
 
                 {!supported && (
-                    <span className="bg-gray-100 text-slate-600 text-xs px-2 py-0.5 rounded-full font-bold text-slate-500 border text-sm">No compatible</span>
+                    <span className="bg-systemGray-6 dark:bg-white/8 text-[--color-label-secondary] text-[12px] px-2.5 py-1 rounded-full font-medium shrink-0">
+                        No compatible
+                    </span>
                 )}
             </div>
 
             {message && (
-                <div className={cn('py-2 px-3 text-sm flex items-center gap-2 rounded-lg mb-3 border', message.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : message.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-red-50 border-red-200 text-red-700')}>
-                    {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" /> : <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />}
+                <div className={cn(
+                    'flex items-center gap-2 px-3.5 py-2.5 text-[13px] rounded-[14px] mb-3',
+                    message.type === 'success' && 'bg-[#34C759]/12 text-[#1F8C3D] dark:text-[#34C759]',
+                    message.type === 'warning' && 'bg-[#FF9500]/12 text-[#B36800] dark:text-[#FFB454]',
+                    message.type === 'error' && 'bg-[#FF3B30]/12 text-[#C9251D] dark:text-[#FF6961]'
+                )}>
+                    {message.type === 'success'
+                        ? <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        : <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />}
                     {message.text}
                 </div>
             )}
 
             {loading ? (
-                <div className="text-center py-3">
-                    <div className="animate-spin animate-spin w-4 h-4 text-slate-500" role="status">
-                        <span className="sr-only">Cargando...</span>
-                    </div>
+                <div className="text-center py-4">
+                    <Loader2 className="w-5 h-5 text-ios-blue animate-spin mx-auto" aria-hidden="true" />
+                    <span className="sr-only">Cargando…</span>
                 </div>
             ) : devices.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                    {devices.map((device) => (
-                        <div key={device.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-                            <div className="flex items-center gap-2">
-                                <div className="rounded-full bg-navy flex items-center justify-center shrink-0" style={{ width: 32, height: 32 }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                        <path d="M9 9H9.01M15 9H15.01M9 15C9.83 15.67 10.83 16 12 16C13.17 16 14.17 15.67 15 15" />
-                                        <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div className="font-bold text-sm text-navy">{device.device_name}</div>
-                                    <div className="text-slate-400" style={{ fontSize: '0.72rem' }}>
-                                        Añadido {formatDate(device.created_at)}
-                                        {device.last_used_at && ` · Usado ${formatDate(device.last_used_at)}`}
+                    {devices.map((device) => {
+                        const Icon = deviceIcon(device.device_name);
+                        return (
+                            <div
+                                key={device.id}
+                                className="flex items-center justify-between p-3 rounded-[14px] bg-systemGray-6 dark:bg-white/5 border border-[--color-separator] dark:border-white/8"
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="rounded-full bg-ios-blue/12 flex items-center justify-center shrink-0 w-9 h-9">
+                                        <Icon className="w-[18px] h-[18px] text-ios-blue" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="font-semibold text-[14px] text-[--color-label-primary] dark:text-white truncate">
+                                            {device.device_name}
+                                        </div>
+                                        <div className="text-[12px] text-[--color-label-secondary] dark:text-[#aeaeb2] truncate">
+                                            Añadido {formatDate(device.created_at)}
+                                            {device.last_used_at && ` · Usado ${formatDate(device.last_used_at)}`}
+                                        </div>
                                     </div>
                                 </div>
+                                <button
+                                    onClick={() => handleDelete(device.id, device.device_name)}
+                                    className="bg-transparent border-none cursor-pointer text-[#FF3B30] hover:bg-[#FF3B30]/10 transition-colors w-8 h-8 rounded-full flex items-center justify-center shrink-0 ml-2"
+                                    title="Eliminar dispositivo"
+                                    aria-label={`Eliminar ${device.device_name}`}
+                                >
+                                    <Trash2 className="w-4 h-4" aria-hidden="true" />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => handleDelete(device.id)}
-                                className="bg-transparent border-none cursor-pointer text-red-500 p-0 hover:text-red-700 transition-colors"
-                                title="Eliminar dispositivo"
-                                aria-label={`Eliminar ${device.device_name}`}
-                            >
-                                <Trash2 className="w-4 h-4" aria-hidden="true" />
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
-                <div className="text-center py-3 text-slate-400 text-sm">
-                    <ShieldOff className="w-7 h-7 mx-auto mb-1 opacity-25" aria-hidden="true" />
-                    {supported
-                        ? 'Pulsa "Añadir dispositivo" para registrar tu Face ID o huella'
-                        : 'Tu dispositivo no soporta autenticación biométrica'}
+                <div className="text-center py-5 px-3 rounded-[14px] bg-systemGray-6 dark:bg-white/3 border border-[--color-separator] dark:border-white/8">
+                    <ShieldOff className="w-7 h-7 text-[--color-label-tertiary] mx-auto mb-2" aria-hidden="true" />
+                    <p className="text-[14px] font-medium text-[--color-label-primary] dark:text-white mb-1">
+                        {supported ? 'Sin dispositivos registrados' : 'No compatible'}
+                    </p>
+                    <p className="text-[12px] text-[--color-label-secondary] dark:text-[#aeaeb2]">
+                        {supported
+                            ? 'Pulsa "Añadir" para registrar tu Face ID o huella dactilar.'
+                            : 'Tu dispositivo no soporta autenticación biométrica.'}
+                    </p>
                 </div>
             )}
         </div>

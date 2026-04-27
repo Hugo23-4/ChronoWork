@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { startAuthentication } from '@simplewebauthn/browser';
+import type { PasskeyLoginResponse } from '@/lib/passkey-types';
 import { cn } from '@/lib/utils';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ScanFace, Loader2, Clock } from 'lucide-react';
 
-const MAX_BIOMETRIC_ATTEMPTS = 2;
+const MAX_BIOMETRIC_ATTEMPTS = 3;
 
 async function checkBiometricSupport(): Promise<boolean> {
   if (typeof window === 'undefined' || !window.PublicKeyCredential) return false;
@@ -63,11 +64,59 @@ export default function LoginPage() {
     checkBiometricSupport().then((ok) => {
       setBioSupported(ok);
       if (ok && hasPasskey && !aborted.current) triggerBiometric();
+      else if (ok && !aborted.current) startConditionalAuth();
     }).catch(() => { });
 
     return () => { aborted.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Conditional UI — el navegador propone passkeys en el campo email
+   * (autocomplete="username webauthn"). Al elegir una, autentica sin botón.
+   * Corre en paralelo al formulario; si el usuario teclea email/contraseña
+   * o pulsa el botón de Face ID, ese flujo gana.
+   */
+  const startConditionalAuth = useCallback(async () => {
+    if (typeof window === 'undefined' || !window.PublicKeyCredential) return;
+    // Solo si el navegador soporta conditional mediation
+    const isCondAvailable = await (window.PublicKeyCredential as typeof window.PublicKeyCredential & {
+      isConditionalMediationAvailable?: () => Promise<boolean>;
+    }).isConditionalMediationAvailable?.().catch(() => false);
+    if (!isCondAvailable) return;
+
+    try {
+      const optRes = await fetch('/api/auth/passkey/login-options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: null }),
+      });
+      if (!optRes.ok) return;
+      const options = await optRes.json();
+
+      const assertion = await startAuthentication({ optionsJSON: options, useBrowserAutofill: true });
+
+      const verifyRes = await fetch('/api/auth/passkey/login-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: assertion }),
+      });
+      const result: PasskeyLoginResponse = await verifyRes.json();
+      if (!verifyRes.ok || !result.verified) return;
+
+      if (result.access_token && result.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: result.access_token,
+          refresh_token: result.refresh_token,
+        });
+        router.push('/dashboard');
+      } else if (result.action_link) {
+        window.location.href = result.action_link;
+      }
+    } catch {
+      // El usuario tecleó / cerró autofill / abort: ignorar silenciosamente
+    }
+  }, [router]);
 
   const triggerBiometric = useCallback(async () => {
     if (aborted.current) return;
@@ -92,7 +141,7 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: assertion }),
       });
-      const result = await verifyRes.json();
+      const result: PasskeyLoginResponse = await verifyRes.json();
       if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'failed');
 
       if (result.access_token && result.refresh_token) {
@@ -252,48 +301,60 @@ export default function LoginPage() {
           <p className="text-slate-500 text-sm mt-1">Acceso de Empleado</p>
         </div>
 
-        {/* ── BIOMETRIC OVERLAY ────────────────────────────────────────── */}
+        {/* ── BIOMETRIC OVERLAY (iOS frost) ────────────────────────────── */}
         {showBio && (
-          <div className="fixed inset-0 z-50 bg-bg-body/97 backdrop-blur-xl flex flex-col items-center justify-center p-8 animate-fade-in">
-            {/* Icon */}
-            <div className={cn(
-              'w-24 h-24 rounded-full mb-7 flex items-center justify-center transition-all duration-400',
-              bioStatus === 'prompting'
-                ? 'bg-gradient-to-br from-navy to-slate-dark shadow-[0_0_0_12px_rgba(37,99,235,0.08),0_0_0_24px_rgba(37,99,235,0.04)]'
-                : 'bg-gradient-to-br from-red-500 to-red-700 shadow-[0_0_0_12px_rgba(239,68,68,0.08),0_0_0_24px_rgba(239,68,68,0.04)]'
-            )}>
-              <ScanFace className="w-11 h-11 text-white" />
+          <div className="fixed inset-0 z-50 bg-white/85 dark:bg-black/85 backdrop-blur-2xl flex flex-col items-center justify-center p-6 animate-fade-in">
+            <div
+              className={cn(
+                'w-24 h-24 rounded-full mb-6 flex items-center justify-center transition-colors duration-300',
+                bioStatus === 'prompting' ? 'bg-ios-blue/12' : 'bg-[#FF3B30]/12'
+              )}
+              style={
+                bioStatus === 'prompting'
+                  ? { boxShadow: '0 0 0 10px rgba(0,122,255,0.06), 0 0 0 22px rgba(0,122,255,0.03)' }
+                  : { boxShadow: '0 0 0 10px rgba(255,59,48,0.06), 0 0 0 22px rgba(255,59,48,0.03)' }
+              }
+            >
+              <ScanFace className={cn('w-11 h-11', bioStatus === 'prompting' ? 'text-ios-blue' : 'text-[#FF3B30]')} />
             </div>
 
-            <h3 className="font-[family-name:var(--font-jakarta)] font-bold text-xl text-navy mb-2 tracking-tight text-center">
+            <h3 className="cw-title-2 text-[--color-label-primary] dark:text-white text-center mb-1.5">
               {bioStatus === 'failed' ? 'No reconocido' : `Identifícate con ${platformName}`}
             </h3>
-            <p className="text-slate-500 text-[0.9rem] text-center max-w-[260px] leading-relaxed mb-7">
+            <p className="text-[14px] text-[--color-label-secondary] dark:text-[#aeaeb2] text-center max-w-[280px] leading-relaxed mb-6">
               {bioStatus === 'failed'
-                ? `Intento ${bioAttempts} de ${MAX_BIOMETRIC_ATTEMPTS}. Vuelve a intentarlo.`
+                ? `Intento ${bioAttempts} de ${MAX_BIOMETRIC_ATTEMPTS}. Vuelve a intentarlo o usa tu contraseña.`
                 : 'Sigue las instrucciones del dispositivo para acceder de forma segura.'}
             </p>
 
             {bioStatus === 'prompting' && (
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-1.5 mb-5" aria-hidden="true">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="w-2 h-2 rounded-full bg-chrono-blue animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-ios-blue animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
                 ))}
               </div>
             )}
 
-            {bioStatus === 'failed' && (
-              <button type="button" onClick={triggerBiometric}
-                className="bg-navy text-white px-6 py-3 rounded-full font-bold mb-3 border-none cursor-pointer hover:bg-slate-dark transition-colors">
-                Reintentar {platformName}
-              </button>
-            )}
+            <div className="flex flex-col gap-2 w-full max-w-[280px]">
+              {bioStatus === 'failed' && (
+                <button
+                  type="button"
+                  onClick={triggerBiometric}
+                  className="w-full h-12 rounded-[14px] bg-ios-blue text-white text-[15px] font-semibold border-none cursor-pointer hover:bg-[#0066D9] active:scale-[0.97] transition-all"
+                  style={{ boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }}
+                >
+                  Reintentar {platformName}
+                </button>
+              )}
 
-            <button type="button"
-              onClick={() => { setShowBio(false); setBioStatus('prompting'); }}
-              className="bg-transparent border border-gray-200 rounded-xl px-5 py-2.5 text-slate-500 text-sm font-medium cursor-pointer hover:border-gray-300 hover:text-slate-700 transition-colors">
-              Usar contraseña en su lugar
-            </button>
+              <button
+                type="button"
+                onClick={() => { setShowBio(false); setBioStatus('prompting'); }}
+                className="w-full h-12 rounded-[14px] bg-systemGray-6 dark:bg-white/8 hover:bg-systemGray-5 dark:hover:bg-white/12 text-[--color-label-primary] dark:text-white text-[15px] font-medium border-none cursor-pointer transition-colors"
+              >
+                Usar contraseña
+              </button>
+            </div>
           </div>
         )}
 
@@ -340,7 +401,7 @@ export default function LoginPage() {
                   <input
                     id="login-email"
                     type="email"
-                    autoComplete="email"
+                    autoComplete="username webauthn"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -373,7 +434,7 @@ export default function LoginPage() {
                   <input
                     id="login-pwd"
                     type={showPwd ? 'text' : 'password'}
-                    autoComplete="current-password"
+                    autoComplete="current-password webauthn"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required

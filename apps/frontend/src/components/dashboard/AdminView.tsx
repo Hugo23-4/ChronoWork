@@ -9,14 +9,15 @@ import SedeListModal from '@/components/admin/SedeListModal';
 import { Users, AlertCircle, Clock, Hourglass, Building2, Plus, List, Loader2, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { m } from 'framer-motion';
+import { staggerContainer, staggerItem, springSoft } from '@/lib/motion';
 
 
 const AdminLocationMap = dynamic(() => import('@/components/admin/AdminLocationMap'), {
     ssr: false,
     loading: () => (
-        <div className="flex flex-col items-center justify-center h-full bg-slate-50 rounded-2xl">
-            <Loader2 className="w-6 h-6 text-chrono-blue animate-spin mb-2" />
-            <small className="text-slate-400 dark:text-zinc-500">Cargando mapa...</small>
+        <div className="flex flex-col items-center justify-center h-full bg-systemGray-6 dark:bg-white/3 rounded-[24px]">
+            <Loader2 className="w-6 h-6 text-ios-blue animate-spin mb-2" />
+            <small className="text-[--color-label-secondary] dark:text-[#aeaeb2]">Cargando mapa…</small>
         </div>
     )
 });
@@ -38,27 +39,21 @@ interface ActivityItem {
 
 const statCards = (stats: { activos: number; total: number; alertas: number; retrasos: number; pendientes: number }) => [
     {
-        label: 'Activos Ahora',
+        label: 'Activos ahora',
         value: stats.activos,
         subtext: 'en turno activo',
         icon: Users,
-        gradient: 'from-emerald-500 via-emerald-400 to-teal-400',
-        glow: 'shadow-emerald-500/25',
+        accent: '#34C759',
         trend: TrendingUp,
-        trendColor: 'text-emerald-200',
-        bg: 'bg-emerald-500',
         hideOnMobile: false,
     },
     {
-        label: 'Retrasos Hoy',
+        label: 'Retrasos hoy',
         value: stats.alertas,
         subtext: 'llegadas tardías',
         icon: AlertCircle,
-        gradient: 'from-rose-500 via-red-500 to-orange-500',
-        glow: 'shadow-rose-500/25',
+        accent: '#FF3B30',
         trend: stats.alertas > 0 ? TrendingUp : Minus,
-        trendColor: 'text-rose-200',
-        bg: 'bg-rose-500',
         hideOnMobile: false,
     },
     {
@@ -66,11 +61,8 @@ const statCards = (stats: { activos: number; total: number; alertas: number; ret
         value: stats.pendientes,
         subtext: 'pendientes de aprobar',
         icon: Hourglass,
-        gradient: 'from-violet-600 via-purple-500 to-indigo-500',
-        glow: 'shadow-violet-500/25',
+        accent: '#AF52DE',
         trend: TrendingDown,
-        trendColor: 'text-violet-200',
-        bg: 'bg-violet-500',
         hideOnMobile: true,
     },
     {
@@ -78,11 +70,8 @@ const statCards = (stats: { activos: number; total: number; alertas: number; ret
         value: stats.total,
         subtext: 'empleados totales',
         icon: Building2,
-        gradient: 'from-slate-700 via-slate-800 to-navy',
-        glow: 'shadow-slate-700/25',
+        accent: '#007AFF',
         trend: Minus,
-        trendColor: 'text-slate-400 dark:text-zinc-500',
-        bg: 'bg-slate-700',
         hideOnMobile: true,
     },
 ];
@@ -201,85 +190,76 @@ export default function AdminView({ userName }: AdminViewProps) {
             <div className="pt-14 lg:pt-0" />
 
             {/* DESKTOP HEADER — iOS large title style */}
-            <div className="flex justify-between items-end mb-8 hidden lg:flex">
+            <div className="hidden lg:flex justify-between items-end mb-8">
                 <div>
-                    <p className="text-slate-400 dark:text-zinc-500 text-sm font-medium mb-2 uppercase tracking-widest">
+                    <p className="text-[12px] font-medium text-[--color-label-secondary] dark:text-[#aeaeb2] mb-2 capitalize">
                         {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
-                    <h1 className="font-extrabold text-[#0F172A] dark:text-zinc-200 text-[2.2rem] leading-[1.1] font-[family-name:var(--font-jakarta)] tracking-tight">
-                        Hola, <span className="text-chrono-blue">{userName || 'Admin'}</span>
+                    <h1 className="cw-title-1 text-[--color-label-primary] dark:text-white">
+                        Hola, <span className="text-ios-blue">{userName || 'Admin'}</span>
                     </h1>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-sm px-4 py-2 rounded-full text-sm text-slate-500 dark:text-zinc-400 flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        {currentTime && <span className="font-bold text-[#0F172A] dark:text-zinc-200">{currentTime}</span>}
-                    </div>
+                <div className="flex items-center gap-2 cw-surface px-3.5 py-2 !rounded-full">
+                    <div className="w-2 h-2 rounded-full bg-[#34C759] animate-pulse" />
+                    {currentTime && <span className="cw-numeric font-semibold text-[14px] text-[--color-label-primary] dark:text-white">{currentTime}</span>}
                 </div>
             </div>
 
             {/* MOBILE HEADER — iOS large title */}
             <div className="mb-6 lg:hidden">
-                <p className="text-slate-400 dark:text-zinc-500 text-xs font-medium mb-1 uppercase tracking-widest">
+                <p className="text-[12px] font-medium text-[--color-label-secondary] dark:text-[#aeaeb2] mb-1 capitalize">
                     {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
-                <h1 className="font-extrabold text-[#0F172A] dark:text-zinc-200 text-[1.9rem] leading-[1.1] font-[family-name:var(--font-jakarta)] tracking-tight">
-                    Panel Admin
+                <h1 className="cw-title-1 text-[--color-label-primary] dark:text-white">
+                    Panel admin
                 </h1>
             </div>
 
             {/* ── STAT CARDS GRID ─────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <m.div
+                className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+            >
                 {cards.map((card) => {
                     const Icon = card.icon;
                     const Trend = card.trend;
                     return (
-                        <div key={card.label} className={cn(card.hideOnMobile && 'hidden lg:block')}>
-                            <m.div
-                                className={cn(
-                                    'relative overflow-hidden rounded-2xl p-5 cursor-default',
-                                    'bg-gradient-to-br', card.gradient,
-                                    'shadow-xl', card.glow,
-                                    'group'
-                                )}
-                                whileHover={{ y: -8, scale: 1.02, boxShadow: '0 28px 60px rgba(15,23,42,0.18)' }}
-                                transition={{ type: 'spring', stiffness: 350, damping: 22 }}
-                            >
-                                {/* Header row */}
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="bg-white/15 rounded-xl p-2">
-                                        <Icon className="w-4 h-4 text-white" />
-                                    </div>
-                                    <div className="flex items-center gap-1 bg-white/10 rounded-full px-2 py-0.5">
-                                        <Trend className={cn('w-3 h-3', card.trendColor)} />
-                                        <span className="text-white/70 text-[0.6rem] font-bold">HOY</span>
-                                    </div>
+                        <m.div
+                            key={card.label}
+                            variants={staggerItem}
+                            whileHover={{ y: -2 }}
+                            transition={springSoft}
+                            className={cn(
+                                'cw-surface p-5 cursor-default relative overflow-hidden',
+                                card.hideOnMobile && 'hidden lg:block'
+                            )}
+                        >
+                            <div className="flex items-start justify-between mb-4">
+                                <div
+                                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                                    style={{ backgroundColor: `${card.accent}1F` }}
+                                >
+                                    <Icon className="w-[18px] h-[18px]" style={{ color: card.accent }} />
                                 </div>
-
-                                {/* Value */}
-                                <div className="mb-1">
-                                    <span className="text-5xl font-extrabold text-white font-[family-name:var(--font-jakarta)] leading-none tracking-tight">
-                                        {loading ? (
-                                            <span className="inline-block w-8 h-10 bg-white/20 rounded-lg animate-pulse" />
-                                        ) : card.value}
-                                    </span>
+                                <div className="flex items-center gap-1">
+                                    <Trend className="w-3 h-3" style={{ color: card.accent }} />
                                 </div>
+                            </div>
 
-                                {/* Labels */}
-                                <p className="text-white font-bold text-xs uppercase tracking-wide mb-0 mt-2">{card.label}</p>
-                                <p className="text-white/60 text-[0.7rem] mt-0.5">{card.subtext}</p>
+                            <div className="cw-numeric leading-none tracking-tight font-semibold text-[40px] sm:text-[44px] text-[--color-label-primary] dark:text-white">
+                                {loading ? (
+                                    <span className="inline-block w-10 h-10 bg-systemGray-6 dark:bg-white/8 rounded-lg animate-pulse" />
+                                ) : card.value}
+                            </div>
 
-                                {/* Decorative blob */}
-                                <div className="absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-white/5 group-hover:bg-white/10 transition-colors duration-300" />
-                                <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-white/5" />
-
-                                {/* Highlight edge */}
-                                <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%)' }} />
-                            </m.div>
-                        </div>
+                            <p className="text-[14px] font-medium text-[--color-label-primary] dark:text-white mt-2 mb-0">{card.label}</p>
+                            <p className="text-[12px] text-[--color-label-secondary] dark:text-[#aeaeb2] mt-0.5">{card.subtext}</p>
+                        </m.div>
                     );
                 })}
-            </div>
+            </m.div>
 
             {/* ── MAP + ACTIVITY ─────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -287,39 +267,40 @@ export default function AdminView({ userName }: AdminViewProps) {
                 {/* MAP */}
                 <div className="lg:col-span-2">
                     <div className="flex justify-between items-center mb-3">
-                        <h5 className="font-bold text-navy dark:text-zinc-100 font-[family-name:var(--font-jakarta)]">
-                            Ubicación en Tiempo Real
-                        </h5>
+                        <h2 className="cw-title-2 text-[--color-label-primary] dark:text-white">
+                            Ubicación en tiempo real
+                        </h2>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setShowCreateSedeModal(true)}
-                                className="bg-navy text-white text-xs font-semibold rounded-full flex items-center gap-1.5 px-3 py-1.5 border-none cursor-pointer hover:bg-slate-800 transition-all hover:shadow-md active:scale-95"
+                                className="bg-ios-blue text-white text-[13px] font-semibold rounded-full flex items-center gap-1.5 px-3 h-9 border-none cursor-pointer hover:bg-[#0066D9] active:scale-[0.97] transition-all"
+                                style={{ boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }}
                             >
                                 <Plus className="w-3.5 h-3.5" />
-                                <span className="hidden md:inline">Nueva Sede</span>
+                                <span className="hidden md:inline">Nueva sede</span>
                             </button>
                             <button
                                 onClick={() => setShowSedeListModal(true)}
-                                className="bg-white text-navy dark:text-zinc-100 text-xs font-semibold rounded-full flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-zinc-700 cursor-pointer hover:bg-gray-50 transition-all hover:shadow-sm active:scale-95"
+                                className="bg-systemGray-6 dark:bg-white/8 text-[--color-label-primary] dark:text-white text-[13px] font-medium rounded-full flex items-center gap-1.5 px-3 h-9 border-0 cursor-pointer hover:bg-systemGray-5 dark:hover:bg-white/12 active:scale-[0.97] transition-all"
                             >
                                 <List className="w-3.5 h-3.5" />
-                                <span className="hidden md:inline">Ver Todas</span>
+                                <span className="hidden md:inline">Ver todas</span>
                             </button>
                         </div>
                     </div>
-                    <div className="bg-white border border-gray-100 dark:border-zinc-800 shadow-sm rounded-2xl overflow-hidden relative h-80">
+                    <div className="cw-surface overflow-hidden relative h-80 !p-0">
                         <AdminLocationMap />
                     </div>
                 </div>
 
                 {/* ACTIVITY FEED */}
                 <div>
-                    <h5 className="font-bold text-navy dark:text-zinc-100 mb-3 font-[family-name:var(--font-jakarta)]">Actividad Reciente</h5>
+                    <h2 className="cw-title-2 text-[--color-label-primary] dark:text-white mb-3">Actividad reciente</h2>
                     <div className="flex flex-col gap-2">
                         {loading ? (
                             <div className="flex flex-col gap-2">
                                 {[1, 2, 3].map(i => (
-                                    <div key={i} className="bg-white dark:bg-zinc-900 rounded-2xl p-3.5 border border-gray-100 dark:border-zinc-800 flex items-center gap-3">
+                                    <div key={i} className="cw-surface p-3.5 flex items-center gap-3">
                                         <div className="skeleton w-9 h-9 rounded-full shrink-0" />
                                         <div className="flex-grow">
                                             <div className="skeleton h-3 w-3/4 rounded mb-2" />
@@ -329,33 +310,35 @@ export default function AdminView({ userName }: AdminViewProps) {
                                 ))}
                             </div>
                         ) : actividad.length === 0 ? (
-                            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 text-center border border-gray-100 dark:border-zinc-800">
-                                <Clock className="w-7 h-7 text-slate-300 mx-auto mb-2" />
-                                <small className="text-slate-400 dark:text-zinc-500">Sin actividad reciente</small>
+                            <div className="cw-surface p-6 text-center">
+                                <Clock className="w-7 h-7 text-[--color-label-tertiary] mx-auto mb-2" />
+                                <small className="text-[--color-label-secondary] dark:text-[#aeaeb2]">Sin actividad reciente.</small>
                             </div>
                         ) : (
                             actividad.map((item) => (
-                                <div key={item.id}
-                                    className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl p-3.5 hover:shadow-md hover:-translate-y-px transition-all duration-200 cursor-default group">
+                                <m.div
+                                    key={item.id}
+                                    whileHover={{ y: -2 }}
+                                    transition={springSoft}
+                                    className="cw-surface p-3.5 cursor-default"
+                                >
                                     <div className="flex gap-3 items-start">
-                                        {/* Avatar */}
                                         <div
-                                            className="rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 w-9 h-9 shadow-sm"
+                                            className="rounded-full flex items-center justify-center text-white font-semibold text-[11px] shrink-0 w-9 h-9"
                                             style={{ backgroundColor: item.actorColor }}
                                         >
                                             {item.actorInitials}
                                         </div>
                                         <div className="flex-grow min-w-0">
                                             <div className="flex items-center justify-between mb-0.5">
-                                                <h6 className="font-bold text-navy dark:text-zinc-100 text-xs m-0 truncate">{item.titulo}</h6>
-                                                <span className="text-slate-300 text-[10px] shrink-0 ml-2">{item.tiempo}</span>
+                                                <h6 className="font-semibold text-[13px] text-[--color-label-primary] dark:text-white m-0 truncate">{item.titulo}</h6>
+                                                <span className="text-[--color-label-tertiary] text-[11px] shrink-0 ml-2">{item.tiempo}</span>
                                             </div>
-                                            <p className="text-slate-400 dark:text-zinc-500 text-xs m-0 truncate">{item.descripcion}</p>
+                                            <p className="text-[--color-label-secondary] dark:text-[#aeaeb2] text-[12px] m-0 truncate">{item.descripcion}</p>
                                         </div>
-                                        {/* Status dot */}
                                         <div className={cn('w-2 h-2 rounded-full shrink-0 mt-1.5', item.color)} />
                                     </div>
-                                </div>
+                                </m.div>
                             ))
                         )}
                     </div>

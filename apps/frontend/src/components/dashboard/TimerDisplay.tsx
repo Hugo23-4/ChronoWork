@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { m, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { Play, Square, AlertCircle, MapPin, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import ReflectiveCard from '@/components/ui/ReflectiveCard';
 import PausaControl from '@/components/dashboard/PausaControl';
 import { cn } from '@/lib/utils';
+import { springSoft, springSnappy } from '@/lib/motion';
 
 interface TimerDisplayProps {
   userId: string;
@@ -127,10 +130,10 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
         lng = pos.coords.longitude;
       } catch (geoError: unknown) {
         const code = (geoError as GeolocationPositionError)?.code;
-        let mensaje = "❌ Error desconocido de ubicación.";
-        if (code === 1) mensaje = "🔒 Permiso denegado. Permite la ubicación en el navegador.";
-        else if (code === 2) mensaje = "📡 Ubicación no disponible. No hay señal.";
-        else if (code === 3) mensaje = "⏱️ Tiempo agotado. Inténtalo de nuevo.";
+        let mensaje = 'Error desconocido de ubicación.';
+        if (code === 1) mensaje = 'Permiso denegado. Permite la ubicación en el navegador.';
+        else if (code === 2) mensaje = 'Ubicación no disponible. No hay señal.';
+        else if (code === 3) mensaje = 'Tiempo agotado. Inténtalo de nuevo.';
 
         setBlockingError(mensaje);
         setLoading(false);
@@ -157,12 +160,12 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
         }
 
         if (!dentroDeZona) {
-          setBlockingError(`⛔ Fuera de zona. Estás a ${Math.round(distanciaMinima)}m de "${sedeMasCercana}".`);
+          setBlockingError(`Fuera de zona. Estás a ${Math.round(distanciaMinima)}m de "${sedeMasCercana}".`);
           setLoading(false);
           return;
         }
       } else {
-        setLocationError("⚠️ Fichaje permitido (Sin sedes activas)");
+        setLocationError('Fichaje permitido (sin sedes activas).');
       }
 
       const now = new Date();
@@ -236,80 +239,146 @@ export default function TimerDisplay({ userId, onStatusChange }: TimerDisplayPro
     return `${h}:${m}:${s}`;
   };
 
+  const isWorking = status === 'trabajando';
+
   return (
     <ReflectiveCard className="w-full h-full">
-      <div className="rounded-2xl overflow-hidden text-center relative bg-transparent">
-        <div className="p-4 lg:p-8">
+      <LayoutGroup>
+        <div className="overflow-hidden text-center relative bg-transparent rounded-[24px]">
+          <div className="px-5 py-7 sm:px-8 sm:py-10">
 
-          <h2 className="font-bold mb-1 text-navy text-xl font-[family-name:var(--font-jakarta)]">
-            {status === 'fuera' ? 'Hola, Compañero 👋' : '¡A por todas! 🚀'}
-          </h2>
-          <p className="text-slate-400 mb-4">
-            {status === 'fuera' ? 'Registra tu entrada para comenzar.' : 'Tu jornada está en curso.'}
-          </p>
-
-          <div className="text-6xl font-bold font-mono my-4 text-navy tracking-tight">
-            {formatTime(elapsed)}
-          </div>
-
-          {blockingError && (
-            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-700 dark:text-red-400 rounded-xl py-3 px-4 text-sm mb-4 font-bold">
-              {blockingError}
-            </div>
-          )}
-
-          {locationError && (
-            <div className="bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-200 dark:border-yellow-800/60 text-yellow-700 dark:text-yellow-400 rounded-xl py-2 px-4 text-sm mb-3">
-              {locationError}
-            </div>
-          )}
-
-          <div className="max-w-md mx-auto">
-            {status === 'fuera' ? (
-              <button
-                onClick={() => handleFichaje('trabajando')}
-                disabled={loading}
+            {/* Status pill */}
+            <div className="flex justify-center mb-5">
+              <m.div
+                layout
+                transition={springSoft}
                 className={cn(
-                  'w-full py-3.5 rounded-full font-bold text-base shadow-lg transition-all cursor-pointer border-none',
-                  loading
-                    ? 'bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-zinc-400 cursor-not-allowed shadow-none'
-                    : 'bg-[#0F172A] dark:bg-blue-600 dark:hover:bg-blue-500 text-white hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0'
+                  'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[13px] font-medium',
+                  isWorking
+                    ? 'bg-[#34C759]/12 text-[#1F8C3D] dark:text-[#34C759]'
+                    : 'bg-systemGray-6 dark:bg-white/8 text-[--color-label-secondary] dark:text-[#aeaeb2]'
                 )}
               >
-                {loading ? 'Ubicando...' : 'REGISTRAR ENTRADA'}
-              </button>
-            ) : (
-              <button
-                onClick={() => handleFichaje('fuera')}
-                disabled={loading}
-                className={cn(
-                  'w-full py-3.5 rounded-full font-bold text-base transition-all cursor-pointer',
-                  loading
-                    ? 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 border-gray-200 dark:border-zinc-700 cursor-not-allowed'
-                    : 'bg-transparent text-red-500 border-2 border-red-500 hover:bg-red-50 dark:hover:bg-red-950/30'
+                <span className={cn(
+                  'w-1.5 h-1.5 rounded-full',
+                  isWorking ? 'bg-[#34C759] animate-pulse' : 'bg-systemGray-2 dark:bg-systemGray-1'
+                )} />
+                {isWorking ? 'Jornada en curso' : 'Sin actividad'}
+              </m.div>
+            </div>
+
+            <h2 className="cw-title-2 text-[--color-label-primary] dark:text-white mb-1.5">
+              {isWorking ? '¡A por todas!' : 'Hola, compañero'}
+            </h2>
+            <p className="text-[15px] text-[--color-label-secondary] dark:text-[#aeaeb2] mb-7">
+              {isWorking ? 'Tu jornada está en curso.' : 'Registra tu entrada para comenzar.'}
+            </p>
+
+            {/* Time display */}
+            <div className="cw-display cw-numeric text-[--color-label-primary] dark:text-white my-6 select-none">
+              {formatTime(elapsed)}
+            </div>
+
+            {/* Errors */}
+            <AnimatePresence>
+              {blockingError && (
+                <m.div
+                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                  transition={springSoft}
+                  className="flex items-center gap-2 mx-auto max-w-md bg-[#FF3B30]/10 dark:bg-[#FF453A]/15 text-[#C9251D] dark:text-[#FF6961] rounded-[14px] px-4 py-3 text-sm mb-4"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span className="text-left">{blockingError}</span>
+                </m.div>
+              )}
+              {locationError && !blockingError && (
+                <m.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={springSoft}
+                  className="flex items-center gap-2 mx-auto max-w-md bg-[#FF9500]/10 text-[#B36800] dark:text-[#FFB454] rounded-[14px] px-4 py-2.5 text-sm mb-3"
+                >
+                  <MapPin className="w-4 h-4 shrink-0" />
+                  <span className="text-left">{locationError}</span>
+                </m.div>
+              )}
+            </AnimatePresence>
+
+            {/* CTA */}
+            <div className="max-w-md mx-auto mt-2">
+              <AnimatePresence mode="wait" initial={false}>
+                {!isWorking ? (
+                  <m.button
+                    key="start"
+                    onClick={() => handleFichaje('trabajando')}
+                    disabled={loading}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={springSnappy}
+                    className={cn(
+                      'w-full h-14 rounded-[20px] font-semibold text-[17px] flex items-center justify-center gap-2 cursor-pointer border-none transition-colors',
+                      loading
+                        ? 'bg-systemGray-5 dark:bg-white/10 text-[--color-label-tertiary] cursor-not-allowed'
+                        : 'bg-ios-blue text-white hover:bg-[#0066D9]'
+                    )}
+                    style={!loading ? { boxShadow: '0 8px 24px rgba(0, 122, 255, 0.28)' } : undefined}
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Ubicando…</>
+                    ) : (
+                      <><Play className="w-5 h-5 fill-current" /> Registrar entrada</>
+                    )}
+                  </m.button>
+                ) : (
+                  <m.button
+                    key="stop"
+                    onClick={() => handleFichaje('fuera')}
+                    disabled={loading}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={springSnappy}
+                    className={cn(
+                      'w-full h-14 rounded-[20px] font-semibold text-[17px] flex items-center justify-center gap-2 cursor-pointer transition-colors',
+                      loading
+                        ? 'bg-systemGray-5 dark:bg-white/10 text-[--color-label-tertiary] border-0 cursor-not-allowed'
+                        : 'bg-[#FF3B30]/10 text-[#FF3B30] border-0 hover:bg-[#FF3B30]/15'
+                    )}
+                  >
+                    {loading ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Procesando…</>
+                    ) : (
+                      <><Square className="w-5 h-5 fill-current" /> Registrar salida</>
+                    )}
+                  </m.button>
                 )}
-              >
-                {loading ? 'Procesando...' : 'REGISTRAR SALIDA'}
-              </button>
-            )}
+              </AnimatePresence>
+            </div>
+
+            {/* Pausas */}
+            <div className="max-w-md mx-auto mt-3">
+              <PausaControl userId={userId} isWorking={isWorking} fichajeId={currentFichajeId} />
+            </div>
+
           </div>
 
-          {/* Pausas */}
-          <div className="max-w-md mx-auto">
-            <PausaControl userId={userId} isWorking={status === 'trabajando'} fichajeId={currentFichajeId} />
-          </div>
-
-        </div>
-        {/* Progress bar */}
-        <div className="h-1.5">
-          <div
+          {/* Subtle bottom indicator */}
+          <m.div
             className={cn(
-              'h-full w-full transition-colors',
-              status === 'trabajando' ? 'bg-emerald-500 animate-pulse' : 'bg-gray-200 dark:bg-zinc-700'
+              'h-[3px] w-full origin-left',
+              isWorking ? 'bg-gradient-to-r from-[#34C759] via-[#34C759] to-[#34C759]/40' : 'bg-systemGray-5 dark:bg-white/6'
             )}
+            animate={{ scaleX: isWorking ? [0.4, 1, 0.4] : 1 }}
+            transition={isWorking ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
           />
         </div>
-      </div>
+      </LayoutGroup>
     </ReflectiveCard>
   );
 }

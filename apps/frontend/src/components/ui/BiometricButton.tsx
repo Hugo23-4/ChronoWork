@@ -1,17 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { supabase } from '@/lib/supabase';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import type { PasskeyLoginResponse } from '@/lib/passkey-types';
+import { AlertTriangle, Loader2, ScanFace } from 'lucide-react';
 
 interface BiometricButtonProps {
     onSuccess?: () => void;
     userId?: string;
     className?: string;
+    redirectTo?: string;
 }
 
-export default function BiometricButton({ onSuccess, userId, className }: BiometricButtonProps) {
+export default function BiometricButton({ onSuccess, userId, className, redirectTo = '/dashboard' }: BiometricButtonProps) {
+    const router = useRouter();
     const [supported, setSupported] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -44,12 +48,26 @@ export default function BiometricButton({ onSuccess, userId, className }: Biomet
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ credential: assertion }),
             });
-            const result = await verifyRes.json();
+            const result: PasskeyLoginResponse = await verifyRes.json();
             if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'Verificación biométrica fallida');
-            if (result.email) {
-                await supabase.auth.signInWithOtp({ email: result.email, options: { shouldCreateUser: false } });
+
+            if (result.access_token && result.refresh_token) {
+                const { error: setErr } = await supabase.auth.setSession({
+                    access_token: result.access_token,
+                    refresh_token: result.refresh_token,
+                });
+                if (setErr) throw setErr;
+                onSuccess?.();
+                router.push(redirectTo);
+                return;
             }
-            onSuccess?.();
+
+            if (result.action_link) {
+                window.location.href = result.action_link;
+                return;
+            }
+
+            throw new Error('Respuesta de sesión inválida');
         } catch (err: unknown) {
             if (err instanceof Error && err.name === 'NotAllowedError') {
                 setError(null);
@@ -65,23 +83,19 @@ export default function BiometricButton({ onSuccess, userId, className }: Biomet
     return (
         <div className={className}>
             <button type="button" onClick={handleLogin} disabled={loading}
-                className="w-full flex items-center justify-center gap-2 font-bold py-3 rounded-lg bg-gradient-to-br from-navy to-slate-700 text-white border-none cursor-pointer transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60">
+                className="w-full flex items-center justify-center gap-2 font-semibold h-14 px-6 rounded-[20px] bg-ios-blue text-white border-none cursor-pointer transition-transform duration-150 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-[#0066D9] active:scale-[0.97] disabled:opacity-60 disabled:active:scale-100"
+                style={{ boxShadow: '0 4px 14px rgba(0, 122, 255, 0.25)' }}>
                 {loading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Verificando…</>
                 ) : (
                     <>
-                        {/* Face ID SVG */}
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="M9 9H9.01M15 9H15.01M9 15C9.83 15.67 10.83 16 12 16C13.17 16 14.17 15.67 15 15" />
-                            <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                            <path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                        </svg>
+                        <ScanFace className="w-5 h-5" />
                         Entrar con Face ID / Huella
                     </>
                 )}
             </button>
             {error && (
-                <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-3 text-sm flex items-center gap-2 mt-2">
+                <div className="bg-[#FFF7ED] border border-[#FED7AA] text-[#9A3412] dark:bg-[#3A2A1F] dark:border-[#5C4030] dark:text-[#FBA570] rounded-[14px] px-3 py-2.5 text-sm flex items-center gap-2 mt-2">
                     <AlertTriangle className="w-4 h-4 shrink-0" aria-hidden="true" />
                     {error}
                 </div>

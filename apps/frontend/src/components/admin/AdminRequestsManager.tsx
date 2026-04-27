@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Inbox, Check, X, Sun, Bandage, Clock, FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBiometricStepUp } from '@/lib/useBiometricStepUp';
+import BiometricStepUpDialog from '@/components/ui/BiometricStepUpDialog';
 
 export default function AdminRequestsManager() {
   const { profile } = useAuth();
@@ -15,6 +17,8 @@ export default function AdminRequestsManager() {
   const [error, setError] = useState('');
   const [isEmpty, setIsEmpty] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+
+  const stepUp = useBiometricStepUp();
 
   useEffect(() => { fetchRequests(); }, [filter, profile?.empresa_id]);
 
@@ -53,6 +57,8 @@ export default function AdminRequestsManager() {
   };
 
   const updateStatus = async (id: string, newStatus: string) => {
+    const ok = await stepUp.request({ action: `solicitud.${newStatus}` });
+    if (!ok) return;
     const { error } = await supabase.from('solicitudes').update({ estado: newStatus }).eq('id', id);
     if (error) alert('Error actualizando estado: ' + error.message);
     else fetchRequests();
@@ -74,6 +80,12 @@ export default function AdminRequestsManager() {
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-zinc-800">
+      <BiometricStepUpDialog
+        state={stepUp.state}
+        onClose={stepUp.close}
+        title="Confirma para autorizar"
+        description="Esta acción afecta a una solicitud del personal y queda registrada en la auditoría."
+      />
       {/* Header */}
       <div className="p-4 border-b border-gray-100 dark:border-zinc-800">
         <div className="flex flex-col md:flex-row justify-between md:items-center gap-3">

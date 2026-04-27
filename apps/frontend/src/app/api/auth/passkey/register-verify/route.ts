@@ -1,29 +1,17 @@
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { getRpId, getExpectedOrigin } from '@/lib/webauthn-rp';
 
 export const dynamic = 'force-dynamic';
 
 function getAdmin() {
-    return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-}
-
-function getRpId(req: NextRequest): string {
-    const origin = req.headers.get('origin') ?? '';
-    try { return new URL(origin).hostname; } catch {
-        return (process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost')
-            .replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        throw new Error('Faltan variables de entorno NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
     }
-}
-
-function getOrigin(req: NextRequest): string {
-    const o = req.headers.get('origin');
-    if (o) return o.replace(/\/$/, '');
-    const h = getRpId(req);
-    return h === 'localhost' ? 'http://localhost:3000' : `https://${h}`;
+    return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function POST(req: NextRequest) {
@@ -36,7 +24,8 @@ export async function POST(req: NextRequest) {
         }
 
         const rpID = getRpId(req);
-        const expectedOrigin = getOrigin(req);
+        const expectedOrigin = getExpectedOrigin(req);
+        console.log('[register-verify] rpID:', rpID, 'expectedOrigin:', expectedOrigin);
 
         // Recuperar el challenge guardado para este usuario
         const { data: row, error: rowErr } = await supabaseAdmin
@@ -95,6 +84,16 @@ export async function POST(req: NextRequest) {
 
         // Limpiar challenge
         await supabaseAdmin.from('webauthn_challenges').delete().eq('id', row.id);
+
+        await supabaseAdmin.from('auditoria_seguridad').insert({
+            user_id: userId,
+            evento: 'passkey.register',
+            metadata: {
+                device_name: deviceName ?? null,
+                ip: req.headers.get('x-forwarded-for') ?? null,
+                ua: req.headers.get('user-agent') ?? null,
+            },
+        }).then(() => {}, () => {});
 
         return NextResponse.json({ verified: true });
     } catch (err) {

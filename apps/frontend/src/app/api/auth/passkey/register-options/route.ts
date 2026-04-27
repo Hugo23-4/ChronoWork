@@ -1,28 +1,19 @@
 import { generateRegistrationOptions } from '@simplewebauthn/server';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { getRpId } from '@/lib/webauthn-rp';
 
 export const dynamic = 'force-dynamic';
 
 const RP_NAME = 'ChronoWork';
 
 function getAdmin() {
-    return createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-}
-
-/** Hostname limpio extraído del origin real del request */
-function getRpId(req: NextRequest): string {
-    const origin = req.headers.get('origin') ?? '';
-    try {
-        const { hostname } = new URL(origin);
-        return hostname;
-    } catch {
-        const env = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost';
-        return env.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        throw new Error('Faltan variables de entorno NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
     }
+    return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 export async function POST(req: NextRequest) {
@@ -36,6 +27,7 @@ export async function POST(req: NextRequest) {
         }
 
         const rpID = getRpId(req);
+        console.log('[register-options] rpID resolved:', rpID, 'origin:', req.headers.get('origin'), 'host:', req.headers.get('host'));
 
         const options = await generateRegistrationOptions({
             rpName: RP_NAME,
@@ -64,12 +56,13 @@ export async function POST(req: NextRequest) {
 
         if (insertErr) {
             console.error('[register-options] challenge insert error:', insertErr);
-            return NextResponse.json({ error: 'Error interno guardando challenge' }, { status: 500 });
+            return NextResponse.json({ error: `Error guardando challenge: ${insertErr.message}` }, { status: 500 });
         }
 
         return NextResponse.json(options);
     } catch (err) {
         console.error('[register-options]', err);
-        return NextResponse.json({ error: 'Error generando opciones de registro' }, { status: 500 });
+        const msg = err instanceof Error ? err.message : 'Error desconocido';
+        return NextResponse.json({ error: `Error generando opciones: ${msg}` }, { status: 500 });
     }
 }

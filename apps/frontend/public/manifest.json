@@ -3,10 +3,13 @@
   "short_name": "ChronoWork",
   "description": "Sistema profesional de fichajes e integridad del dato.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f172a",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "orientation": "portrait",
+  "categories": ["business", "productivity"],
+  "lang": "es-ES",
   "icons": [
     {
       "src": "/icon.svg",

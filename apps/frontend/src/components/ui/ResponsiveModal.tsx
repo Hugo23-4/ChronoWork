@@ -79,44 +79,46 @@ function DesktopDialog({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        {/* Backdrop */}
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-in" />
-        {/* Panel */}
+        {/* Backdrop — iOS frost */}
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/30 backdrop-blur-md data-[state=open]:animate-fade-in" />
+        {/* Panel — iOS sheet */}
         <DialogPrimitive.Content
           className={cn(
             'fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2',
-            'w-full max-w-lg max-h-[90vh] bg-white dark:bg-zinc-950 rounded-2xl shadow-2xl',
-            'ring-1 ring-black/5 dark:ring-white/10 flex flex-col',
+            'w-full max-w-lg max-h-[90vh] flex flex-col',
+            'bg-white dark:bg-[#1c1c1e] rounded-[20px]',
+            'border border-[--color-separator] dark:border-white/8',
+            'shadow-[0_24px_64px_rgba(0,0,0,0.16)] dark:shadow-none',
             'data-[state=open]:animate-scale-in',
             contentClassName
           )}
         >
           {/* Header */}
           {(title || description) && (
-            <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-gray-100 dark:border-zinc-800 shrink-0">
+            <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-[--color-separator] dark:border-white/8 shrink-0">
               <div>
                 {title && (
-                  <DialogPrimitive.Title className="text-lg font-bold text-navy dark:text-zinc-200 leading-none mb-1">
+                  <DialogPrimitive.Title className="text-[17px] font-semibold tracking-tight text-[--color-label-primary] dark:text-white leading-tight">
                     {title}
                   </DialogPrimitive.Title>
                 )}
                 {description && (
-                  <DialogPrimitive.Description className="text-sm text-slate-500 dark:text-zinc-400">
+                  <DialogPrimitive.Description className="text-[13px] text-[--color-label-secondary] dark:text-[#aeaeb2] mt-0.5">
                     {description}
                   </DialogPrimitive.Description>
                 )}
               </div>
-              <DialogPrimitive.Close className="rounded-lg p-1.5 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer border-none bg-transparent">
+              <DialogPrimitive.Close className="rounded-full w-8 h-8 flex items-center justify-center text-[--color-label-secondary] dark:text-[#aeaeb2] hover:bg-systemGray-6 dark:hover:bg-white/8 transition-colors cursor-pointer border-none bg-transparent">
                 <X className="w-4 h-4" />
                 <span className="sr-only">Cerrar</span>
               </DialogPrimitive.Close>
             </div>
           )}
           {/* Scrollable body */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+          <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
           {/* Footer */}
           {footer && (
-            <div className="shrink-0 flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
+            <div className="shrink-0 flex justify-end gap-2 px-6 py-4 border-t border-[--color-separator] dark:border-white/8">
               {footer}
             </div>
           )}

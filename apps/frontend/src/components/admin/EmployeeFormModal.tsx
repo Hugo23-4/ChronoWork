@@ -32,8 +32,8 @@ interface SedeOption {
     nombre: string;
 }
 
-const FIELD_CLASS = 'w-full px-4 py-3 border border-gray-200 dark:border-zinc-700 rounded-xl bg-gray-50 dark:bg-zinc-800 dark:text-zinc-100 focus:border-chrono-blue focus:ring-2 focus:ring-chrono-blue/10 focus:bg-white outline-none transition-colors text-sm';
-const LABEL_CLASS = 'block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wide mb-1.5';
+const FIELD_CLASS = 'w-full px-3.5 py-2.5 border border-[--color-separator] dark:border-white/10 rounded-[14px] bg-systemGray-6 dark:bg-white/5 text-[--color-label-primary] dark:text-white placeholder:text-[--color-label-tertiary] focus:border-ios-blue focus:ring-[3px] focus:ring-ios-blue/25 focus:bg-white dark:focus:bg-white/8 outline-none transition-all text-[14px]';
+const LABEL_CLASS = 'block text-[13px] font-medium text-[--color-label-primary] dark:text-[#E5E5EA] mb-1.5';
 
 export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave }: EmployeeFormModalProps) {
     const { profile } = useAuth();
@@ -129,14 +129,15 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
     const footer = (
         <>
             <button type="button" onClick={onClose} disabled={saving}
-                className="bg-white text-navy border border-gray-200 dark:border-zinc-700 px-4 py-2.5 rounded-full font-semibold hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 text-sm">
+                className="bg-systemGray-6 dark:bg-white/8 text-[--color-label-primary] dark:text-white border-0 px-4 h-10 rounded-full font-medium hover:bg-systemGray-5 dark:hover:bg-white/12 transition-colors cursor-pointer disabled:opacity-50 text-[14px]">
                 Cancelar
             </button>
             <button type="button" onClick={handleSubmit} disabled={saving || loading}
-                className="bg-navy text-white px-4 py-2.5 rounded-full font-semibold hover:bg-slate-800 transition-colors cursor-pointer border-none flex items-center gap-2 disabled:opacity-50 text-sm">
+                className="bg-ios-blue text-white px-5 h-10 rounded-full font-semibold hover:bg-[#0066D9] active:scale-[0.97] transition-all cursor-pointer border-none flex items-center gap-2 disabled:opacity-50 text-[14px]"
+                style={{ boxShadow: '0 4px 14px rgba(0,122,255,0.25)' }}>
                 {saving
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-                    : <><Check className="w-4 h-4" /> {employeeId ? 'Actualizar' : 'Crear Empleado'}</>
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando…</>
+                    : <><Check className="w-4 h-4" /> {employeeId ? 'Actualizar' : 'Crear empleado'}</>
                 }
             </button>
         </>
@@ -160,42 +161,36 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Nombre */}
                         <div className="sm:col-span-2">
-                            <label className={LABEL_CLASS}>Nombre Completo *</label>
+                            <label className={LABEL_CLASS}>Nombre completo *</label>
                             <input type="text" className={FIELD_CLASS} placeholder="Ej: Juan Pérez García"
                                 value={formData.nombre_completo} onChange={(e) => handleChange('nombre_completo', e.target.value)} required />
                         </div>
 
-                        {/* DNI */}
                         <div>
                             <label className={LABEL_CLASS}>DNI / NIE</label>
                             <input type="text" className={FIELD_CLASS} placeholder="12345678X"
                                 value={formData.dni} onChange={(e) => handleChange('dni', e.target.value)} />
                         </div>
 
-                        {/* Email */}
                         <div>
-                            <label className={LABEL_CLASS}>Email Corporativo *</label>
+                            <label className={LABEL_CLASS}>Email corporativo *</label>
                             <input type="email" className={FIELD_CLASS} placeholder="empleado@empresa.es"
                                 value={formData.email} onChange={(e) => handleChange('email', e.target.value)} required />
                         </div>
 
-                        {/* Teléfono */}
                         <div>
                             <label className={LABEL_CLASS}>Teléfono</label>
                             <input type="tel" className={FIELD_CLASS} placeholder="+34 600 000 000"
                                 value={formData.telefono} onChange={(e) => handleChange('telefono', e.target.value)} />
                         </div>
 
-                        {/* Puesto */}
                         <div>
                             <label className={LABEL_CLASS}>Puesto</label>
                             <input type="text" className={FIELD_CLASS} placeholder="Ej: Desarrollador"
                                 value={formData.puesto} onChange={(e) => handleChange('puesto', e.target.value)} />
                         </div>
 
-                        {/* Departamento */}
                         <div>
                             <label className={LABEL_CLASS}>Departamento</label>
                             <select className={FIELD_CLASS} value={formData.departamento} onChange={(e) => handleChange('departamento', e.target.value)}>
@@ -208,44 +203,42 @@ export default function EmployeeFormModal({ employeeId, isOpen, onClose, onSave 
                             </select>
                         </div>
 
-                        {/* Sede */}
                         <div>
-                            <label className={LABEL_CLASS}>Sede Asignada</label>
+                            <label className={LABEL_CLASS}>Sede asignada</label>
                             <select className={FIELD_CLASS} value={formData.sede_id || ''} onChange={(e) => handleChange('sede_id', e.target.value || undefined)}>
                                 <option value="">Sin asignar</option>
                                 {sedes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                             </select>
                         </div>
 
-                        {/* Rol */}
                         <div className="sm:col-span-2">
-                            <label className={LABEL_CLASS}>Rol de Usuario</label>
+                            <label className={LABEL_CLASS}>Rol de usuario</label>
                             <select className={FIELD_CLASS} value={formData.rol} onChange={(e) => handleChange('rol', e.target.value)}>
                                 <option value="empleado">Empleado</option>
                                 <option value="admin">Administrador</option>
                             </select>
                             {formData.rol === 'admin' && (
-                                <p className="text-xs text-red-500 mt-1 font-medium">⚠️ Tendrá acceso total al panel admin</p>
+                                <p className="text-[12px] text-[#FF3B30] mt-1.5 font-medium">Tendrá acceso total al panel de administración.</p>
                             )}
                         </div>
 
-                        {/* Estado */}
-                        <div className="sm:col-span-2">
-                            <label className="flex items-center gap-3 cursor-pointer select-none">
-                                <div className="relative">
-                                    <input type="checkbox" className="sr-only peer" checked={formData.activo}
-                                        onChange={(e) => handleChange('activo', e.target.checked)} />
-                                    <div className="w-10 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-chrono-blue/30 rounded-full peer peer-checked:bg-chrono-blue transition-colors" />
-                                    <div className="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full shadow transition-transform peer-checked:translate-x-4" />
-                                </div>
-                                <span className="text-sm font-semibold text-navy">
-                                    Empleado {formData.activo ? <span className="text-emerald-600">ACTIVO</span> : <span className="text-red-500">DE BAJA</span>}
+                        <div className="sm:col-span-2 flex items-center justify-between gap-3 px-3.5 py-3 bg-systemGray-6 dark:bg-white/5 rounded-[14px]">
+                            <div className="flex flex-col">
+                                <span className="text-[14px] font-medium text-[--color-label-primary] dark:text-white">
+                                    Empleado activo
                                 </span>
+                                <span className="text-[12px] text-[--color-label-secondary] dark:text-[#aeaeb2]">
+                                    {formData.activo ? 'Aparece en listados activos.' : 'No aparecerá en listados activos.'}
+                                </span>
+                            </div>
+                            <label className="relative inline-flex shrink-0 cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" checked={formData.activo}
+                                    onChange={(e) => handleChange('activo', e.target.checked)} />
+                                <div className="w-[51px] h-[31px] bg-systemGray-4 dark:bg-white/15 rounded-full peer peer-checked:bg-[#34C759] transition-colors" />
+                                <div className="absolute top-0.5 left-0.5 bg-white w-[27px] h-[27px] rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.15)] transition-transform peer-checked:translate-x-5" />
                             </label>
-                            {!formData.activo && <p className="text-xs text-slate-400 dark:text-zinc-500 mt-1 ml-13">No aparecerá en listados activos</p>}
                         </div>
 
-                        {/* Close hint */}
                         <button type="button" onClick={onClose} className="sr-only"><X /></button>
                     </div>
                 )}
