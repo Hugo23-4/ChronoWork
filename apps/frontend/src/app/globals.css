@@ -118,6 +118,22 @@
   box-sizing: border-box;
 }
 
+html, body {
+  /* Bloquear scroll horizontal global — ningún elemento debería sobresalir
+     del viewport. Si algo lo necesita (mapa, tabla wide), debe envolverse
+     en un contenedor con overflow-x: auto local. */
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Evitar auto-zoom de iOS al hacer focus en inputs (font-size < 16px lo
+   provoca). En desktop mantenemos el tamaño compacto via media query. */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
