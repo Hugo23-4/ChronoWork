@@ -60,11 +60,12 @@ export default function LoginPage() {
 
     setPlatformName(getPlatformName());
 
-    const hasPasskey = localStorage.getItem('chrono_has_passkey') === 'true';
+    // No auto-disparamos biometría al cargar para evitar AbortError en iOS
+    // (browser exige user gesture explícito para `navigator.credentials.get`).
+    // Solo activamos conditional UI (mediación pasiva en el campo email).
     checkBiometricSupport().then((ok) => {
       setBioSupported(ok);
-      if (ok && hasPasskey && !aborted.current) triggerBiometric();
-      else if (ok && !aborted.current) startConditionalAuth();
+      if (ok && !aborted.current) startConditionalAuth();
     }).catch(() => { });
 
     return () => { aborted.current = true; };
