@@ -1,20 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { LayoutGrid, Clock, FileText, UserCircle, LogOut } from 'lucide-react';
+import { LayoutGrid, Clock, FileText, UserCircle, LogOut, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
-  { icon: LayoutGrid, label: 'Mi Panel', href: '/dashboard' },
-  { icon: Clock, label: 'Mis Fichajes', href: '/dashboard/fichajes' },
-  { icon: FileText, label: 'Mis Solicitudes', href: '/dashboard/solicitudes' },
-  { icon: UserCircle, label: 'Mi Perfil', href: '/dashboard/perfil' },
+  { icon: LayoutGrid, label: 'Mi panel', href: '/dashboard' },
+  { icon: Clock, label: 'Mis fichajes', href: '/dashboard/fichajes' },
+  { icon: FileText, label: 'Mis solicitudes', href: '/dashboard/solicitudes' },
+  { icon: UserCircle, label: 'Mi perfil', href: '/dashboard/perfil' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile, signOut } = useAuth();
 
   const isActive = (path: string) => {
@@ -22,62 +23,82 @@ export default function Sidebar() {
     return pathname.startsWith(path);
   };
 
+  const isAdmin = profile?.rol === 'admin' || profile?.rol_id === 2;
+
   return (
-    <div className="flex flex-col h-full text-white p-3 w-[280px] min-h-dvh bg-[#0F172A] dark:bg-zinc-950 dark:border-r dark:border-zinc-800/60">
+    <div
+      className="flex flex-col h-full px-3 py-4 w-[260px] min-h-dvh bg-white/72 dark:bg-[#1c1c1e]/72 backdrop-blur-xl border-r border-[--color-separator] dark:border-white/8"
+      style={{ WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}
+    >
 
       {/* LOGO */}
-      <div className="mb-4 px-2 mt-2">
-        <h4 className="font-bold text-lg m-0 font-[family-name:var(--font-jakarta)] text-white dark:text-zinc-200">ChronoWork</h4>
+      <div className="mb-5 px-2 mt-1">
+        <h4 className="font-semibold text-[17px] m-0 tracking-tight text-[--color-label-primary] dark:text-white font-[family-name:var(--font-jakarta)]">
+          ChronoWork
+        </h4>
       </div>
 
-      {/* MENÚ PERSONAL */}
-      <span className="text-slate-500 dark:text-zinc-600 uppercase font-bold px-3 mb-2 text-[0.7rem] tracking-wide">
-        Mi Espacio
+      <span className="text-[11px] font-medium uppercase tracking-[0.06em] px-3 mb-2 text-[--color-label-tertiary] dark:text-[#8e8e93]">
+        Mi espacio
       </span>
-      <ul className="flex flex-col mb-4 gap-1">
+
+      <ul className="flex flex-col mb-3 gap-0.5 list-none p-0">
         {menuItems.map((item) => {
           const Icon = item.icon;
+          const active = isActive(item.href);
           return (
-            <li key={item.href}>
+            <li key={item.href} className="list-none">
               <Link
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg relative no-underline transition-colors',
-                  isActive(item.href)
-                    ? 'bg-blue-600/25 dark:bg-blue-500/20 text-white font-bold'
-                    : 'text-white/50 dark:text-zinc-500 hover:text-white/80 dark:hover:text-zinc-200 hover:bg-white/5 dark:hover:bg-white/[0.04]'
+                  'flex items-center gap-3 px-3 py-2 rounded-[10px] no-underline text-[14px] font-medium transition-colors',
+                  active
+                    ? 'bg-ios-blue/12 text-ios-blue dark:bg-ios-blue-dark/15 dark:text-ios-blue-dark'
+                    : 'text-[--color-label-primary] dark:text-[#E5E5EA] hover:bg-systemGray-6 dark:hover:bg-white/6'
                 )}
               >
-                {isActive(item.href) && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 bg-sky-400 dark:bg-blue-500 rounded-r-sm w-1 h-[60%]" />
-                )}
-                <Icon className="w-5 h-5" />
-                <span>{item.label}</span>
+                <Icon className={cn('w-[18px] h-[18px] shrink-0', active ? '' : 'text-[--color-label-secondary] dark:text-[#aeaeb2]')} />
+                <span className="truncate">{item.label}</span>
               </Link>
             </li>
           );
         })}
       </ul>
 
+      {/* Toggle Panel Admin (si user es admin) */}
+      {isAdmin && (
+        <button
+          onClick={() => router.push('/admin')}
+          className="w-full rounded-[12px] bg-ios-blue/12 hover:bg-ios-blue/18 text-ios-blue dark:bg-ios-blue-dark/15 dark:hover:bg-ios-blue-dark/22 dark:text-ios-blue-dark py-2.5 px-3 flex items-center justify-center gap-2 transition-colors cursor-pointer text-[13px] font-semibold border-none"
+        >
+          <ShieldCheck className="w-4 h-4" />
+          <span>Panel administración</span>
+        </button>
+      )}
+
       {/* SPACER */}
       <div className="flex-grow" />
 
       {/* USUARIO */}
-      <div className="mt-4 pt-3 border-t border-slate-700/25 dark:border-zinc-800/60">
-        <div className="flex items-center gap-3 px-2">
-          <div className="bg-blue-600 dark:bg-blue-500 rounded-full flex items-center justify-center text-white font-bold w-10 h-10 text-sm shrink-0">
-            {profile?.nombre_completo?.substring(0, 2).toUpperCase() || 'EM'}
+      <div className="mt-4 pt-3 border-t border-[--color-separator] dark:border-white/8">
+        <div className="flex items-center gap-3 px-1">
+          <div className="bg-gradient-to-br from-ios-blue to-[#5856D6] rounded-full flex items-center justify-center text-white font-semibold w-9 h-9 text-[13px] shrink-0">
+            {profile?.nombre_completo?.split(' ').map((n: string) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'EM'}
           </div>
-          <div className="overflow-hidden flex-grow">
-            <div className="font-bold text-white dark:text-zinc-200 truncate max-w-[130px]">
+          <div className="overflow-hidden flex-grow min-w-0">
+            <div className="font-semibold text-[13px] text-[--color-label-primary] dark:text-white truncate">
               {profile?.nombre_completo || 'Empleado'}
             </div>
-            <small className="text-white/50 dark:text-zinc-500 block text-xs">
-              Empleado
+            <small className="text-[--color-label-secondary] dark:text-[#aeaeb2] block text-[11px]">
+              {isAdmin ? 'Administrador' : 'Empleado'}
             </small>
           </div>
-          <button onClick={signOut} className="text-white/50 dark:text-zinc-500 hover:text-white dark:hover:text-zinc-200 transition-colors p-0 bg-transparent border-none cursor-pointer" title="Cerrar sesión">
-            <LogOut className="w-5 h-5" />
+          <button
+            onClick={signOut}
+            className="text-[--color-label-secondary] hover:text-[--color-label-primary] dark:text-[#aeaeb2] dark:hover:text-white transition-colors p-1.5 rounded-md hover:bg-systemGray-6 dark:hover:bg-white/6 bg-transparent border-none cursor-pointer"
+            title="Cerrar sesión"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
