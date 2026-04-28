@@ -163,21 +163,11 @@ export default function LoginPage() {
       const result: PasskeyLoginResponse = await verifyRes.json();
       if (!verifyRes.ok || !result.verified) throw new Error(result.error ?? 'failed');
 
-      if (result.access_token && result.refresh_token) {
-        const { error: setErr } = await supabase.auth.setSession({
-          access_token: result.access_token,
-          refresh_token: result.refresh_token,
-        });
-        if (setErr) throw setErr;
-        // Esperar hasta que getUser confirme la sesión (cookies persistidas).
-        // iOS Chrome puede tardar varios cientos de ms en escribir cookies tras
-        // setSession; navegar antes provoca loop de redirect a /login.
-        await waitForSession();
-        window.location.assign('/dashboard');
-        return;
-      }
-      if (result.action_link) { window.location.href = result.action_link; return; }
+      // Las cookies de sesión se escriben SERVER-SIDE en login-verify
+      // (Set-Cookie). Tras response 200 OK con verified:true, basta navegar
+      // — el middleware leerá las cookies recién recibidas.
       window.location.assign('/dashboard');
+      return;
 
     } catch (err: unknown) {
       console.error('[login.triggerBiometric]', err);

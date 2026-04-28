@@ -1,6 +1,7 @@
 import { verifyAuthenticationResponse } from '@simplewebauthn/server';
 import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 import { createClient } from '@supabase/supabase-js';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getRpId, getExpectedOrigin } from '@/lib/webauthn-rp';
 
@@ -165,11 +166,21 @@ export async function POST(req: NextRequest) {
         if (verifyRes.ok) {
             const session = await verifyRes.json();
             if (session?.access_token && session?.refresh_token) {
-                return NextResponse.json({
-                    verified: true,
-                    access_token: session.access_token,
-                    refresh_token: session.refresh_token,
-                });
+                // Escribir cookies de sesión SERVER-SIDE vía @supabase/ssr.
+                // El cliente NO necesita hacer setSession (race condition en iOS
+                // Chrome) — al recibir la response con Set-Cookie, las cookies
+                // quedan listas para la siguiente navegación.
+                try {
+                    const ssr = await createSupabaseServerClient();
+                    await ssr.auth.setSession({
+                        access_token: session.access_token,
+                        refresh_token: session.refresh_token,
+                    });
+                } catch (cookieErr) {
+                    console.error('[login-verify] ssr.setSession error:', cookieErr);
+                }
+
+                return NextResponse.json({ verified: true });
             }
             console.error('[login-verify] verifyOtp ok but no tokens:', session);
         } else {
@@ -177,8 +188,7 @@ export async function POST(req: NextRequest) {
             console.error('[login-verify] verifyOtp HTTP', verifyRes.status, errBody);
         }
 
-        // Si llegamos aquí la verificación falló. NO mandar action_link como fallback
-        // porque la URL Supabase redirige a /auth/callback y el flujo iOS rompe.
+        // Si llegamos aquí la verificación falló.
         return NextResponse.json({
             error: 'No se pudo crear la sesión. Inténtalo con email y contraseña.',
         }, { status: 500 });
