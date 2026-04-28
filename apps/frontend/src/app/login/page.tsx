@@ -78,27 +78,25 @@ export default function LoginPage() {
 
     setPlatformName(getPlatformName());
 
-    // No auto-disparamos biometría al cargar para evitar AbortError en iOS
-    // (browser exige user gesture explícito para `navigator.credentials.get`).
-    // Solo activamos conditional UI (mediación pasiva en el campo email).
+    // No auto-disparamos biometría ni conditional UI al cargar.
+    // - iOS Chrome exige user gesture para `navigator.credentials.get` modal.
+    // - Conditional UI corriendo en paralelo bloqueaba el modal lanzado por
+    //   el botón "Entrar con Face ID" (dos llamadas a credentials.get
+    //   simultáneas → la modal aborta al instante).
     checkBiometricSupport().then((ok) => {
       setBioSupported(ok);
-      if (ok && !aborted.current) startConditionalAuth();
     }).catch(() => { });
 
     return () => { aborted.current = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /**
-   * Conditional UI — el navegador propone passkeys en el campo email
-   * (autocomplete="username webauthn"). Al elegir una, autentica sin botón.
-   * Corre en paralelo al formulario; si el usuario teclea email/contraseña
-   * o pulsa el botón de Face ID, ese flujo gana.
-   */
-  const startConditionalAuth = useCallback(async () => {
+  // Nota: conditional UI deshabilitada — provocaba conflicto con el botón
+  // manual de Face ID (dos `navigator.credentials.get` simultáneas → abort).
+  // Se mantiene como TODO si en el futuro se integra con AbortController.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _startConditionalAuth_disabled = useCallback(async () => {
     if (typeof window === 'undefined' || !window.PublicKeyCredential) return;
-    // Solo si el navegador soporta conditional mediation
     const isCondAvailable = await (window.PublicKeyCredential as typeof window.PublicKeyCredential & {
       isConditionalMediationAvailable?: () => Promise<boolean>;
     }).isConditionalMediationAvailable?.().catch(() => false);
@@ -135,7 +133,7 @@ export default function LoginPage() {
         window.location.href = result.action_link;
       }
     } catch {
-      // El usuario tecleó / cerró autofill / abort: ignorar silenciosamente
+      // ignore
     }
   }, []);
 
@@ -435,7 +433,7 @@ export default function LoginPage() {
                   <input
                     id="login-email"
                     type="email"
-                    autoComplete="username webauthn"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -468,7 +466,7 @@ export default function LoginPage() {
                   <input
                     id="login-pwd"
                     type={showPwd ? 'text' : 'password'}
-                    autoComplete="current-password webauthn"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
