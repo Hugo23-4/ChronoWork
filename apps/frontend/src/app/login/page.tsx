@@ -20,6 +20,24 @@ async function checkBiometricSupport(): Promise<boolean> {
   } catch { return false; }
 }
 
+/**
+ * Espera (poll) hasta que supabase.auth.getUser() confirme sesión activa.
+ * Necesario antes de navegar a rutas protegidas porque las cookies setadas
+ * por setSession pueden tardar unos cientos de ms en persistirse en iOS
+ * Chrome; sin esta espera el middleware SSR ve user=null y redirige al login.
+ */
+async function waitForSession(maxMs = 2500): Promise<boolean> {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) return true;
+    } catch { /* network blip */ }
+    await new Promise(r => setTimeout(r, 120));
+  }
+  return false;
+}
+
 function getPlatformName(): string {
   if (typeof navigator === 'undefined') return 'biometría';
   const ua = navigator.userAgent;
@@ -111,7 +129,7 @@ export default function LoginPage() {
           refresh_token: result.refresh_token,
         });
         if (setErr) return;
-        await new Promise(r => setTimeout(r, 80));
+        await waitForSession();
         window.location.assign('/dashboard');
       } else if (result.action_link) {
         window.location.href = result.action_link;
@@ -153,10 +171,10 @@ export default function LoginPage() {
           refresh_token: result.refresh_token,
         });
         if (setErr) throw setErr;
-        // Esperar un tick para que las cookies de Supabase queden persistidas
-        // antes de navegar (algunos browsers iOS bloquean si la cookie aún
-        // no se ha escrito y el middleware SSR no encuentra sesión).
-        await new Promise(r => setTimeout(r, 80));
+        // Esperar hasta que getUser confirme la sesión (cookies persistidas).
+        // iOS Chrome puede tardar varios cientos de ms en escribir cookies tras
+        // setSession; navegar antes provoca loop de redirect a /login.
+        await waitForSession();
         window.location.assign('/dashboard');
         return;
       }
@@ -208,9 +226,11 @@ export default function LoginPage() {
         rolId = await Promise.race([query, timeout]);
       } catch { /* go to dashboard */ }
 
-      if (rolId === 1) router.push('/admin');
-      else if (rolId === 3) router.push('/inspector');
-      else router.push('/dashboard');
+      // Esperar persistencia de cookies antes de navegación full-reload
+      // (router.push no espera al middleware → redirige a /login en iOS).
+      await waitForSession();
+      const dest = rolId === 1 ? '/admin' : rolId === 3 ? '/inspector' : '/dashboard';
+      window.location.assign(dest);
 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
