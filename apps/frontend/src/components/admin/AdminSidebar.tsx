@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { Gauge, Users, Clock, FileText, MapPin, Calendar, Coffee, ArrowLeftCircle, LogOut } from 'lucide-react';
+import { Gauge, Users, Clock, FileText, MapPin, Calendar, Coffee, ArrowLeftCircle, LogOut, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 const adminMenuItems = [
   { icon: Gauge, label: 'Panel de control', href: '/admin' },
@@ -14,6 +15,7 @@ const adminMenuItems = [
   { icon: MapPin, label: 'Centros de trabajo', href: '/admin/centros' },
   { icon: Calendar, label: 'Turnos y horarios', href: '/admin/turnos' },
   { icon: Coffee, label: 'Pausas', href: '/admin/pausas' },
+  { icon: UserCircle, label: 'Mi perfil', href: '/dashboard/perfil' },
 ];
 
 export default function AdminSidebar() {
@@ -76,11 +78,16 @@ export default function AdminSidebar() {
       {/* Volver a empleado */}
       <button
         onClick={() => router.push('/dashboard')}
-        className="w-full rounded-[10px] bg-systemGray-6 dark:bg-white/6 hover:bg-systemGray-5 dark:hover:bg-white/10 text-[--color-label-primary] dark:text-[#E5E5EA] py-2 px-3 flex items-center justify-center gap-2 transition-colors cursor-pointer text-[13px] font-medium border-none"
+        className="w-full rounded-[10px] bg-systemGray-6 dark:bg-white/6 hover:bg-systemGray-5 dark:hover:bg-white/10 text-[--color-label-primary] dark:text-[#E5E5EA] py-2 px-3 flex items-center justify-center gap-2 transition-colors cursor-pointer text-[13px] font-medium border-none mb-3"
       >
         <ArrowLeftCircle className="w-4 h-4" />
         <span>Vista empleado</span>
       </button>
+
+      {/* Tema */}
+      <div className="px-1">
+        <ThemeToggle compact />
+      </div>
 
       <div className="flex-grow" />
 

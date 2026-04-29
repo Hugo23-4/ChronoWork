@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LayoutGrid, Clock, FileText, UserCircle, LogOut, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 const menuItems = [
   { icon: LayoutGrid, label: 'Mi panel', href: '/dashboard' },
@@ -69,12 +70,17 @@ export default function Sidebar() {
       {isAdmin && (
         <button
           onClick={() => router.push('/admin')}
-          className="w-full rounded-[12px] bg-ios-blue/12 hover:bg-ios-blue/18 text-ios-blue dark:bg-ios-blue-dark/15 dark:hover:bg-ios-blue-dark/22 dark:text-ios-blue-dark py-2.5 px-3 flex items-center justify-center gap-2 transition-colors cursor-pointer text-[13px] font-semibold border-none"
+          className="w-full rounded-[12px] bg-ios-blue/12 hover:bg-ios-blue/18 text-ios-blue dark:bg-ios-blue-dark/15 dark:hover:bg-ios-blue-dark/22 dark:text-ios-blue-dark py-2.5 px-3 flex items-center justify-center gap-2 transition-colors cursor-pointer text-[13px] font-semibold border-none mb-3"
         >
           <ShieldCheck className="w-4 h-4" />
           <span>Panel administración</span>
         </button>
       )}
+
+      {/* Tema */}
+      <div className="px-1">
+        <ThemeToggle compact />
+      </div>
 
       {/* SPACER */}
       <div className="flex-grow" />
