@@ -214,11 +214,13 @@ export default function LoginPage() {
         rolId = await Promise.race([query, timeout]);
       } catch { /* go to dashboard */ }
 
-      // Esperar persistencia de cookies antes de navegación full-reload
-      // (router.push no espera al middleware → redirige a /login en iOS).
-      await waitForSession();
-      const dest = rolId === 1 ? '/admin' : rolId === 3 ? '/inspector' : '/dashboard';
-      window.location.assign(dest);
+      // signInWithPassword ya pobló el SDK browser con la sesión en memoria,
+      // así que router.push (client navigation) basta — los layouts protegidos
+      // verifican useAuth en cliente, no cookies SSR. Evitamos waitForSession
+      // que en iOS Chrome puede colgar si /auth/v1/user tarda en responder.
+      // rol_id en BD: 1=Empleado, 2=Administrador, 3=Inspector
+      const dest = rolId === 2 ? '/admin' : rolId === 3 ? '/inspector' : '/dashboard';
+      router.push(dest);
 
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
