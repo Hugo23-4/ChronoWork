@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import { Sun, Bandage, Clock, CalendarCheck, FileText, X, Loader2 } from 'lucide-react';
+import { Sun, Bandage, Clock, CalendarCheck, FileText, X, Loader2, Briefcase, Scale, Vote, Building2, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Toast from '@/components/ui/Toast';
 
 interface Solicitud {
   id: string;
   empleado_id: string;
-  tipo: 'vacaciones' | 'baja';
+  tipo: 'vacaciones' | 'baja' | 'otra_ausencia';
+  subtipo?: string | null;
   estado: 'pendiente' | 'aprobado' | 'rechazado';
   fecha_inicio: string;
   fecha_fin?: string | null;
@@ -24,17 +25,29 @@ interface Solicitud {
   created_at: string;
 }
 
+const SUBTIPOS_OTRA = [
+  { value: 'juicio', label: 'Juicio / Citación judicial', Icon: Scale },
+  { value: 'mesa_electoral', label: 'Mesa electoral', Icon: Vote },
+  { value: 'ayuntamiento', label: 'Trámite ayuntamiento / administración', Icon: Building2 },
+  { value: 'deber_publico', label: 'Deber inexcusable público', Icon: Briefcase },
+  { value: 'otro', label: 'Otro motivo', Icon: MoreHorizontal },
+];
+
 export default function EmployeeRequests() {
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(false);
-  const [activeModal, setActiveModal] = useState<'vacaciones' | 'baja' | 'parcial' | null>(null);
+  const [activeModal, setActiveModal] = useState<'vacaciones' | 'baja' | 'parcial' | 'otra' | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [myRequests, setMyRequests] = useState<Solicitud[]>([]);
 
   const [vacationData, setVacationData] = useState({ start: '', end: '', comment: '' });
   const [bajaData, setBajaData] = useState({ date: '', comment: '' });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [otraData, setOtraData] = useState({
+    subtipo: 'juicio', start: '', end: '', horaSalida: '', horaRegreso: '', comment: ''
+  });
+  const [otraFile, setOtraFile] = useState<File | null>(null);
 
   const TIPOS_AUSENCIA = [
     { value: 'consulta_propia', label: 'Consulta médica propia', icon: '🏥' },
@@ -131,6 +144,52 @@ export default function EmployeeRequests() {
     }
   };
 
+  const submitOtra = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otraData.start) {
+      setToast({ message: 'Indica la fecha de la ausencia.', type: 'warning' });
+      return;
+    }
+    setLoading(true);
+    let uploadedFileName: string | null = null;
+    try {
+      if (otraFile) {
+        const ext = otraFile.name.split('.').pop();
+        const fileName = `${user?.id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('justificantes').upload(fileName, otraFile);
+        if (upErr) throw upErr;
+        uploadedFileName = fileName;
+      }
+      const { error } = await supabase.from('solicitudes').insert({
+        empleado_id: user?.id,
+        tipo: 'otra_ausencia',
+        subtipo: otraData.subtipo,
+        fecha_inicio: otraData.start,
+        fecha_fin: otraData.end || null,
+        comentario: otraData.comment,
+        archivo_path: uploadedFileName,
+        hora_salida_prevista: otraData.horaSalida || null,
+        hora_regreso_prevista: otraData.horaRegreso || null,
+        estado: 'pendiente',
+      });
+      if (error) {
+        if (uploadedFileName) {
+          try { await supabase.storage.from('justificantes').remove([uploadedFileName]); } catch {}
+        }
+        throw error;
+      }
+      setActiveModal(null);
+      setOtraData({ subtipo: 'juicio', start: '', end: '', horaSalida: '', horaRegreso: '', comment: '' });
+      setOtraFile(null);
+      fetchMyHistory();
+      setToast({ message: 'Solicitud enviada correctamente.', type: 'success' });
+    } catch (err: unknown) {
+      setToast({ message: 'Error: ' + (err instanceof Error ? err.message : String(err)), type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const submitParcial = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -183,16 +242,28 @@ export default function EmployeeRequests() {
           </div>
         </button>
       </div>
-      <button onClick={() => setActiveModal('parcial')}
-        className="w-full bg-white border border-gray-100 p-4 rounded-2xl shadow-sm text-left flex items-center gap-3 cursor-pointer hover:shadow-md hover:-translate-y-px transition-all mb-6">
-        <div className="bg-sky-500/10 p-3 rounded-xl text-sky-500">
-          <Clock className="w-5 h-5" />
-        </div>
-        <div>
-          <h6 className="font-bold text-navy text-sm">Ausencia Médica Parcial</h6>
-          <small className="text-slate-400 text-xs">Consulta, urgencia o acompañar familiar (horas)</small>
-        </div>
-      </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+        <button onClick={() => setActiveModal('parcial')}
+          className="bg-white border border-gray-100 w-full p-4 rounded-2xl shadow-sm text-left flex items-center gap-3 cursor-pointer hover:shadow-md hover:-translate-y-px transition-all">
+          <div className="bg-sky-500/10 p-3 rounded-xl text-sky-500">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <h6 className="font-bold text-navy text-sm">Ausencia Médica Parcial</h6>
+            <small className="text-slate-400 text-xs">Consulta, urgencia o familiar (horas)</small>
+          </div>
+        </button>
+        <button onClick={() => setActiveModal('otra')}
+          className="bg-white border border-gray-100 w-full p-4 rounded-2xl shadow-sm text-left flex items-center gap-3 cursor-pointer hover:shadow-md hover:-translate-y-px transition-all">
+          <div className="bg-violet-500/10 p-3 rounded-xl text-violet-500">
+            <Briefcase className="w-5 h-5" />
+          </div>
+          <div>
+            <h6 className="font-bold text-navy text-sm">Otra Ausencia</h6>
+            <small className="text-slate-400 text-xs">Juicio, mesa electoral, ayuntamiento…</small>
+          </div>
+        </button>
+      </div>
 
       {/* Historial */}
       <h6 className="font-bold text-navy mb-3">Mis Solicitudes Recientes</h6>
@@ -206,11 +277,17 @@ export default function EmployeeRequests() {
                 <div className="flex gap-3 items-center">
                   {req.tipo === 'vacaciones'
                     ? <CalendarCheck className="w-5 h-5 text-amber-500" />
-                    : <FileText className="w-5 h-5 text-red-500" />
+                    : req.tipo === 'otra_ausencia'
+                      ? <Briefcase className="w-5 h-5 text-violet-500" />
+                      : <FileText className="w-5 h-5 text-red-500" />
                   }
                   <div>
                     <div className="font-bold text-navy text-sm capitalize">
-                      {req.es_parcial ? 'Ausencia Parcial' : req.tipo === 'baja' ? 'Baja Médica' : 'Vacaciones'}
+                      {req.tipo === 'otra_ausencia'
+                        ? `Otra ausencia${req.subtipo ? ` · ${SUBTIPOS_OTRA.find(s => s.value === req.subtipo)?.label ?? req.subtipo}` : ''}`
+                        : req.es_parcial ? 'Ausencia Parcial'
+                        : req.tipo === 'baja' ? 'Baja Médica'
+                        : 'Vacaciones'}
                       {req.es_parcial && (
                         <span className="ml-1.5 bg-sky-500/10 text-sky-600 text-[0.65rem] px-1.5 py-0.5 rounded-full font-bold">
                           {req.horas_ausencia}h
@@ -306,6 +383,88 @@ export default function EmployeeRequests() {
                     className="w-full bg-navy text-white py-3 rounded-xl font-bold border-none cursor-pointer hover:bg-slate-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                     {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                     {loading ? 'Subiendo Documento...' : 'Tramitar Baja'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Otra ausencia */}
+            {activeModal === 'otra' && (
+              <form onSubmit={submitOtra}>
+                <div className="flex items-center justify-between p-5 border-b border-gray-100">
+                  <h5 className="font-bold text-navy text-lg">Otra Ausencia</h5>
+                  <button type="button" className="text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer" onClick={() => setActiveModal(null)}>
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div>
+                    <label className={labelClass}>Motivo</label>
+                    <div className="flex flex-col gap-2">
+                      {SUBTIPOS_OTRA.map(s => {
+                        const Icon = s.Icon;
+                        return (
+                          <button key={s.value} type="button"
+                            className={cn(
+                              'text-left border rounded-xl px-3 py-2.5 text-sm cursor-pointer transition-all bg-transparent flex items-center gap-2',
+                              otraData.subtipo === s.value
+                                ? 'border-chrono-blue bg-chrono-blue/5 font-bold text-navy'
+                                : 'border-gray-200 text-slate-600 hover:border-gray-300'
+                            )}
+                            onClick={() => setOtraData({ ...otraData, subtipo: s.value })}>
+                            <Icon className="w-4 h-4 shrink-0" />
+                            {s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className={labelClass}>Desde</label>
+                      <input type="date" className={inputClass} required
+                        value={otraData.start}
+                        onChange={e => setOtraData({ ...otraData, start: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Hasta (opcional)</label>
+                      <input type="date" className={inputClass}
+                        value={otraData.end}
+                        onChange={e => setOtraData({ ...otraData, end: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className={labelClass}>Hora salida (opcional)</label>
+                      <input type="time" className={inputClass}
+                        value={otraData.horaSalida}
+                        onChange={e => setOtraData({ ...otraData, horaSalida: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Hora regreso (opcional)</label>
+                      <input type="time" className={inputClass}
+                        value={otraData.horaRegreso}
+                        onChange={e => setOtraData({ ...otraData, horaRegreso: e.target.value })} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Justificante (opcional, foto/PDF)</label>
+                    <input type="file" className={inputClass} accept="image/*,.pdf"
+                      onChange={e => setOtraFile(e.target.files ? e.target.files[0] : null)} />
+                    <p className="text-xs text-slate-400 mt-1">Citación judicial, convocatoria mesa electoral, etc.</p>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Observaciones</label>
+                    <textarea className={inputClass} rows={2}
+                      value={otraData.comment}
+                      onChange={e => setOtraData({ ...otraData, comment: e.target.value })} />
+                  </div>
+                </div>
+                <div className="p-5 border-t border-gray-100">
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-navy text-white py-3 rounded-xl font-bold border-none cursor-pointer hover:bg-slate-dark transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {loading ? 'Enviando…' : 'Enviar solicitud'}
                   </button>
                 </div>
               </form>

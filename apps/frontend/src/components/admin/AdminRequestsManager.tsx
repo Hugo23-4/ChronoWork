@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import { Inbox, Check, X, Sun, Bandage, Clock, FileText, Loader2 } from 'lucide-react';
+import { Inbox, Check, X, Sun, Bandage, Clock, FileText, Loader2, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBiometricStepUp } from '@/lib/useBiometricStepUp';
 import BiometricStepUpDialog from '@/components/ui/BiometricStepUpDialog';
@@ -71,10 +71,22 @@ export default function AdminRequestsManager() {
     return null;
   };
 
+  const SUBTIPO_LABELS: Record<string, string> = {
+    juicio: 'Juicio',
+    mesa_electoral: 'Mesa electoral',
+    ayuntamiento: 'Ayuntamiento',
+    deber_publico: 'Deber público',
+    otro: 'Otro',
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const typeBadge = (req: any) => {
     if (req.es_parcial) return <span className="bg-sky-100 text-sky-700 text-[0.65rem] px-2.5 py-0.5 rounded-full font-bold border border-sky-200 inline-flex items-center gap-1"><Clock className="w-3 h-3" />Parcial ({req.horas_ausencia}h)</span>;
     if (req.tipo === 'vacaciones') return <span className="bg-amber-100 text-amber-700 text-[0.65rem] px-2.5 py-0.5 rounded-full font-bold border border-amber-200 inline-flex items-center gap-1"><Sun className="w-3 h-3" />Vacaciones</span>;
+    if (req.tipo === 'otra_ausencia') {
+      const sub = req.subtipo ? (SUBTIPO_LABELS[req.subtipo] ?? req.subtipo) : 'Otra';
+      return <span className="bg-violet-100 text-violet-700 text-[0.65rem] px-2.5 py-0.5 rounded-full font-bold border border-violet-200 inline-flex items-center gap-1"><Briefcase className="w-3 h-3" />{sub}</span>;
+    }
     return <span className="bg-red-100 text-red-700 text-[0.65rem] px-2.5 py-0.5 rounded-full font-bold border border-red-200 inline-flex items-center gap-1"><Bandage className="w-3 h-3" />Baja Médica</span>;
   };
 
