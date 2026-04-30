@@ -46,7 +46,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         setUser(session.user);
-        await fetchProfile(session.user.id);
+        // fetchProfile no debe BLOQUEAR el setLoading(false). Si la query
+        // tarda (RLS / red), liberamos loading igual y el profile llega
+        // cuando llegue (componentes lo consumen reactivamente).
+        fetchProfile(session.user.id).catch((e) => console.error('[fetchProfile]', e));
         setLoading(false);
       } else {
         setUser(null);
@@ -58,15 +61,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Función para traer los datos extendidos del empleado (Rol e Integridad)
+  // Función para traer los datos extendidos del empleado (Rol e Integridad).
+  // Wrap con timeout para que un join lento (RLS empresas) no cuelgue indefinido.
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+      setTimeout(() => resolve({ data: null, error: new Error('profile timeout 6s') }), 6000)
+    );
+    const queryPromise = supabase
       .from('empleados_info')
       .select('*, roles(nombre), empresas(nombre)')
       .eq('id', userId)
-      .single();
+      .single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((res: any) => ({ data: res.data, error: res.error }));
 
-    if (!error) setProfile(data);
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+    if (error) {
+      console.error('[fetchProfile]', error);
+      // Fallback: query mínima sin joins por si RLS empresas/roles bloquea.
+      const { data: basic } = await supabase
+        .from('empleados_info')
+        .select('id, nombre_completo, email, rol, rol_id, empresa_id, dni, telefono, puesto, departamento, sede_id, activo')
+        .eq('id', userId)
+        .single();
+      if (basic) setProfile(basic as EmpleadoProfile);
+      return;
+    }
+    if (data) setProfile(data);
   };
 
   const signOut = useCallback(async () => {
